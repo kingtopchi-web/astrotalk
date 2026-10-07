@@ -347,7 +347,7 @@ function LiveSession() {
 
     // No cleanup here. We handle WebRTC cleanup when component unmounts 
     // to prevent disconnecting when sessionStatus changes to LIVE.
-  }, [sessionStatus, consultationId, isExpert]);
+  }, [sessionStatus, consultationId, isExpert, isIncoming, callAccepted]);
 
   // Timer & Heartbeat logic
   useEffect(() => {
