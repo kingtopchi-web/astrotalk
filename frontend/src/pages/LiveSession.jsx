@@ -214,24 +214,25 @@ function LiveSession() {
           peerConnection.addTrack(track, stream);
         });
 
-        console.log("[WEBRTC] WAITING FOR REMOTE TRACK...");
+        // Construct a remote stream robustly
+        const remoteStream = new MediaStream();
         peerConnection.ontrack = (event) => {
           console.log("[WEBRTC] REMOTE TRACK RECEIVED", event.track.kind, event.track.id, event.track.readyState);
-          console.log("[WEBRTC] Streams:", event.streams);
-          const [remoteStream] = event.streams;
           
-          if (remoteVideoRef.current && remoteStream) {
+          remoteStream.addTrack(event.track);
+          
+          if (remoteVideoRef.current) {
             if (remoteVideoRef.current.srcObject !== remoteStream) {
               console.log("[WEBRTC] Setting remoteVideo srcObject");
               remoteVideoRef.current.srcObject = remoteStream;
-              setIsConnected(true);
-              
-              remoteVideoRef.current.play().catch(error => {
-                 console.error("[WEBRTC] Remote video play failed:", error);
-              });
             }
+            setIsConnected(true);
+            
+            remoteVideoRef.current.play().catch(error => {
+               console.error("[WEBRTC] Remote video play failed:", error);
+            });
           } else {
-             console.error("[WEBRTC] remoteVideoRef.current or remoteStream is missing", { ref: !!remoteVideoRef.current, stream: !!remoteStream });
+             console.error("[WEBRTC] remoteVideoRef.current is missing");
           }
         };
 
@@ -283,6 +284,9 @@ function LiveSession() {
           }
         });
 
+        // Queue for ICE candidates that arrive before remote description is set
+        const iceCandidateQueue = [];
+
         socket.on('webrtc_offer', async (data) => {
           console.log("[SIGNALING] RECEIVE OFFER");
           if (isExpert) {
@@ -291,6 +295,13 @@ function LiveSession() {
           }
           try {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal));
+            
+            // Process queued candidates
+            while(iceCandidateQueue.length) {
+                const c = iceCandidateQueue.shift();
+                await peerConnection.addIceCandidate(c).catch(e => console.error("Queued ICE error", e));
+            }
+
             const answer = await peerConnection.createAnswer();
             console.log("[WEBRTC] ANSWER CREATED", answer);
             await peerConnection.setLocalDescription(answer);
@@ -308,6 +319,12 @@ function LiveSession() {
           try {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal));
             console.log("[WEBRTC] Remote description set successfully from answer");
+            
+            // Process queued candidates
+            while(iceCandidateQueue.length) {
+                const c = iceCandidateQueue.shift();
+                await peerConnection.addIceCandidate(c).catch(e => console.error("Queued ICE error", e));
+            }
           } catch (e) { console.error("[WEBRTC] Error setting remote description from answer", e); }
         });
 
@@ -317,8 +334,14 @@ function LiveSession() {
           console.log("[SIGNALING] RECEIVE ICE candidate", data.candidate);
           try {
             if (data.candidate) {
-              await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-              console.log("[WEBRTC] ICE candidate added successfully");
+              const rtcCandidate = new RTCIceCandidate(data.candidate);
+              if (!peerConnection.remoteDescription) {
+                  console.log("[WEBRTC] Queueing ICE candidate because remoteDescription is null");
+                  iceCandidateQueue.push(rtcCandidate);
+              } else {
+                  await peerConnection.addIceCandidate(rtcCandidate);
+                  console.log("[WEBRTC] ICE candidate added successfully");
+              }
             }
           } catch (e) { console.error("[WEBRTC] Error adding ICE candidate", e); }
         });
