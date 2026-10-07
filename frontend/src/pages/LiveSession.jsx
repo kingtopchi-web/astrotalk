@@ -161,6 +161,23 @@ function LiveSession() {
     };
   }, [consultationId]); // Run once on mount
 
+  // Connection Timeout Logic (Show error if WebRTC doesn't connect in 30s)
+  useEffect(() => {
+    let timeoutId;
+    if (sessionStatus === 'LIVE' && !isConnected && (!isIncoming || callAccepted)) {
+      timeoutId = setTimeout(() => {
+        if (!isConnected) {
+          console.warn("[WEBRTC] Connection timed out after 30 seconds");
+          setErrorMsg('Connection timed out. The other user may have disconnected, closed their browser, or has network issues. Please try booking again.');
+          setSessionStatus('ERROR');
+        }
+      }, 30000); // 30 seconds timeout
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [sessionStatus, isConnected, isIncoming, callAccepted]);
+
   // WebRTC setup - Runs when LIVE
   useEffect(() => {
     if (sessionStatus !== 'LIVE') return;
@@ -204,6 +221,13 @@ function LiveSession() {
         };
         peerConnection.oniceconnectionstatechange = () => {
             console.log("[WEBRTC] iceConnectionState:", peerConnection.iceConnectionState);
+            if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
+                setIsConnected(true);
+            } else if (peerConnection.iceConnectionState === 'disconnected' || peerConnection.iceConnectionState === 'failed') {
+                console.warn("[WEBRTC] ICE connection lost!");
+                setErrorMsg('Network connection lost with the other user. The call has ended.');
+                setSessionStatus('ERROR');
+            }
         };
         peerConnection.onsignalingstatechange = () => {
             console.log("[WEBRTC] signalingState:", peerConnection.signalingState);
@@ -667,7 +691,7 @@ function LiveSession() {
                </p>
              ) : (
                <p className="text-blue-300 text-sm md:text-base font-medium mt-3 flex items-center gap-1">
-                 Ringing <span className="animate-pulse flex gap-0.5 ml-1"><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span></span>
+                 {isExpert && callAccepted ? 'Connecting' : 'Ringing'} <span className="animate-pulse flex gap-0.5 ml-1"><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span></span>
                </p>
              )}
           </div>
@@ -694,7 +718,7 @@ function LiveSession() {
                  <button onClick={endCall} className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform active:scale-95">
                    <span className="material-symbols-outlined text-3xl md:text-4xl">call_end</span>
                  </button>
-                 <span className="text-xs md:text-sm font-bold text-white/90">Cancel Call</span>
+                 <span className="text-xs md:text-sm font-bold text-white/90">Cancel</span>
                </div>
             )}
           </div>
