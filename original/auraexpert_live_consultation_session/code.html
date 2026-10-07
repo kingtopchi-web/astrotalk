@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fcf9f8;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container-lowest": "#ffffff", "surface-container-low": "#f6f3f2", "on-tertiary-container": "#005b3d", "on-surface-variant": "#4f4632", "on-surface": "#1c1b1b", "on-secondary-container": "#f8f2ff", "outline": "#827660", "on-background": "#1c1b1b", "surface-dim": "#dcd9d9", "on-primary-fixed-variant": "#5b4300", "surface-container-high": "#eae7e7", "error-container": "#ffdad6", "tertiary": "#006c49", "on-secondary": "#ffffff", "secondary-fixed-dim": "#ccbeff", "tertiary-fixed": "#6ffbbe", "surface-container-highest": "#e5e2e1", "on-error-container": "#93000a", "secondary-fixed": "#e7deff", "inverse-surface": "#313030", "on-tertiary-fixed-variant": "#005236", "surface-variant": "#e5e2e1", "tertiary-container": "#48d99e", "primary-container": "#f5b800", "surface-bright": "#fcf9f8", "tertiary-fixed-dim": "#4edea3", "background": "#fcf9f8", "secondary": "#5e27e6", "on-primary-fixed": "#261a00", "primary": "#795900", "surface-container": "#f0eded", "primary-fixed-dim": "#fabd0d", "inverse-primary": "#fabd0d", "outline-variant": "#d4c5ac", "primary-fixed": "#ffdf9f", "on-primary": "#ffffff", "inverse-on-surface": "#f3f0ef", "on-error": "#ffffff", "surface": "#fcf9f8", "on-primary-container": "#664b00", "on-secondary-fixed-variant": "#4d00d2", "error": "#ba1a1a", "surface-tint": "#795900", "on-tertiary-fixed": "#002113", "on-tertiary": "#ffffff", "on-secondary-fixed": "#1f0060", "secondary-container": "#774aff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter-lg": "2rem", "gutter-md": "1.5rem", "gutter": "1rem", "margin-lg": "3rem", "space-lg": "1.5rem", "margin": "1rem", "space-md": "1rem", "space-xl": "2rem", "margin-md": "2rem" }, fontFamily: { "display-hero": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"] }, fontSize: { "display-hero": ["40px", { lineHeight: "48px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.04em", fontWeight: "700" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-lg-mobile": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "display-hero-mobile": ["28px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "800" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Back" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="AuraExpert Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1ULTrcGlUCyQqlJXoOuf9DIgo7RHTQ_1m3p3E5Ei3Jr-jSPLY2kBYz4cLI5FVLzQf4Mb99tTjYRi_bMfB5ApVmAf4eNseKW2BnkEfmfC8K0A3DVfdH9w2iUsm2UNXp93dj8Rv5kLoHFSpMAcjfZrEp8uil6sHe4g_TC93OwmHX9fuIxuDvCnmfckQtvRI4Qvfr32wtWjhWovNzaXR30oATAa1MuhwG07uy_Y_qtA3NzUHkDF78gDq0fUA"/><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Live Consultation Session</h1></div><div class="flex items-center gap-space-xs"><div class="flex items-center bg-primary-fixed/40 px-space-sm py-1 rounded-full"><span class="font-label-md text-label-md text-on-primary-fixed font-bold">$84.50</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK99XHwBeZskOJjbHG95F8ljNEFpySWUMWC3BE_Hv2N_3JiSQNGZjyJ0tFvCHhoymXsgltQgrWM1OkuaHsY7GyDAAHKLIsKLVTRo22UcOjhGYbZ-Mz0hBYmAiiRZY1cl998LugyV7zYkUsRttfykFCEN77VcOvHbmLsu094ivWcYF3bj9L6-_vqEKOX9JThLj3SXPW5swUS-TufphL22LE5nxI9BghmuZetKKMIro3TIgtH82FxJwI"/></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full px-margin pb-gutter-lg">
+<!-- Live Billing Floating Status Header Card -->
+<div class="relative w-full rounded-xl bg-surface-container-lowest shadow-md p-space-md mt-space-sm mb-space-md">
+<div class="flex items-center justify-between gap-space-sm mb-space-xs">
+<!-- Live Elapsed Timer Pill -->
+<div class="flex items-center gap-space-xs bg-secondary/10 px-space-sm py-1 rounded-full">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+</span>
+<span class="font-label-md text-label-md text-secondary font-bold tracking-tight" id="call-timer">08:42</span>
+<span class="text-outline-variant font-body-sm text-body-sm">•</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold" id="call-billed">$24.36 billed</span>
+</div>
+<!-- Rate Tag -->
+<div class="flex items-center gap-1 bg-surface-container px-space-sm py-1 rounded-full">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold">$2.80/min</span>
+</div>
+</div>
+<!-- Balance Meter & Safe Runway -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">account_balance_wallet</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+          Balance: <strong class="text-on-surface font-bold font-label-md text-label-md">$59.14</strong>
+</span>
+</div>
+<div class="font-label-sm text-label-sm text-tertiary font-bold bg-tertiary/10 px-space-xs py-0.5 rounded">
+        ~21 mins left
+      </div>
+</div>
+<!-- Auto-Recharge Status Banner -->
+<div class="mt-space-sm flex items-center justify-between bg-primary-fixed/30 rounded-lg px-space-sm py-1.5">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-on-primary-fixed">autorenew</span>
+<span class="font-label-sm text-label-sm text-on-primary-fixed truncate">Auto-recharge enabled ($25 threshold)</span>
+</div>
+<button class="shrink-0 font-label-sm text-label-sm text-on-primary-fixed font-bold underline ml-space-xs active:scale-95 transition-transform" type="button">
+        + Add $25
+      </button>
+</div>
+</div>
+<!-- Video Stream Canvas Container (High Contrast Dark Slate Shell) -->
+<div class="relative w-full rounded-xl overflow-hidden shadow-xl bg-inverse-surface aspect-[4/5] flex items-center justify-center">
+<!-- Remote Stream View (Dr. Priya Sharma) -->
+<img class="absolute inset-0 w-full h-full object-cover" data-alt="Photorealistic portrait of Dr Priya Sharma during a high definition telehealth video consultation, warm ambient studio lighting, professional medical aesthetics, subtle bokeh background of an office bookshelf, empathetic and trustworthy expression, 8k resolution, modern editorial warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL-8kg5U7VxAMq00-LAgzykKmRNDAQbPx3pspBgXUcIPpEadgoQFn9vhgnwTvCZEz14CIwa-bI1YfJwlIYzZF6PjExqYILEfUicLGYCBg1GYfbuHJX4ylZtbOPtICknO4wyQ9YG--Mvle-Gy5zBXESOLzld6j1Gc6-v8nB4z0X9VRxDpK0dt4jwBsZL7zSNfLL0umQC1TxTwYQ_31vUP2IJk54ecruklIQCl_Y_QV4z8K5680SRNfe"/>
+<!-- Top Overlay Badges: Encrypted & Latency -->
+<div class="absolute top-space-md inset-x-space-md flex items-center justify-between z-10 pointer-events-none">
+<!-- Latency & Connection Health Badge -->
+<div class="flex items-center gap-1.5 bg-inverse-surface/80 backdrop-blur-md px-space-sm py-1 rounded-full shadow-sm pointer-events-auto">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-fixed opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary-fixed"></span>
+</span>
+<span class="font-label-sm text-label-sm text-inverse-on-surface">Strong • 48ms</span>
+</div>
+<!-- Security Micro-Badge -->
+<div class="flex items-center gap-1 bg-inverse-surface/80 backdrop-blur-md px-space-sm py-1 rounded-full shadow-sm pointer-events-auto">
+<span class="material-symbols-outlined text-[13px] text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="font-label-sm text-label-sm text-inverse-on-surface">E2E Encrypted</span>
+</div>
+</div>
+<!-- Active Remote Speaker Identifier & Live Audio Waveform -->
+<div class="absolute bottom-space-md left-space-md z-10 flex flex-col gap-1 pointer-events-none">
+<div class="flex items-center gap-space-xs bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full">
+<span class="font-label-md text-label-md text-inverse-on-surface font-bold">Dr. Priya Sharma</span>
+<span class="material-symbols-outlined text-[14px] text-secondary-fixed" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<!-- Ambient Audio Dynamic Waveform -->
+<div class="flex items-end gap-1 h-4 bg-inverse-surface/80 backdrop-blur-md px-2 py-1 rounded-full w-fit">
+<span class="w-1 bg-tertiary-fixed rounded-full h-2 animate-pulse"></span>
+<span class="w-1 bg-tertiary-fixed rounded-full h-3.5 animate-pulse" style="animation-delay: 150ms;"></span>
+<span class="w-1 bg-tertiary-fixed rounded-full h-1.5 animate-pulse" style="animation-delay: 300ms;"></span>
+<span class="w-1 bg-tertiary-fixed rounded-full h-3 animate-pulse" style="animation-delay: 75ms;"></span>
+<span class="w-1 bg-tertiary-fixed rounded-full h-2 animate-pulse" style="animation-delay: 200ms;"></span>
+</div>
+</div>
+<!-- Picture-in-Picture Self Video Stream Thumbnail -->
+<div class="absolute top-space-md right-space-md w-24 h-32 rounded-lg overflow-hidden shadow-xl z-20 bg-surface-dim">
+<img class="w-full h-full object-cover" data-alt="Selfie camera angle of client in cozy modern home office natural lighting holding consultation listening attentively, warm skin tones, ambient domestic background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD23yEFQr4IKw6VTfbqEKmAVdC0s7wiJ_M3PHPrbx4i8dcJR-KcVKaMjFviSQfIhcxZ8Fw1-HtSnX8aknkUHkpn3ELqNk2q00Fd6SI2Sbp_OfSGzDQweq3NEnvBKfBVLq0x4S-_eSI1BBwug6kxn5f3yEsWSbdCY9ANzZyKoHIJBl7CR13a28oONhKHcCPk8t-iS6cKv8ojyhnp-MUbR2VWrQh8a13WXFypMrM1616VjAlmR5TK8x93"/>
+<div class="absolute bottom-1 right-1 bg-inverse-surface/75 px-1 py-0.5 rounded text-[8px] font-bold text-inverse-on-surface">
+        You
+      </div>
+</div>
+<!-- Floating Gift Selector Drawer Trigger Layer (Active Modal State Container) -->
+<div class="hidden absolute inset-x-space-sm bottom-space-md z-30 bg-surface-container-lowest rounded-xl p-space-sm shadow-xl" id="gift-tray">
+<div class="flex items-center justify-between mb-space-xs px-1">
+<span class="font-label-md text-label-md text-on-surface font-bold">Send Quick Gratitude Token</span>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="toggleGiftTray()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="grid grid-cols-4 gap-space-xs">
+<button class="flex flex-col items-center p-2 rounded-lg bg-surface-container hover:bg-primary-fixed/30 transition-transform active:scale-95" onclick="sendGiftAnimation('Coffee')" type="button">
+<span class="text-2xl">☕</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold mt-1">Coffee</span>
+<span class="font-body-sm text-[10px] text-primary font-bold">$3.00</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg bg-surface-container hover:bg-primary-fixed/30 transition-transform active:scale-95" onclick="sendGiftAnimation('Heart')" type="button">
+<span class="text-2xl">❤️</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold mt-1">Heart</span>
+<span class="font-body-sm text-[10px] text-primary font-bold">$5.00</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg bg-surface-container hover:bg-primary-fixed/30 transition-transform active:scale-95" onclick="sendGiftAnimation('Trophy')" type="button">
+<span class="text-2xl">🏆</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold mt-1">Trophy</span>
+<span class="font-body-sm text-[10px] text-primary font-bold">$10.00</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg bg-surface-container hover:bg-primary-fixed/30 transition-transform active:scale-95" onclick="sendGiftAnimation('Star')" type="button">
+<span class="text-2xl">🌟</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold mt-1">Superstar</span>
+<span class="font-body-sm text-[10px] text-primary font-bold">$20.00</span>
+</button>
+</div>
+</div>
+<!-- Floating Live Gift Toast Canvas -->
+<div class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-inverse-surface/90 text-inverse-on-surface backdrop-blur-md px-space-md py-space-sm rounded-full shadow-xl flex items-center gap-space-sm animate-bounce" id="gift-toast">
+<span class="text-2xl" id="gift-toast-icon">🌟</span>
+<span class="font-label-md text-label-md font-bold" id="gift-toast-label">Gift sent to Dr. Priya!</span>
+</div>
+</div>
+<!-- Primary Live Call Control Deck -->
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-md p-space-md mt-space-md flex items-center justify-between gap-space-xs">
+<!-- Mute Mic Action -->
+<button class="w-12 h-12 rounded-full flex flex-col items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface transition-all active:scale-95 shadow-sm" id="btn-mic" onclick="toggleMic()" type="button">
+<span class="material-symbols-outlined text-[22px]" id="mic-icon">mic</span>
+</button>
+<!-- Toggle Camera Action -->
+<button class="w-12 h-12 rounded-full flex flex-col items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface transition-all active:scale-95 shadow-sm" id="btn-cam" onclick="toggleCam()" type="button">
+<span class="material-symbols-outlined text-[22px]" id="cam-icon">videocam</span>
+</button>
+<!-- Switch View / Share Frame Action -->
+<button class="w-12 h-12 rounded-full flex flex-col items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface transition-all active:scale-95 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[22px]">flip_camera_ios</span>
+</button>
+<!-- Send Gift Sparkle Button -->
+<button class="w-12 h-12 rounded-full flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed hover:bg-primary-container transition-all active:scale-95 shadow-sm" onclick="toggleGiftTray()" type="button">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">featured_seasonal_and_gifts</span>
+</button>
+<!-- End Consultation Emergency Button -->
+<button class="px-space-md h-12 rounded-full flex items-center gap-1.5 bg-error text-on-error hover:bg-error/90 font-label-md text-label-md font-bold transition-all active:scale-95 shadow-md" onclick="promptEndCall()" type="button">
+<span class="material-symbols-outlined text-[20px]">call_end</span>
+<span>End</span>
+</button>
+</div>
+<!-- End Call Confirmation Confirmation Modal (Hidden Default) -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/50 backdrop-blur-sm p-margin" id="end-modal">
+<div class="w-full max-w-sm bg-surface-container-lowest rounded-xl p-space-lg shadow-xl flex flex-col items-center text-center">
+<div class="w-14 h-14 rounded-full bg-error-container flex items-center justify-center text-on-error-container mb-space-sm">
+<span class="material-symbols-outlined text-[28px]">call_end</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Conclude Consultation?</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs mb-space-lg">
+        Your current session duration is 08:42. A final summary receipt will be generated automatically.
+      </p>
+<div class="flex items-center gap-space-sm w-full">
+<button class="flex-1 py-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold" onclick="dismissEndModal()" type="button">
+          Continue Call
+        </button>
+<button class="flex-1 py-space-sm rounded-lg bg-error text-on-error hover:bg-error/90 font-label-md text-label-md font-bold shadow-sm" onclick="finalizeEndCall()" type="button">
+          Confirm End
+        </button>
+</div>
+</div>
+</div>
+<!-- Collapsible Real-Time Chat & Consultation Notes Drawer -->
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-md mt-space-md overflow-hidden">
+<!-- Header Collapsible Toggle -->
+<button class="w-full p-space-md flex items-center justify-between bg-surface-container-low hover:bg-surface-container transition-colors text-left" onclick="toggleDrawer()" type="button">
+<div class="flex items-center gap-space-sm">
+<div class="relative flex items-center justify-center w-8 h-8 rounded-full bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined text-[18px]">forum</span>
+<span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-primary-container"></span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Consultation Chat & Notes</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Shared files, lab notes & messages</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant transition-transform" id="drawer-chevron">expand_more</span>
+</button>
+<!-- Collapsible Chat Body -->
+<div class="p-space-md flex flex-col gap-space-md" id="drawer-body">
+<!-- Chat Conversation History Stream -->
+<div class="flex flex-col gap-space-sm max-h-56 overflow-y-auto pr-1">
+<!-- Remote Expert Message -->
+<div class="flex items-start gap-space-xs max-w-[85%]">
+<img class="w-6 h-6 rounded-full object-cover mt-1 shrink-0" data-alt="Small thumbnail profile photo of female Indian physician in clinical attire with stethoscope." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDssGfWJes5w2LAA6FAuJLyanS_kBUyVYf6p9fvBlKu7vca_mqnGNylEAiH9qHMMxM7AW5vF44jTR71O2kw_bS8rxZhT0pBc1KbDS0bwhGG2Se565wh0GMz6ul8q0GqFf9cRbIF5xCU-j87Yg5y6Pz1alBNFg5PkKDtcV_2HGoXDWIGBjsJv2KJDGznv9ZYn8Gny94HrbaByKk9ObBqZtKoSs4vUeN4qPj3SIV7vApcvAGUQvBUqZjw"/>
+<div class="bg-surface-container-high text-on-surface rounded-xl rounded-tl-none p-space-sm shadow-sm">
+<p class="font-body-sm text-body-sm">
+              I’ve attached the sleep protocol recommendations. Let’s review page 2 together.
+            </p>
+<span class="font-label-sm text-[10px] text-on-surface-variant mt-1 block">08:34 AM</span>
+</div>
+</div>
+<!-- Shared Document Card Component -->
+<div class="ml-7 flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container max-w-[85%]">
+<div class="w-9 h-9 rounded-md bg-secondary/15 flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<div class="min-w-0 flex-1">
+<span class="font-label-sm text-label-sm text-on-surface font-bold truncate block">Circadian_Optimization.pdf</span>
+<span class="font-body-sm text-[10px] text-on-surface-variant">1.4 MB • PDF</span>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-highest text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+</div>
+<!-- Local User Message -->
+<div class="flex items-start gap-space-xs max-w-[85%] self-end flex-row-reverse">
+<div class="bg-secondary text-on-secondary rounded-xl rounded-tr-none p-space-sm shadow-sm">
+<p class="font-body-sm text-body-sm">
+              Got it! Downloading now. Should I take the magnesium glycinate right before bed?
+            </p>
+<span class="font-label-sm text-[10px] text-secondary-fixed text-right mt-1 block">08:38 AM</span>
+</div>
+</div>
+<!-- Remote Response -->
+<div class="flex items-start gap-space-xs max-w-[85%]">
+<img class="w-6 h-6 rounded-full object-cover mt-1 shrink-0" data-alt="Small thumbnail profile photo of female Indian physician in clinical attire with stethoscope." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ2ic9GocHI2M-AoaIDXJoSXxB-Yqhw9tsD-kcEAhVF619gF0y8E-hGrpR_ZvzY1Iyob9jl1o-B_Lc2jdFvjLMYk9DTB4KaUuIPJGNMJWTYllTmIOvxQbBS_u53pVdIXN7oNX_fCwvxugruSfi8l-MAkIDa6c_V4TJkNdzY5JTZqbJg5h2V7sdo6Sh2kEgfiDuxwguPPRn6zxW0Zc-ap810oYpedSyj_5yff5lutBP4_fgKY9FRXSP"/>
+<div class="bg-surface-container-high text-on-surface rounded-xl rounded-tl-none p-space-sm shadow-sm">
+<p class="font-body-sm text-body-sm">
+              Yes, ideally 45 minutes prior with water.
+            </p>
+<span class="font-label-sm text-[10px] text-on-surface-variant mt-1 block">08:40 AM</span>
+</div>
+</div>
+</div>
+<!-- Quick Session Live Notes Bar -->
+<div class="bg-primary-fixed/20 p-space-sm rounded-lg flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-on-primary-fixed">edit_note</span>
+<span class="font-label-sm text-label-sm text-on-primary-fixed truncate">
+          Live Note: Page 2 dietary protocol + Magnesium 400mg routine.
+        </span>
+</div>
+<!-- Input Field & Attachment Action Bar -->
+<div class="flex items-center gap-space-xs">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">attach_file</span>
+</button>
+<div class="relative flex-1">
+<input class="w-full bg-surface-container rounded-full px-space-md py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:bg-surface-container-low transition-all" placeholder="Type your message..." type="text"/>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center bg-secondary text-on-secondary hover:bg-secondary/90 transition-transform active:scale-95 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let seconds = 522; // 08:42 start
+  let billedAmount = 24.36;
+  const ratePerMinute = 2.80;
+
+  // Real-time ticking timer & billing sync
+  setInterval(() => {
+    seconds++;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    const timerElem = document.getElementById('call-timer');
+    if (timerElem) timerElem.textContent = formatted;
+
+    if (seconds % 60 === 0) {
+      billedAmount += ratePerMinute;
+      const billedElem = document.getElementById('call-billed');
+      if (billedElem) billedElem.textContent = `$${billedAmount.toFixed(2)} billed`;
+    }
+  }, 1000);
+
+  // Mute audio toggle
+  function toggleMic() {
+    const icon = document.getElementById('mic-icon');
+    const btn = document.getElementById('btn-mic');
+    if (!icon || !btn) return;
+    if (icon.textContent === 'mic') {
+      icon.textContent = 'mic_off';
+      btn.classList.add('bg-error-container', 'text-on-error-container');
+      btn.classList.remove('bg-surface-container', 'text-on-surface');
+    } else {
+      icon.textContent = 'mic';
+      btn.classList.remove('bg-error-container', 'text-on-error-container');
+      btn.classList.add('bg-surface-container', 'text-on-surface');
+    }
+  }
+
+  // Camera toggle
+  function toggleCam() {
+    const icon = document.getElementById('cam-icon');
+    const btn = document.getElementById('btn-cam');
+    if (!icon || !btn) return;
+    if (icon.textContent === 'videocam') {
+      icon.textContent = 'videocam_off';
+      btn.classList.add('bg-error-container', 'text-on-error-container');
+      btn.classList.remove('bg-surface-container', 'text-on-surface');
+    } else {
+      icon.textContent = 'videocam';
+      btn.classList.remove('bg-error-container', 'text-on-error-container');
+      btn.classList.add('bg-surface-container', 'text-on-surface');
+    }
+  }
+
+  // Gift tray toggle
+  function toggleGiftTray() {
+    const tray = document.getElementById('gift-tray');
+    if (tray) {
+      tray.classList.toggle('hidden');
+    }
+  }
+
+  // Send gift interaction animation
+  function sendGiftAnimation(type) {
+    toggleGiftTray();
+    const toast = document.getElementById('gift-toast');
+    const toastIcon = document.getElementById('gift-toast-icon');
+    const toastLabel = document.getElementById('gift-toast-label');
+    
+    const icons = {
+      'Coffee': '☕',
+      'Heart': '❤️',
+      'Trophy': '🏆',
+      'Star': '🌟'
+    };
+
+    if (toast && toastIcon && toastLabel) {
+      toastIcon.textContent = icons[type] || '🎁';
+      toastLabel.textContent = `Sent ${type} to Dr. Priya!`;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2500);
+    }
+  }
+
+  // End Call Modal handlers
+  function promptEndCall() {
+    const modal = document.getElementById('end-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function dismissEndModal() {
+    const modal = document.getElementById('end-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function finalizeEndCall() {
+    dismissEndModal();
+    window.history.back();
+  }
+
+  // Drawer collapsible logic
+  function toggleDrawer() {
+    const body = document.getElementById('drawer-body');
+    const chevron = document.getElementById('drawer-chevron');
+    if (!body || !chevron) return;
+    body.classList.toggle('hidden');
+    if (body.classList.contains('hidden')) {
+      chevron.textContent = 'expand_less';
+    } else {
+      chevron.textContent = 'expand_more';
+    }
+  }
+</script></main></body></html>

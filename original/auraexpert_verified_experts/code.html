@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fcf9f8;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container-lowest": "#ffffff", "surface-container-low": "#f6f3f2", "on-tertiary-container": "#005b3d", "on-surface-variant": "#4f4632", "on-surface": "#1c1b1b", "on-secondary-container": "#f8f2ff", "outline": "#827660", "on-background": "#1c1b1b", "surface-dim": "#dcd9d9", "on-primary-fixed-variant": "#5b4300", "surface-container-high": "#eae7e7", "error-container": "#ffdad6", "tertiary": "#006c49", "on-secondary": "#ffffff", "secondary-fixed-dim": "#ccbeff", "tertiary-fixed": "#6ffbbe", "surface-container-highest": "#e5e2e1", "on-error-container": "#93000a", "secondary-fixed": "#e7deff", "inverse-surface": "#313030", "on-tertiary-fixed-variant": "#005236", "surface-variant": "#e5e2e1", "tertiary-container": "#48d99e", "primary-container": "#f5b800", "surface-bright": "#fcf9f8", "tertiary-fixed-dim": "#4edea3", "background": "#fcf9f8", "secondary": "#5e27e6", "on-primary-fixed": "#261a00", "primary": "#795900", "surface-container": "#f0eded", "primary-fixed-dim": "#fabd0d", "inverse-primary": "#fabd0d", "outline-variant": "#d4c5ac", "primary-fixed": "#ffdf9f", "on-primary": "#ffffff", "inverse-on-surface": "#f3f0ef", "on-error": "#ffffff", "surface": "#fcf9f8", "on-primary-container": "#664b00", "on-secondary-fixed-variant": "#4d00d2", "error": "#ba1a1a", "surface-tint": "#795900", "on-tertiary-fixed": "#002113", "on-tertiary": "#ffffff", "on-secondary-fixed": "#1f0060", "secondary-container": "#774aff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter-lg": "2rem", "gutter-md": "1.5rem", "gutter": "1rem", "margin-lg": "3rem", "space-lg": "1.5rem", "margin": "1rem", "space-md": "1rem", "space-xl": "2rem", "margin-md": "2rem" }, fontFamily: { "display-hero": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"] }, fontSize: { "display-hero": ["40px", { lineHeight: "48px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.04em", fontWeight: "700" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-lg-mobile": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "display-hero-mobile": ["28px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "800" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between gap-space-xs"><div class="flex items-center gap-space-xs"><img alt="AuraExpert Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1ULTrcGlUCyQqlJXoOuf9DIgo7RHTQ_1m3p3E5Ei3Jr-jSPLY2kBYz4cLI5FVLzQf4Mb99tTjYRi_bMfB5ApVmAf4eNseKW2BnkEfmfC8K0A3DVfdH9w2iUsm2UNXp93dj8Rv5kLoHFSpMAcjfZrEp8uil6sHe4g_TC93OwmHX9fuIxuDvCnmfckQtvRI4Qvfr32wtWjhWovNzaXR30oATAa1MuhwG07uy_Y_qtA3NzUHkDF78gDq0fUA"/><span class="hidden">Experts</span></div><div class="flex items-center gap-space-xs"><div class="flex items-center bg-primary-fixed/40 pl-space-sm pr-space-xs py-1 rounded-full shadow-[0_2px_8px_-2px_rgba(245,184,0,0.2)]"><span class="material-symbols-outlined text-primary font-bold text-[18px] mr-1">account_balance_wallet</span><span class="font-label-md text-label-md text-on-primary-fixed font-bold mr-1">$84.50</span><button aria-label="Add Funds" class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-95 transition-transform" type="button"><span class="material-symbols-outlined text-[16px] font-bold">add</span></button></div><button aria-label="Notifications" class="w-11 h-11 relative flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[24px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><a class="relative flex items-center justify-center p-0.5 rounded-full hover:opacity-90 transition-opacity" data-path="wallet-and-profile" href="#"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_2px_8px_-2px_rgba(94,39,230,0.2)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK99XHwBeZskOJjbHG95F8ljNEFpySWUMWC3BE_Hv2N_3JiSQNGZjyJ0tFvCHhoymXsgltQgrWM1OkuaHsY7GyDAAHKLIsKLVTRo22UcOjhGYbZ-Mz0hBYmAiiRZY1cl998LugyV7zYkUsRttfykFCEN77VcOvHbmLsu094ivWcYF3bj9L6-_vqEKOX9JThLj3SXPW5swUS-TufphL22LE5nxI9BghmuZetKKMIro3TIgtH82FxJwI"/></a></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full pb-8">
+<!-- Search & Category Swiper -->
+<div class="px-margin flex flex-col gap-space-sm pt-space-xs">
+<!-- Search Bar -->
+<div class="relative w-full shadow-sm rounded-xl bg-surface-container-lowest">
+<div class="absolute inset-y-0 left-0 pl-space-md flex items-center pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full pl-11 pr-11 py-3 text-body-md font-body-md bg-transparent text-on-surface placeholder:text-outline focus:outline-none rounded-xl" id="expert-search" placeholder="Search by name, role, or skill..." type="text"/>
+<button aria-label="Voice Search" class="absolute inset-y-0 right-0 pr-space-md flex items-center text-primary hover:opacity-80 transition-opacity" type="button">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+<!-- Category Segments -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-1">
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary text-on-secondary font-label-md text-label-md whitespace-nowrap shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[16px]">stars</span>
+        All Disciplines
+      </button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md whitespace-nowrap shadow-sm hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[16px]">account_balance</span>
+        Finance & Wealth
+      </button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md whitespace-nowrap shadow-sm hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+        AI & Engineering
+      </button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md whitespace-nowrap shadow-sm hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[16px]">self_improvement</span>
+        Executive Wellness
+      </button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md whitespace-nowrap shadow-sm hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[16px]">rocket_launch</span>
+        Venture Capital
+      </button>
+</div>
+<!-- Micro Filter Carousel -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-0.5">
+<!-- Active Live Filter -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest shadow-sm text-on-surface font-label-sm text-label-sm whitespace-nowrap" id="filter-online">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+        Online Now
+      </button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest shadow-sm text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+        Top Rated (4.8+)
+      </button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest shadow-sm text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[14px]">sell</span>
+        Under $3/min
+      </button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest shadow-sm text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[14px] text-secondary">videocam</span>
+        Video Enabled
+      </button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-lowest shadow-sm text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[14px]">translate</span>
+        Languages (5+)
+      </button>
+</div>
+</div>
+<!-- Interactive 30s Matching Quiz Pill -->
+<div class="px-margin mt-space-md">
+<div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-fixed/60 via-surface-container-lowest to-secondary-fixed/50 p-space-md shadow-sm">
+<div class="flex items-center justify-between gap-space-sm relative z-10">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm shrink-0">
+<span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+</div>
+<div class="flex flex-col">
+<h2 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Need help choosing?</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Take our 30-sec aura match quiz</p>
+</div>
+</div>
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-on-surface text-surface font-label-sm text-label-sm font-bold shadow-sm active:scale-95 transition-transform flex items-center gap-1" type="button">
+          Start
+          <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-container/20 rounded-full blur-xl pointer-events-none"></div>
+</div>
+</div>
+<!-- Sort Bar & Total Metrics -->
+<div class="px-margin mt-space-lg flex items-center justify-between">
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">142</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Specialists Active</span>
+</div>
+<!-- Dropdown Trigger Container -->
+<div class="relative inline-block text-left">
+<button class="flex items-center gap-1 px-3 py-1 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md active:bg-surface-container-high transition-colors" id="sort-menu-btn" type="button">
+<span class="text-outline text-label-sm font-normal">Sort:</span>
+<span class="font-bold" id="current-sort-label">Highest Rated</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</button>
+<!-- Dropdown Popup -->
+<div class="hidden absolute right-0 mt-1 w-44 rounded-xl bg-surface-container-lowest shadow-xl z-30 p-1.5" id="sort-dropdown">
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-sm text-label-sm bg-primary-fixed/30 text-on-primary-fixed font-bold flex items-center justify-between" onclick="setSort('Highest Rated')">
+          Highest Rated <span class="material-symbols-outlined text-[14px]">check</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition-colors" onclick="setSort('Price: Low to High')">
+          Price: Low to High
+        </button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition-colors" onclick="setSort('Experience (Yrs)')">
+          Experience
+        </button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition-colors" onclick="setSort('Most Popular')">
+          Most Popular
+        </button>
+</div>
+</div>
+</div>
+<!-- Experts Stack -->
+<div class="px-margin flex flex-col gap-space-md mt-space-md">
+<!-- Card 1: Elena Rostova (Online) -->
+<div class="rounded-2xl bg-surface-container-lowest p-space-md shadow-sm relative flex flex-col gap-space-sm hover:shadow-md transition-shadow">
+<!-- Upper Section -->
+<div class="flex items-start gap-space-md">
+<!-- Avatar with Live Beacon -->
+<div class="relative shrink-0">
+<img class="w-16 h-16 rounded-full object-cover" data-alt="Sophisticated female financial advisor Elena Rostova in smart cream blazer with warm ambient office lighting and elegant confident smile, editorial corporate portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvalYS2dspb4haf4W-F9A0_z_2yExTKzWPaQccm27rzZsxgXjUw4ywDn7HQDyM2seJ-Ed8yytwUNABECtlrFEK7injmrOrvR8xWX_cG4WGuCabM9m4Jet2_H9KRVeUKVg5LjiwMcCZ_XdWxVI07_zOPrjISmEZWKYzlAHZechA_CsbhLjgEgZVkEZKducUuUUEOBHvzyiZ7AqDZgUJqpRzrOlmB5Md1CPXEp_aRKBQRVFES9OwbZn4"/>
+<!-- Emerald status indicator -->
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary ring-2 ring-surface-container-lowest"></span>
+</div>
+<!-- Info & Badges -->
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate font-bold">Elena Rostova, CFA</h3>
+<span class="material-symbols-outlined text-secondary text-[16px]" style="font-variation-settings: 'FILL' 1;" title="Verified Pro">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Wealth Strategist & Portfolio Architect</p>
+<div class="flex items-center gap-space-sm mt-1.5 flex-wrap">
+<!-- Rating -->
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">4.98</span>
+<span class="font-label-sm text-label-sm text-outline">(1,420)</span>
+</div>
+<!-- Experience -->
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-md">12 yrs exp</span>
+</div>
+</div>
+<!-- Pricing Tag -->
+<div class="flex flex-col items-end shrink-0">
+<div class="flex items-baseline gap-0.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$3.20</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">/ min</span>
+</div>
+</div>
+<!-- Skill Taglets -->
+<div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Private Equity</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Tax Advisory</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Family Trust</span>
+</div>
+<!-- Action Cluster -->
+<div class="grid grid-cols-3 gap-space-xs pt-1">
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">chat_bubble</span>
+          Chat
+        </button>
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">call</span>
+          Audio
+        </button>
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-bold shadow-sm active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+          Connect
+        </button>
+</div>
+</div>
+<!-- Card 2: Marcus Vance (Busy - In Call) -->
+<div class="rounded-2xl bg-surface-container-lowest p-space-md shadow-sm relative flex flex-col gap-space-sm hover:shadow-md transition-shadow">
+<div class="flex items-start gap-space-md">
+<!-- Avatar with Busy Amber Beacon -->
+<div class="relative shrink-0">
+<img class="w-16 h-16 rounded-full object-cover" data-alt="Marcus Vance enterprise AI and cloud solutions expert, charismatic 30s man with subtle modern glasses, architectural studio background with soft ambient lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAst_GUDyj538Q1WQXfjCsqCqjEBiKrHautbItJ9-RfVWFZDTslHkRB-EChp_0Qbc187lrUuhtEaSEr59t3udLiA6ahgMNyWOVx1QhSJKSbUAGxIcokHfDICM6nrFNU2d0XnSfockZfVF9WZkZR9LIN_IJqueIPvDO_ewDAxcleqryjwpXEyytG9kvj_JyHwTQvovPzCYCy-a0PmssyMqFws6LWvdUjTYXIWErpYS1ouIPCKLo4WlBu"/>
+<!-- Amber pulsing status -->
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-primary ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate font-bold">Marcus Vance</h3>
+<span class="material-symbols-outlined text-secondary text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Enterprise AI & Cloud Architect</p>
+<div class="flex items-center gap-space-sm mt-1.5 flex-wrap">
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">4.92</span>
+<span class="font-label-sm text-label-sm text-outline">(890)</span>
+</div>
+<!-- Live Busy Status Tag -->
+<span class="font-label-sm text-label-sm text-on-primary-fixed-variant bg-primary-fixed/40 px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[12px]">phone_in_talk</span>
+              In Call (~6m wait)
+            </span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$4.50</span>
+<span class="font-label-sm text-label-sm text-outline">/ min</span>
+</div>
+</div>
+<!-- Skills -->
+<div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">LLM Scaling</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">AWS Multi-Region</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">SOC2</span>
+</div>
+<!-- Queue Trigger Area -->
+<div class="flex items-center gap-space-sm pt-1">
+<button class="w-12 h-11 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+</button>
+<button class="flex-1 py-2.5 rounded-xl bg-secondary text-on-secondary font-label-md text-label-md font-bold shadow-sm active:scale-98 transition-transform flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">hourglass_top</span>
+          Join Priority Queue (Pos #2)
+        </button>
+</div>
+</div>
+<!-- Card 3: Dr. Priya Sharma (Online + 3 Min Promo) -->
+<div class="rounded-2xl bg-surface-container-lowest p-space-md shadow-sm relative flex flex-col gap-space-sm hover:shadow-md transition-shadow">
+<!-- Promo Badge Overlay -->
+<div class="flex items-center justify-between pb-1">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold shadow-sm">
+<span class="material-symbols-outlined text-[13px] text-primary">arrow_back_ios_new</span>
+          First 3 mins Free
+        </span>
+<span class="font-label-sm text-label-sm text-tertiary flex items-center gap-1 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+          Instant Connect
+        </span>
+</div>
+<div class="flex items-start gap-space-md">
+<!-- Avatar with Emerald Beacon -->
+<div class="relative shrink-0">
+<img class="w-16 h-16 rounded-full object-cover" data-alt="Dr Priya Sharma executive holistic wellness mentor, peaceful bright studio with indoor bamboo greenery, serene warm expression, natural sunlight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_aP6x5TpMaUkLAsDjVlatS-NnOoDAupkfZwVNJrf8BZA8Od4mCbLBfJfBHAhLHZvTq54UiLiDWQx3QC4k4UKDzBHxSt1VLWfp39FROKCQGNOyrdvRbO90a0edMkEt_2796AGYlgGHWKS_4GnoYygVIzRm5vH8x2-OZfSohDo4hUGVsVhombG2d6hic8mTyQm_YQOcnQmXZDnDQkyFL6R7mdeC3t6JtM71ZjkN5lX-BENqaXFRsxhB"/>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate font-bold">Dr. Priya Sharma</h3>
+<span class="material-symbols-outlined text-secondary text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Holistic Wellness & Executive Mindset</p>
+<div class="flex items-center gap-space-sm mt-1.5 flex-wrap">
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">5.0</span>
+<span class="font-label-sm text-label-sm text-outline">(2,100)</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-md">Neurobiology PhD</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$2.80</span>
+<span class="font-label-sm text-label-sm text-outline">/ min</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Burnout Prevention</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Sleep Science</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Breathwork</span>
+</div>
+<!-- Action Cluster -->
+<div class="grid grid-cols-3 gap-space-xs pt-1">
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">chat_bubble</span>
+          Chat
+        </button>
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">call</span>
+          Audio
+        </button>
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-bold shadow-sm active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+          Claim 3m
+        </button>
+</div>
+</div>
+<!-- Card 4: Kaelen Thorne (Offline) -->
+<div class="rounded-2xl bg-surface-container-lowest/80 p-space-md shadow-sm relative flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-md">
+<!-- Avatar with Offline Neutral Beacon -->
+<div class="relative shrink-0">
+<img class="w-16 h-16 rounded-full object-cover filter grayscale-[25%]" data-alt="Kaelen Thorne angel investor and startup pitch coach, stylish modern aesthetic in loft workspace with espresso cup and sleek tech surroundings." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ760IeeBShwX1H1oWxCUmBSGx74JeJvakd-ydzeD_NWo_EVlk5GgU2wA8fDk9onpzqJ9YzPJ3cdi7Xq787_a6uZKm2thgBbidxBIzHCaGLnWL5GOv8dM8KgZbXiAkskRRyDfwRUTNiyxsqCwO1iqIYEGjc3DMvKYUQloIHPXsOV_tlpVf_YTuNzHUSBEjkl49YMhw-QDMr44DrGV-WJmcBRThCTkRCMdffd0WmFmRPQokvqzFaXfe"/>
+<!-- Slate Offline dot -->
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-outline ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate font-bold">Kaelen Thorne</h3>
+<span class="material-symbols-outlined text-secondary text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Startup Pitch & Angel Fundraising</p>
+<div class="flex items-center gap-space-sm mt-1.5 flex-wrap">
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">4.88</span>
+<span class="font-label-sm text-label-sm text-outline">(430)</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline bg-surface-container-low px-2 py-0.5 rounded-md">Offline</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$3.80</span>
+<span class="font-label-sm text-label-sm text-outline">/ min</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Seed Pitch Decks</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Cap Table Review</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Y Combinator</span>
+</div>
+<!-- Action Cluster: Notify Me & Book Next Day -->
+<div class="flex items-center gap-space-sm pt-1">
+<button class="flex-1 py-2.5 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-semibold active:scale-98 transition-all flex items-center justify-center gap-2" id="notify-btn-kaelen" type="button">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+          Notify When Available
+        </button>
+<button class="px-4 py-2.5 rounded-xl bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md font-bold active:scale-98 transition-all flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+          Schedule
+        </button>
+</div>
+</div>
+</div>
+<!-- Trust Guarantee Banner -->
+<div class="px-margin mt-space-lg">
+<div class="rounded-xl bg-surface-container-low p-space-md flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div class="flex flex-col">
+<p class="font-label-md text-label-md text-on-surface font-bold">100% Satisfaction Guarantee</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">If an expert isn't the right fit within the first 2 minutes, get an instant balance refund.</p>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Sort Dropdown Toggle
+  const sortBtn = document.getElementById('sort-menu-btn');
+  const sortDropdown = document.getElementById('sort-dropdown');
+  const sortLabel = document.getElementById('current-sort-label');
+
+  if (sortBtn && sortDropdown) {
+    sortBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sortDropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', () => {
+      if (!sortDropdown.classList.contains('hidden')) {
+        sortDropdown.classList.add('hidden');
+      }
+    });
+  }
+
+  function setSort(val) {
+    if (sortLabel) sortLabel.textContent = val;
+    if (sortDropdown) sortDropdown.classList.add('hidden');
+  }
+
+  // Interactive Online Filter Pill Toggle
+  const onlineFilter = document.getElementById('filter-online');
+  if (onlineFilter) {
+    onlineFilter.addEventListener('click', () => {
+      onlineFilter.classList.toggle('bg-tertiary-container');
+      onlineFilter.classList.toggle('text-on-tertiary-container');
+    });
+  }
+
+  // Notification micro-action
+  const notifyBtn = document.getElementById('notify-btn-kaelen');
+  if (notifyBtn) {
+    notifyBtn.addEventListener('click', () => {
+      notifyBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] text-tertiary">check_circle</span> Alert Registered';
+      notifyBtn.classList.add('bg-tertiary-fixed/30', 'text-on-tertiary-fixed-variant');
+    });
+  }
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-bold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[56px] h-12 text-on-surface-variant hover:text-on-surface transition-all gap-0.5" data-path="explore-and-home" href="#"><span class="material-symbols-outlined text-[22px]">explore</span><span class="font-label-sm text-label-sm">Explore</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 text-primary font-bold" data-path="experts" href="#"><span class="material-symbols-outlined text-[22px]">support_agent</span><span class="font-label-sm text-label-sm">Experts</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 text-on-surface-variant hover:text-on-surface transition-all gap-0.5" data-path="services-and-market" href="#"><span class="material-symbols-outlined text-[22px]">storefront</span><span class="font-label-sm text-label-sm">Market</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 text-on-surface-variant hover:text-on-surface transition-all gap-0.5 relative" data-path="bookings" href="#"><span class="material-symbols-outlined text-[22px]">calendar_month</span><span class="font-label-sm text-label-sm">Bookings</span><span class="absolute top-1 right-2 w-4 h-4 rounded-full bg-secondary text-on-secondary font-label-sm text-[9px] flex items-center justify-center font-bold">2</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 text-on-surface-variant hover:text-on-surface transition-all gap-0.5" data-path="wallet-and-profile" href="#"><span class="material-symbols-outlined text-[22px]">account_circle</span><span class="font-label-sm text-label-sm">Profile</span></a></div></nav></body></html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fcf9f8;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container-lowest": "#ffffff", "surface-container-low": "#f6f3f2", "on-tertiary-container": "#005b3d", "on-surface-variant": "#4f4632", "on-surface": "#1c1b1b", "on-secondary-container": "#f8f2ff", "outline": "#827660", "on-background": "#1c1b1b", "surface-dim": "#dcd9d9", "on-primary-fixed-variant": "#5b4300", "surface-container-high": "#eae7e7", "error-container": "#ffdad6", "tertiary": "#006c49", "on-secondary": "#ffffff", "secondary-fixed-dim": "#ccbeff", "tertiary-fixed": "#6ffbbe", "surface-container-highest": "#e5e2e1", "on-error-container": "#93000a", "secondary-fixed": "#e7deff", "inverse-surface": "#313030", "on-tertiary-fixed-variant": "#005236", "surface-variant": "#e5e2e1", "tertiary-container": "#48d99e", "primary-container": "#f5b800", "surface-bright": "#fcf9f8", "tertiary-fixed-dim": "#4edea3", "background": "#fcf9f8", "secondary": "#5e27e6", "on-primary-fixed": "#261a00", "primary": "#795900", "surface-container": "#f0eded", "primary-fixed-dim": "#fabd0d", "inverse-primary": "#fabd0d", "outline-variant": "#d4c5ac", "primary-fixed": "#ffdf9f", "on-primary": "#ffffff", "inverse-on-surface": "#f3f0ef", "on-error": "#ffffff", "surface": "#fcf9f8", "on-primary-container": "#664b00", "on-secondary-fixed-variant": "#4d00d2", "error": "#ba1a1a", "surface-tint": "#795900", "on-tertiary-fixed": "#002113", "on-tertiary": "#ffffff", "on-secondary-fixed": "#1f0060", "secondary-container": "#774aff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter-lg": "2rem", "gutter-md": "1.5rem", "gutter": "1rem", "margin-lg": "3rem", "space-lg": "1.5rem", "margin": "1rem", "space-md": "1rem", "space-xl": "2rem", "margin-md": "2rem" }, fontFamily: { "display-hero": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"] }, fontSize: { "display-hero": ["40px", { lineHeight: "48px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.04em", fontWeight: "700" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-lg-mobile": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "display-hero-mobile": ["28px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "800" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Back" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="AuraExpert Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1ULTrcGlUCyQqlJXoOuf9DIgo7RHTQ_1m3p3E5Ei3Jr-jSPLY2kBYz4cLI5FVLzQf4Mb99tTjYRi_bMfB5ApVmAf4eNseKW2BnkEfmfC8K0A3DVfdH9w2iUsm2UNXp93dj8Rv5kLoHFSpMAcjfZrEp8uil6sHe4g_TC93OwmHX9fuIxuDvCnmfckQtvRI4Qvfr32wtWjhWovNzaXR30oATAa1MuhwG07uy_Y_qtA3NzUHkDF78gDq0fUA"/><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Live Consultation Session</h1></div><div class="flex items-center gap-space-xs"><div class="flex items-center bg-primary-fixed/40 px-space-sm py-1 rounded-full"><span class="font-label-md text-label-md text-on-primary-fixed font-bold">$84.50</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK99XHwBeZskOJjbHG95F8ljNEFpySWUMWC3BE_Hv2N_3JiSQNGZjyJ0tFvCHhoymXsgltQgrWM1OkuaHsY7GyDAAHKLIsKLVTRo22UcOjhGYbZ-Mz0hBYmAiiRZY1cl998LugyV7zYkUsRttfykFCEN77VcOvHbmLsu094ivWcYF3bj9L6-_vqEKOX9JThLj3SXPW5swUS-TufphL22LE5nxI9BghmuZetKKMIro3TIgtH82FxJwI"/></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full px-margin pb-32 space-y-space-lg">
+<!-- Top Context & Quick Status -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center space-x-space-xs">
+<span class="inline-flex w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">Live Billing Engine Ready</span>
+</div>
+<button aria-label="Transaction Receipts and Statements" class="flex items-center space-x-1 px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Statements</span>
+</button>
+</div>
+<!-- Primary Balance Card (Warm Luxury Gradient) -->
+<div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-inverse-surface via-on-surface to-inverse-surface text-surface-container-lowest p-space-lg shadow-xl shadow-secondary/5">
+<!-- Ambient Golden Flare -->
+<div class="absolute -right-12 -top-12 w-48 h-48 bg-primary-container/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -left-12 -bottom-12 w-48 h-48 bg-secondary-container/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col space-y-space-md">
+<!-- Balance Header & Security Badge -->
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-label-md text-label-md text-surface-container-high/90">Available Consultation Balance</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest/20 text-surface-container-lowest font-label-sm text-label-sm backdrop-blur-sm">
+          Verified
+        </span>
+</div>
+<!-- Main Balance Number -->
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-display-hero-mobile text-display-hero-mobile text-surface-container-lowest tracking-tight">$84.50</span>
+<span class="font-label-md text-label-md text-primary-fixed-dim font-bold">USD</span>
+</div>
+<!-- Talk-Time Utility Indicator -->
+<div class="inline-flex items-center space-x-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-lowest/10 backdrop-blur-md self-start">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed-dim">timer</span>
+<span class="font-label-md text-label-md text-surface-container-lowest">
+          ≈ 30 mins live consultation <span class="text-surface-container-highest/70 font-normal">(avg. $2.80/min)</span>
+</span>
+</div>
+<!-- Split Funds Sub-panel -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container-lowest/5 backdrop-blur-sm">
+<div class="font-label-sm text-label-sm text-surface-container-highest/70 uppercase">Cash Reserve</div>
+<div class="font-headline-sm text-headline-sm text-surface-container-lowest mt-0.5">$70.00</div>
+</div>
+<div class="p-space-sm rounded-lg bg-primary-fixed-dim/15 backdrop-blur-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-fixed-dim uppercase">Bonus Vault</span>
+<span class="font-label-sm text-label-sm text-primary-fixed-dim">18d left</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-primary-fixed-dim mt-0.5">+$14.50</div>
+</div>
+</div>
+<!-- Card Action Row -->
+<div class="flex items-center justify-between pt-space-xs">
+<button class="flex items-center space-x-1 text-surface-container-high hover:text-surface-container-lowest transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span class="font-label-sm text-label-sm">Spending Limit</span>
+</button>
+<button class="flex items-center space-x-1 text-surface-container-high hover:text-surface-container-lowest transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span class="font-label-sm text-label-sm">Tax Receipt</span>
+</button>
+<button class="flex items-center space-x-1 text-surface-container-high hover:text-surface-container-lowest transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span class="font-label-sm text-label-sm">Withdraw</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Continuous Call Protection Card (Auto-Refill) -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm space-y-space-md">
+<div class="flex items-start justify-between">
+<div class="flex items-start space-x-space-sm">
+<div class="w-10 h-10 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shrink-0">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center space-x-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface">Call Protection</span>
+<span class="px-1.5 py-0.5 rounded-full bg-tertiary-container/30 text-on-tertiary-container font-label-sm text-label-sm">ACTIVE</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Never drop off abruptly during high-value advisor calls</p>
+</div>
+</div>
+<!-- Native App Toggle Button -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="autoRefillToggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<!-- Parameter Adjusters -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">When balance hits</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$15.00</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Auto-replenish</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">$30.00</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</div>
+</div>
+</div>
+<!-- Linked Card & Fallback Info -->
+<div class="flex items-center justify-between pt-space-xs p-space-sm rounded-lg bg-surface-container-low">
+<div class="flex items-center space-x-space-sm">
+<div class="w-8 h-5 rounded bg-inverse-surface flex items-center justify-center text-surface-container-lowest font-label-sm text-label-sm font-bold tracking-tighter">
+          VISA
+        </div>
+<span class="font-label-md text-label-md text-on-surface">•••• 4291</span>
+</div>
+<button class="font-label-sm text-label-sm text-secondary font-bold hover:underline" type="button">Change</button>
+</div>
+<div class="flex items-start space-x-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-tertiary shrink-0 mt-0.5">verified_user</span>
+<span class="font-body-sm text-body-sm">Instant SMS notice sent prior to debit. You can pause or cancel anytime.</span>
+</div>
+</div>
+<!-- Recharge Packs Grid -->
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Select Recharge Pack</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Bonus talk-time credits applied instantly</p>
+</div>
+<span class="px-space-sm py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm flex items-center space-x-1">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span>
+<span>Bonus Boost</span>
+</span>
+</div>
+<!-- Pack Matrix -->
+<div class="grid grid-cols-2 gap-space-sm" id="packGrid">
+<!-- Option 1 -->
+<button class="pack-card text-left p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all relative active:scale-95 focus:outline-none" data-amount="25" data-bonus="2.50" type="button">
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface">$25</div>
+<div class="mt-1 flex items-center space-x-1">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold">+10% Bonus</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Get $27.50 wallet credit</p>
+</button>
+<!-- Option 2 (Popular Selection) -->
+<button class="pack-card active-pack text-left p-space-md rounded-xl bg-surface-container-lowest shadow-md transition-all relative active:scale-95 focus:outline-none" data-amount="50" data-bonus="7.50" type="button">
+<div class="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm shadow-sm flex items-center space-x-0.5">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>MOST POPULAR</span>
+</div>
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface">$50</div>
+<div class="mt-1 flex items-center space-x-1">
+<span class="px-1.5 py-0.5 rounded bg-primary-fixed/60 text-on-primary-fixed font-label-sm text-label-sm font-bold">+15% ($7.50)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface mt-2 font-medium">Get $57.50 wallet credit</p>
+</button>
+<!-- Option 3 (Best Value) -->
+<button class="pack-card text-left p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all relative active:scale-95 focus:outline-none" data-amount="100" data-bonus="20.00" type="button">
+<div class="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm shadow-sm">
+          BEST VALUE
+        </div>
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface">$100</div>
+<div class="mt-1 flex items-center space-x-1">
+<span class="px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold">+20% ($20.00)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Get $120.00 wallet credit</p>
+</button>
+<!-- Option 4 -->
+<button class="pack-card text-left p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all relative active:scale-95 focus:outline-none" data-amount="200" data-bonus="50.00" type="button">
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface">$200</div>
+<div class="mt-1 flex items-center space-x-1">
+<span class="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm font-bold">+25% VIP Pack</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Get $250.00 wallet credit</p>
+</button>
+</div>
+<!-- Custom Recharge Input & Quick Chips -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm space-y-space-sm">
+<label class="font-label-md text-label-md text-on-surface font-semibold block" for="customAmount">Or Enter Custom Top-Up</label>
+<div class="relative flex items-center">
+<span class="absolute left-3 font-headline-sm text-headline-sm text-on-surface-variant">$</span>
+<input class="w-full pl-8 pr-12 py-3 rounded-lg bg-surface-container-low font-headline-sm text-headline-sm text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none transition-colors" id="customAmount" min="10" placeholder="Enter amount (min. $10)" type="number"/>
+<span class="absolute right-3 font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">USD</span>
+</div>
+<!-- Quick Add Pills -->
+<div class="flex items-center space-x-space-xs pt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant mr-1">Quick add:</span>
+<button class="px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm hover:bg-surface-container-highest active:scale-95 transition-all" onclick="setCustom(15)" type="button">+$15</button>
+<button class="px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm hover:bg-surface-container-highest active:scale-95 transition-all" onclick="setCustom(35)" type="button">+$35</button>
+<button class="px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm hover:bg-surface-container-highest active:scale-95 transition-all" onclick="setCustom(75)" type="button">+$75</button>
+</div>
+</div>
+<!-- Coupon Code Collapsible / Banner -->
+<div class="p-space-sm rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
+<div class="flex items-center space-x-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined text-[18px]">sell</span>
+</div>
+<div>
+<span class="font-label-md text-label-md text-on-surface font-bold">AURAEXPERT50</span>
+<span class="block font-body-sm text-body-sm text-tertiary">Special $5.00 discount voucher applied</span>
+</div>
+</div>
+<button class="text-error font-label-sm text-label-sm font-semibold hover:underline" type="button">Remove</button>
+</div>
+</div>
+<!-- Payment Methods Gateway -->
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Payment Method</h2>
+<div class="flex items-center space-x-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span class="font-label-sm text-label-sm">256-Bit SSL Secured</span>
+</div>
+</div>
+<!-- Gateway Selector List -->
+<div class="space-y-space-xs">
+<!-- Option: Apple Pay / Google Pay -->
+<label class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-space-md">
+<input checked="" class="w-4 h-4 text-secondary focus:ring-0" name="paymentMethod" type="radio" value="applepay"/>
+<div class="flex items-center space-x-space-sm">
+<div class="w-10 h-7 rounded bg-on-surface flex items-center justify-center text-surface-container-lowest">
+<span class="material-symbols-outlined text-[18px]">contactless</span>
+</div>
+<div>
+<div class="flex items-center space-x-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Apple Pay / Google Pay</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm">FASTEST</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">One-touch biometric authorization</p>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">fingerprint</span>
+</label>
+<!-- Option: Saved Primary Card -->
+<label class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-space-md">
+<input class="w-4 h-4 text-secondary focus:ring-0" name="paymentMethod" type="radio" value="card"/>
+<div class="flex items-center space-x-space-sm">
+<div class="w-10 h-7 rounded bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed font-label-sm text-label-sm font-bold">
+              VISA
+            </div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Visa ending in •••• 4291</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Expires 09/27 (Default Billing Source)</p>
+</div>
+</div>
+</div>
+<button class="font-label-sm text-label-sm text-secondary font-bold" type="button">Edit</button>
+</label>
+<!-- Option: PayPal / Venmo -->
+<label class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-space-md">
+<input class="w-4 h-4 text-secondary focus:ring-0" name="paymentMethod" type="radio" value="paypal"/>
+<div class="flex items-center space-x-space-sm">
+<div class="w-10 h-7 rounded bg-surface-container-high flex items-center justify-center text-on-surface-variant font-label-sm text-label-sm font-bold">
+              PP
+            </div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">PayPal / Venmo</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Connect your online wallet securely</p>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+</label>
+<!-- Option: Instant Wire / NetBanking -->
+<label class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-space-md">
+<input class="w-4 h-4 text-secondary focus:ring-0" name="paymentMethod" type="radio" value="bank"/>
+<div class="flex items-center space-x-space-sm">
+<div class="w-10 h-7 rounded bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Net Banking / Wire Transfer</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Direct bank checkout with zero surcharge</p>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+</label>
+</div>
+</div>
+<!-- Trust Assurance Badges -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-start space-x-space-xs">
+<span class="material-symbols-outlined text-[18px] text-tertiary shrink-0 mt-0.5">verified</span>
+<div class="min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-bold">100% Call Assurance</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Automated full refund on dropped calls within first 2 mins.</p>
+</div>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-start space-x-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary shrink-0 mt-0.5">encrypted</span>
+<div class="min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-bold">PCI-DSS Level 1</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Financial details are tokenized and never stored on device.</p>
+</div>
+</div>
+</div>
+<!-- Transaction History Ledger -->
+<div class="space-y-space-sm pt-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Recent Wallet Activity</h2>
+<a class="font-label-md text-label-md text-secondary font-bold hover:underline" href="#">View All</a>
+</div>
+<div class="rounded-xl bg-surface-container-lowest shadow-sm divide-y-0 overflow-hidden">
+<!-- Item 1 -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-space-sm min-w-0">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+</div>
+<div class="min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate block">Dr. Priya Sharma</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Consultation (12 mins) • Today, 08:45 AM</span>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm text-error block">-$33.60</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Completed</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-low transition-colors bg-surface-container-low/30">
+<div class="flex items-center space-x-space-sm min-w-0">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div class="min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate block">Auto-Recharge Completed</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Visa •••• 4291 • Yesterday</span>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm text-tertiary block">+$25.00</span>
+<span class="font-label-sm text-label-sm text-tertiary font-medium">Credited</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-space-sm min-w-0">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed shrink-0">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</div>
+<div class="min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate block">Devina Nair</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Astrology Chat (18 mins) • Oct 24</span>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm text-error block">-$45.00</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Completed</span>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-low transition-colors bg-surface-container-low/30">
+<div class="flex items-center space-x-space-sm min-w-0">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">redeem</span>
+</div>
+<div class="min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate block">Welcome Loyalty Cashback</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Promotional Reward • Oct 22</span>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm text-primary block">+$10.00</span>
+<span class="font-label-sm text-label-sm text-primary-fixed-dim font-bold">Bonus Credit</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Checkout Bar -->
+<div class="fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-xl shadow-lg p-margin pb-safe">
+<div class="max-w-md mx-auto flex items-center justify-between gap-space-md">
+<!-- Breakdown Summary -->
+<div class="flex flex-col min-w-0">
+<div class="flex items-center space-x-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Total Charge:</span>
+<span class="line-through text-on-surface-variant font-label-sm text-label-sm" id="originalPriceDisplay">$55.00</span>
+</div>
+<div class="flex items-baseline space-x-1">
+<span class="font-headline-md text-headline-md text-on-surface font-extrabold" id="checkoutAmount">$50.00</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold" id="totalCredited">(Gets $57.50)</span>
+</div>
+</div>
+<!-- Trigger CTA -->
+<button class="flex-1 max-w-[230px] py-3.5 px-space-md rounded-xl bg-primary-container text-on-primary-container font-headline-sm text-headline-sm font-bold flex items-center justify-center space-x-2 shadow-md shadow-primary-container/30 active:scale-95 transition-transform hover:opacity-95" id="rechargeSubmitBtn" type="button">
+<span class="truncate" id="buttonLabel">Top-Up Now</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  let selectedAmount = 50;
+  let bonusAmount = 7.50;
+  const voucherDiscount = 5.00;
+
+  function updateCheckoutDisplay() {
+    const totalToPay = Math.max(0, selectedAmount);
+    const walletGets = (selectedAmount + bonusAmount).toFixed(2);
+
+    const checkoutAmountEl = document.getElementById('checkoutAmount');
+    const originalPriceDisplay = document.getElementById('originalPriceDisplay');
+    const totalCreditedEl = document.getElementById('totalCredited');
+    const buttonLabel = document.getElementById('buttonLabel');
+
+    if (checkoutAmountEl) checkoutAmountEl.innerText = '$' + totalToPay.toFixed(2);
+    if (originalPriceDisplay) originalPriceDisplay.innerText = '$' + (totalToPay + voucherDiscount).toFixed(2);
+    if (totalCreditedEl) totalCreditedEl.innerText = '(Gets $' + walletGets + ')';
+    if (buttonLabel) buttonLabel.innerText = 'Pay $' + totalToPay.toFixed(2);
+  }
+
+  // Interactive selection on pack cards
+  const packCards = document.querySelectorAll('.pack-card');
+  packCards.forEach(card => {
+    card.addEventListener('click', () => {
+      packCards.forEach(c => {
+        c.classList.remove('bg-surface-container-high', 'scale-[1.02]');
+        c.classList.add('bg-surface-container-lowest');
+      });
+      card.classList.remove('bg-surface-container-lowest');
+      card.classList.add('bg-surface-container-high', 'scale-[1.02]');
+
+      selectedAmount = parseFloat(card.getAttribute('data-amount')) || 0;
+      bonusAmount = parseFloat(card.getAttribute('data-bonus')) || 0;
+
+      const customInput = document.getElementById('customAmount');
+      if (customInput) customInput.value = '';
+
+      updateCheckoutDisplay();
+    });
+  });
+
+  // Custom amount handling
+  function setCustom(val) {
+    const input = document.getElementById('customAmount');
+    if (input) {
+      input.value = val;
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+
+  const customInput = document.getElementById('customAmount');
+  if (customInput) {
+    customInput.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val > 0) {
+        packCards.forEach(c => {
+          c.classList.remove('bg-surface-container-high', 'scale-[1.02]');
+          c.classList.add('bg-surface-container-lowest');
+        });
+        selectedAmount = val;
+        bonusAmount = val >= 100 ? val * 0.20 : (val >= 50 ? val * 0.15 : (val >= 25 ? val * 0.10 : 0));
+        updateCheckoutDisplay();
+      }
+    });
+  }
+
+  // Submit animation
+  const submitBtn = document.getElementById('rechargeSubmitBtn');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      submitBtn.classList.add('opacity-75', 'pointer-events-none');
+      submitBtn.innerHTML = `
+        <span class="inline-block w-4 h-4 border-2 border-on-primary-container border-t-transparent rounded-full animate-spin"></span>
+        <span>Authorizing...</span>
+      `;
+      setTimeout(() => {
+        submitBtn.innerHTML = `
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span>$${selectedAmount.toFixed(2)} Added!</span>
+        `;
+        setTimeout(() => {
+          submitBtn.classList.remove('opacity-75', 'pointer-events-none');
+          updateCheckoutDisplay();
+        }, 2200);
+      }, 1200);
+    });
+  }
+
+  updateCheckoutDisplay();
+</script></main></body></html>

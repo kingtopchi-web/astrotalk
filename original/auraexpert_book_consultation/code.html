@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fcf9f8;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container-lowest": "#ffffff", "surface-container-low": "#f6f3f2", "on-tertiary-container": "#005b3d", "on-surface-variant": "#4f4632", "on-surface": "#1c1b1b", "on-secondary-container": "#f8f2ff", "outline": "#827660", "on-background": "#1c1b1b", "surface-dim": "#dcd9d9", "on-primary-fixed-variant": "#5b4300", "surface-container-high": "#eae7e7", "error-container": "#ffdad6", "tertiary": "#006c49", "on-secondary": "#ffffff", "secondary-fixed-dim": "#ccbeff", "tertiary-fixed": "#6ffbbe", "surface-container-highest": "#e5e2e1", "on-error-container": "#93000a", "secondary-fixed": "#e7deff", "inverse-surface": "#313030", "on-tertiary-fixed-variant": "#005236", "surface-variant": "#e5e2e1", "tertiary-container": "#48d99e", "primary-container": "#f5b800", "surface-bright": "#fcf9f8", "tertiary-fixed-dim": "#4edea3", "background": "#fcf9f8", "secondary": "#5e27e6", "on-primary-fixed": "#261a00", "primary": "#795900", "surface-container": "#f0eded", "primary-fixed-dim": "#fabd0d", "inverse-primary": "#fabd0d", "outline-variant": "#d4c5ac", "primary-fixed": "#ffdf9f", "on-primary": "#ffffff", "inverse-on-surface": "#f3f0ef", "on-error": "#ffffff", "surface": "#fcf9f8", "on-primary-container": "#664b00", "on-secondary-fixed-variant": "#4d00d2", "error": "#ba1a1a", "surface-tint": "#795900", "on-tertiary-fixed": "#002113", "on-tertiary": "#ffffff", "on-secondary-fixed": "#1f0060", "secondary-container": "#774aff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter-lg": "2rem", "gutter-md": "1.5rem", "gutter": "1rem", "margin-lg": "3rem", "space-lg": "1.5rem", "margin": "1rem", "space-md": "1rem", "space-xl": "2rem", "margin-md": "2rem" }, fontFamily: { "display-hero": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"] }, fontSize: { "display-hero": ["40px", { lineHeight: "48px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.04em", fontWeight: "700" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-lg-mobile": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "display-hero-mobile": ["28px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "800" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Back" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="AuraExpert Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1ULTrcGlUCyQqlJXoOuf9DIgo7RHTQ_1m3p3E5Ei3Jr-jSPLY2kBYz4cLI5FVLzQf4Mb99tTjYRi_bMfB5ApVmAf4eNseKW2BnkEfmfC8K0A3DVfdH9w2iUsm2UNXp93dj8Rv5kLoHFSpMAcjfZrEp8uil6sHe4g_TC93OwmHX9fuIxuDvCnmfckQtvRI4Qvfr32wtWjhWovNzaXR30oATAa1MuhwG07uy_Y_qtA3NzUHkDF78gDq0fUA"/><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Live Consultation Session</h1></div><div class="flex items-center gap-space-xs"><div class="flex items-center bg-primary-fixed/40 px-space-sm py-1 rounded-full"><span class="font-label-md text-label-md text-on-primary-fixed font-bold">$84.50</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK99XHwBeZskOJjbHG95F8ljNEFpySWUMWC3BE_Hv2N_3JiSQNGZjyJ0tFvCHhoymXsgltQgrWM1OkuaHsY7GyDAAHKLIsKLVTRo22UcOjhGYbZ-Mz0hBYmAiiRZY1cl998LugyV7zYkUsRttfykFCEN77VcOvHbmLsu094ivWcYF3bj9L6-_vqEKOX9JThLj3SXPW5swUS-TufphL22LE5nxI9BghmuZetKKMIro3TIgtH82FxJwI"/></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full pb-36">
+<!-- Top Context Ribbon & Back Indicator -->
+<div class="px-margin pt-4 pb-2 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold bg-secondary-fixed/50 px-2.5 py-1 rounded-full">Step 2 of 2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">· Finalize Booking</span>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-full text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-tertiary" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span>Encrypted 256-bit</span>
+</div>
+</div>
+<!-- Expert Master Mini-Card (Level 1 Elevation) -->
+<div class="px-margin my-2">
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-[0_4px_20px_-4px_rgba(23,23,23,0.06),0_2px_8px_-2px_rgba(109,61,245,0.04)] relative overflow-hidden">
+<!-- Ambient warm accent glow -->
+<div class="absolute -right-8 -top-8 w-28 h-28 bg-primary-container/15 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-start gap-3.5 relative z-10">
+<!-- Avatar with Emerald Online status -->
+<div class="relative shrink-0">
+<img class="w-16 h-16 rounded-2xl object-cover shadow-sm" data-alt="Portrait of Dr. Priya Sharma, an accomplished neurobiology specialist with warm approachable smile, studio lighting, soft cream and amber bokeh background, modern medical aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKVjGOv8PQKzoHwV0lBVnvaRh33ooZmqMPovr2tuyEjZiJnFTwRwG1atM1Avcf7kIXPep_cp82Lg4Dbd16YqtA1UAdCDaUeq2cMG6LGSnYJcy2G3MCgHHJVyD9xi85Tz_kJz7fX2OoMeXFFe7Vf-2RgJem-Vm19X2HdSc1OgS7IfEssNKUYRSm5HiQ7DcymoZyGoVL5CUZqlHjZOEvy3QfiC4ZYQsq9iHIBdfjaXzgLuDev-I_JlLQ"/>
+<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-tertiary rounded-full ring-2 ring-surface-container-lowest flex items-center justify-center">
+<span class="w-1.5 h-1.5 bg-surface-container-lowest rounded-full"></span>
+</div>
+</div>
+<!-- Info details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<div class="flex items-center gap-1.5 truncate">
+<h2 class="font-headline-sm text-headline-sm text-on-surface truncate">Dr. Priya Sharma</h2>
+<span class="material-symbols-outlined text-[18px] text-secondary shrink-0" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="font-label-sm text-label-sm bg-primary-fixed/60 text-on-primary-fixed px-2 py-0.5 rounded-full font-bold shrink-0">$2.80/m</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Holistic Wellness &amp; Executive Neurobiology PhD</p>
+<div class="flex items-center gap-2 mt-2 flex-wrap">
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-[14px] text-primary-container" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">5.0</span>
+<span class="font-body-sm text-[11px] text-on-surface-variant">(2.1k)</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary font-label-md text-label-md bg-tertiary-container/20 px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-[13px]">bolt</span>
+<span>Confirms &lt; 15m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Timezone Context Ribbon -->
+<div class="mt-3.5 pt-2.5 flex items-center justify-between bg-surface-container-low/70 rounded-xl px-3 py-2 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">schedule</span>
+<span class="font-label-md text-label-md font-medium">Your Time: America/New_York (EST)</span>
+</div>
+<button class="font-label-sm text-label-sm text-secondary font-bold hover:underline" type="button">Change</button>
+</div>
+</div>
+</div>
+<!-- 1. Consultation Format Selector -->
+<section class="px-margin mt-5">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span>1. Select Session Format</span>
+</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">1-on-1 Encrypted</span>
+</div>
+<div class="grid grid-cols-3 gap-2.5" id="format-container">
+<!-- Video Call (Selected Default) -->
+<button class="format-card relative p-3 rounded-2xl bg-surface-container-lowest text-left shadow-[0_4px_16px_-4px_rgba(109,61,245,0.12)] transition-all flex flex-col justify-between h-32 ring-2 ring-secondary" data-format="video" onclick="selectFormat(this)" type="button">
+<div class="absolute -top-2 right-2 bg-secondary text-on-secondary font-label-sm text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm">
+          Popular
+        </div>
+<div class="w-9 h-9 rounded-xl bg-secondary-fixed/50 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] font-bold text-on-surface">Video Call</div>
+<div class="font-body-sm text-[11px] text-on-surface-variant mt-0.5">HD &amp; Screenshare</div>
+</div>
+</button>
+<!-- Audio Call -->
+<button class="format-card relative p-3 rounded-2xl bg-surface-container-lowest text-left shadow-[0_2px_8px_-2px_rgba(23,23,23,0.05)] transition-all flex flex-col justify-between h-32 hover:bg-surface-container-low" data-format="audio" onclick="selectFormat(this)" type="button">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">headset_mic</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] font-bold text-on-surface">Audio Call</div>
+<div class="font-body-sm text-[11px] text-on-surface-variant mt-0.5">Private voice-only</div>
+</div>
+</button>
+<!-- Priority Chat -->
+<button class="format-card relative p-3 rounded-2xl bg-surface-container-lowest text-left shadow-[0_2px_8px_-2px_rgba(23,23,23,0.05)] transition-all flex flex-col justify-between h-32 hover:bg-surface-container-low" data-format="chat" onclick="selectFormat(this)" type="button">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">forum</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] font-bold text-on-surface">Priority Chat</div>
+<div class="font-body-sm text-[11px] text-on-surface-variant mt-0.5">Live + File Vault</div>
+</div>
+</button>
+</div>
+</section>
+<!-- 2. Duration & Package Tier Selection -->
+<section class="px-margin mt-6">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">2. Duration &amp; Package</h3>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Bundle Discounts Applied</span>
+</div>
+<div class="flex flex-col gap-2.5" id="duration-container">
+<!-- 15 Mins -->
+<div class="duration-tier relative bg-surface-container-lowest p-3.5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(23,23,23,0.04)] cursor-pointer transition-all flex items-center justify-between" onclick="selectDuration(this, 42, '15 mins')">
+<div class="flex items-center gap-3">
+<div class="tier-radio w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="tier-dot w-2 h-2 rounded-full bg-transparent"></span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">15 Mins</span>
+<span class="font-label-md text-label-md text-on-surface-variant">· Express Check-in</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Targeted rapid advice &amp; quick biomarker check</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$42.00</span>
+<div class="font-body-sm text-[11px] text-on-surface-variant">$2.80/m</div>
+</div>
+</div>
+<!-- 30 Mins (Selected Default) -->
+<div class="duration-tier relative bg-surface-container-lowest p-3.5 rounded-2xl shadow-[0_6px_20px_-4px_rgba(109,61,245,0.1)] cursor-pointer transition-all flex items-center justify-between ring-2 ring-primary-container" onclick="selectDuration(this, 75, '30 mins')">
+<div class="absolute -top-2.5 right-4 bg-primary-container text-on-primary font-label-sm text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">loyalty</span>
+<span>Save 10%</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="tier-radio w-5 h-5 rounded-full bg-primary-container flex items-center justify-center">
+<span class="tier-dot w-2 h-2 rounded-full bg-on-primary"></span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">30 Mins</span>
+<span class="font-label-md text-label-md text-secondary font-bold">· Comprehensive Protocol</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Holistic audit, root-cause assessment &amp; regimen</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$75.00</span>
+<div class="font-body-sm text-[11px] text-on-surface-variant line-through">$84.00</div>
+</div>
+</div>
+<!-- 45 Mins -->
+<div class="duration-tier relative bg-surface-container-lowest p-3.5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(23,23,23,0.04)] cursor-pointer transition-all flex items-center justify-between" onclick="selectDuration(this, 110, '45 mins')">
+<div class="flex items-center gap-3">
+<div class="tier-radio w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="tier-dot w-2 h-2 rounded-full bg-transparent"></span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">45 Mins</span>
+<span class="font-label-md text-label-md text-on-surface-variant">· Deep Diagnostic</span>
+<span class="font-label-sm text-[10px] bg-secondary-fixed/60 text-secondary px-1.5 py-0.2 rounded font-bold">Save 15%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Lab telemetry deep-dive &amp; personalized protocols</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$110.00</span>
+<div class="font-body-sm text-[11px] text-on-surface-variant line-through">$126.00</div>
+</div>
+</div>
+<!-- 60 Mins -->
+<div class="duration-tier relative bg-surface-container-lowest p-3.5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(23,23,23,0.04)] cursor-pointer transition-all flex items-center justify-between" onclick="selectDuration(this, 140, '60 mins')">
+<div class="flex items-center gap-3">
+<div class="tier-radio w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="tier-dot w-2 h-2 rounded-full bg-transparent"></span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">60 Mins</span>
+<span class="font-label-md text-label-md text-on-surface-variant">· VIP Strategy</span>
+<span class="font-label-sm text-[10px] bg-tertiary-fixed text-on-tertiary-fixed-variant px-1.5 py-0.2 rounded font-bold">Best Value</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Full neurobiology roadmapping + 14-day direct chat</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">$140.00</span>
+<div class="font-body-sm text-[11px] text-on-surface-variant line-through">$168.00</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Interactive Calendar & Date Ribbon -->
+<section class="px-margin mt-6">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">3. Choose Date</h3>
+<span class="font-label-md text-label-md text-secondary font-bold">November 2024</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Horizontal Rolling Date Selector -->
+<div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="date-ribbon">
+<!-- Mon 18 -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-lowest shadow-[0_2px_6px_rgba(0,0,0,0.03)] text-on-surface" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Mon</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">18</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary mt-1.5"></span>
+</button>
+<!-- Tue 19 -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-lowest shadow-[0_2px_6px_rgba(0,0,0,0.03)] text-on-surface" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Tue</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">19</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary mt-1.5"></span>
+</button>
+<!-- Wed 20 (Today - Selected) -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-secondary text-on-secondary shadow-[0_6px_16px_rgba(109,61,245,0.25)]" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-[10px] text-on-secondary uppercase font-bold tracking-tight">Today</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">20</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container mt-1.5"></span>
+</button>
+<!-- Thu 21 -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-lowest shadow-[0_2px_6px_rgba(0,0,0,0.03)] text-on-surface" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Thu</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">21</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary mt-1.5"></span>
+</button>
+<!-- Fri 22 -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-lowest shadow-[0_2px_6px_rgba(0,0,0,0.03)] text-on-surface" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Fri</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">22</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary mt-1.5"></span>
+</button>
+<!-- Sat 23 -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-lowest shadow-[0_2px_6px_rgba(0,0,0,0.03)] text-on-surface" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Sat</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">23</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container mt-1.5"></span>
+</button>
+<!-- Sun 24 -->
+<button class="date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-low/50 text-on-surface-variant opacity-60" onclick="selectDate(this)" type="button">
+<span class="font-label-sm text-label-sm">Sun</span>
+<span class="font-headline-sm text-headline-sm font-bold mt-1">24</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant mt-1.5"></span>
+</button>
+</div>
+</section>
+<!-- 4. Time Slot Grid (Segmented) -->
+<section class="px-margin mt-5">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">4. Available Time Slots</h3>
+<span class="font-label-sm text-label-sm text-tertiary font-bold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span> 9 slots open
+      </span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_4px_16px_-4px_rgba(23,23,23,0.05)] space-y-4">
+<!-- Morning Section -->
+<div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant font-semibold mb-2">
+<span class="material-symbols-outlined text-[16px] text-primary">wb_twilight</span>
+<span>Morning</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            09:30 AM
+          </button>
+<!-- Unavailable Slot -->
+<div class="py-2.5 px-2 rounded-xl bg-surface-container text-on-surface-variant/40 font-label-lg text-label-lg font-semibold text-center line-through cursor-not-allowed select-none">
+            10:15 AM
+          </div>
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            11:00 AM
+          </button>
+</div>
+</div>
+<!-- Afternoon Section -->
+<div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant font-semibold mb-2">
+<span class="material-symbols-outlined text-[16px] text-primary-container">light_mode</span>
+<span>Afternoon</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            01:30 PM
+          </button>
+<!-- Selected Slot -->
+<button class="time-slot py-2.5 px-2 rounded-xl bg-primary-container text-on-primary font-label-lg text-label-lg font-bold text-center ring-2 ring-primary shadow-sm transition-all flex items-center justify-center gap-1" onclick="selectSlot(this)" type="button">
+<span>02:15 PM</span>
+<span class="material-symbols-outlined text-[14px]">check</span>
+</button>
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            03:00 PM
+          </button>
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            04:30 PM
+          </button>
+</div>
+</div>
+<!-- Evening Section -->
+<div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant font-semibold mb-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">dark_mode</span>
+<span>Evening</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            06:00 PM
+          </button>
+<button class="time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all" onclick="selectSlot(this)" type="button">
+            07:15 PM
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. Pre-Consultation Intake & Goals -->
+<section class="px-margin mt-6">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">5. Intake &amp; Goals</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Helps doctor prepare</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_4px_16px_-4px_rgba(23,23,23,0.05)] space-y-4">
+<!-- Session Focus Chips -->
+<div>
+<label class="font-label-md text-label-md text-on-surface font-semibold block mb-2">Primary Consultation Focus</label>
+<div class="flex flex-wrap gap-2" id="focus-chips">
+<button class="chip-item px-3 py-1.5 rounded-full font-label-md text-label-md bg-secondary text-on-secondary font-medium transition-all shadow-sm" onclick="toggleChip(this)" type="button">
+            Sleep Optimization
+          </button>
+<button class="chip-item px-3 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all" onclick="toggleChip(this)" type="button">
+            Executive Burnout
+          </button>
+<button class="chip-item px-3 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all" onclick="toggleChip(this)" type="button">
+            Biomarkers &amp; Lab Review
+          </button>
+<button class="chip-item px-3 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all" onclick="toggleChip(this)" type="button">
+            Neuro-Nutrition
+          </button>
+</div>
+</div>
+<!-- Attach Lab Reports / Prior Notes -->
+<div>
+<label class="font-label-md text-label-md text-on-surface font-semibold block mb-1.5">Attach Lab Reports / Prior Notes (Optional)</label>
+<!-- Uploaded Chip -->
+<div class="flex items-center justify-between bg-surface-container-low px-3 py-2.5 rounded-xl mb-2">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[20px] text-secondary">description</span>
+<div class="truncate">
+<p class="font-label-md text-label-md text-on-surface font-medium truncate">Blood_Panel_Oct24.pdf</p>
+<p class="font-body-sm text-[11px] text-tertiary">2.4 MB · Uploaded &amp; Scanned ✓</p>
+</div>
+</div>
+<button class="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Upload trigger zone -->
+<button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low text-secondary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)]" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span>+ Upload PDF or Clinical Image (Up to 25MB)</span>
+</button>
+</div>
+<!-- Note for Expert -->
+<div>
+<label class="font-label-md text-label-md text-on-surface font-semibold block mb-1.5">Brief Note for Dr. Priya Sharma</label>
+<textarea class="w-full p-3 rounded-xl bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_rgba(109,61,245,0.3)] resize-none transition-all" placeholder="Share your primary symptoms, current supplementation, or specific questions for this session..." rows="3"></textarea>
+</div>
+</div>
+</section>
+<!-- 6. Booking Protection & Guarantee Trust Card -->
+<section class="px-margin mt-6">
+<div class="bg-gradient-to-br from-surface-container-lowest to-surface-container-low/70 rounded-2xl p-4 shadow-[0_2px_12px_-2px_rgba(23,23,23,0.04)]">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-7 h-7 rounded-lg bg-tertiary/15 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-bold text-on-surface">Aura Seamless Protection</h4>
+</div>
+<div class="space-y-2.5">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary mt-0.5 shrink-0">check_circle</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant"><strong class="text-on-surface font-semibold">Free Rescheduling:</strong> Change or postpone without penalty up to 2 hours before start time.</p>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary mt-0.5 shrink-0">check_circle</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant"><strong class="text-on-surface font-semibold">100% Satisfaction Guarantee:</strong> If unconnected or dissatisfied within 3 minutes, instant full refund.</p>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary mt-0.5 shrink-0">sync</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Syncs automatically with Google Calendar, Apple iCal &amp; Microsoft Outlook.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Sticky Bottom Summary & Booking Action Bar -->
+<div class="fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(23,23,23,0.08)] px-margin pt-3.5 pb-safe">
+<div class="max-w-md mx-auto">
+<!-- Breakdown & Wallet Status -->
+<div class="flex items-center justify-between mb-2.5">
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-md text-headline-md font-bold text-on-surface" id="summary-price">$75.00</span>
+<span class="font-label-md text-label-md text-on-surface-variant" id="summary-meta">(30m Video Call)</span>
+</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-tertiary font-bold">check_circle</span>
+<span class="font-label-sm text-[11px] text-tertiary font-semibold">Wallet: $84.50 available · No card charge needed</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm bg-primary-fixed/40 text-on-primary-fixed font-bold px-2 py-0.5 rounded-full inline-block">
+            Today 02:15 PM
+          </span>
+</div>
+</div>
+<!-- Primary Confirmation CTA -->
+<button class="w-full bg-primary-container text-on-primary py-3.5 px-6 rounded-2xl font-headline-sm text-headline-sm font-bold shadow-[0_8px_20px_-4px_rgba(245,184,0,0.4)] hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2" onclick="confirmBooking(this)" type="button">
+<span>Confirm &amp; Reserve Slot</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<!-- Reassurance Microcopy -->
+<p class="font-body-sm text-[11px] text-on-surface-variant text-center mt-2 pb-1">
+        Instant confirmation. Private video link and invite sent to your verified email &amp; SMS.
+      </p>
+</div>
+</div>
+</div>
+<script>
+  function selectFormat(btn) {
+    const container = document.getElementById('format-container');
+    container.querySelectorAll('.format-card').forEach(c => {
+      c.classList.remove('ring-2', 'ring-secondary', 'shadow-[0_4px_16px_-4px_rgba(109,61,245,0.12)]');
+      c.classList.add('shadow-[0_2px_8px_-2px_rgba(23,23,23,0.05)]');
+      const badge = c.querySelector('.bg-secondary');
+      const iconWrap = c.querySelector('div:first-of-type');
+    });
+    btn.classList.add('ring-2', 'ring-secondary', 'shadow-[0_4px_16px_-4px_rgba(109,61,245,0.12)]');
+    updateSummary();
+  }
+
+  function selectDuration(card, price, label) {
+    const container = document.getElementById('duration-container');
+    container.querySelectorAll('.duration-tier').forEach(t => {
+      t.classList.remove('ring-2', 'ring-primary-container', 'shadow-[0_6px_20px_-4px_rgba(109,61,245,0.1)]');
+      t.classList.add('shadow-[0_2px_8px_-2px_rgba(23,23,23,0.04)]');
+      const radio = t.querySelector('.tier-radio');
+      const dot = t.querySelector('.tier-dot');
+      if (radio && dot) {
+        radio.className = 'tier-radio w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center';
+        dot.className = 'tier-dot w-2 h-2 rounded-full bg-transparent';
+      }
+    });
+
+    card.classList.add('ring-2', 'ring-primary-container', 'shadow-[0_6px_20px_-4px_rgba(109,61,245,0.1)]');
+    const activeRadio = card.querySelector('.tier-radio');
+    const activeDot = card.querySelector('.tier-dot');
+    if (activeRadio && activeDot) {
+      activeRadio.className = 'tier-radio w-5 h-5 rounded-full bg-primary-container flex items-center justify-center';
+      activeDot.className = 'tier-dot w-2 h-2 rounded-full bg-on-primary';
+    }
+
+    const priceDisplay = document.getElementById('summary-price');
+    if (priceDisplay) priceDisplay.innerText = '$' + price.toFixed(2);
+    const metaDisplay = document.getElementById('summary-meta');
+    if (metaDisplay) metaDisplay.innerText = '(' + label + ' Video Call)';
+  }
+
+  function selectDate(chip) {
+    const ribbon = document.getElementById('date-ribbon');
+    ribbon.querySelectorAll('.date-chip').forEach(c => {
+      c.className = 'date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-surface-container-lowest shadow-[0_2px_6px_rgba(0,0,0,0.03)] text-on-surface';
+    });
+    chip.className = 'date-chip shrink-0 flex flex-col items-center justify-center w-14 py-3 rounded-2xl bg-secondary text-on-secondary shadow-[0_6px_16px_rgba(109,61,245,0.25)]';
+  }
+
+  function selectSlot(btn) {
+    document.querySelectorAll('.time-slot').forEach(s => {
+      s.className = 'time-slot py-2.5 px-2 rounded-xl bg-surface-container-low text-on-surface font-label-lg text-label-lg font-semibold text-center hover:bg-surface-container-high transition-all';
+      s.innerHTML = s.innerText.replace('check', '').trim();
+    });
+    const timeText = btn.innerText.trim();
+    btn.className = 'time-slot py-2.5 px-2 rounded-xl bg-primary-container text-on-primary font-label-lg text-label-lg font-bold text-center ring-2 ring-primary shadow-sm transition-all flex items-center justify-center gap-1';
+    btn.innerHTML = '<span>' + timeText + '</span><span class="material-symbols-outlined text-[14px]">check</span>';
+  }
+
+  function toggleChip(chip) {
+    const parent = document.getElementById('focus-chips');
+    parent.querySelectorAll('.chip-item').forEach(c => {
+      c.className = 'chip-item px-3 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all';
+    });
+    chip.className = 'chip-item px-3 py-1.5 rounded-full font-label-md text-label-md bg-secondary text-on-secondary font-medium transition-all shadow-sm';
+  }
+
+  function confirmBooking(btn) {
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span><span>Securing Slot...</span>';
+    setTimeout(() => {
+      btn.className = 'w-full bg-tertiary text-on-tertiary py-3.5 px-6 rounded-2xl font-headline-sm text-headline-sm font-bold shadow-lg flex items-center justify-center gap-2';
+      btn.innerHTML = '<span class="material-symbols-outlined text-[22px]">check_circle</span><span>Reserved! Check Your Email</span>';
+    }, 1200);
+  }
+</script></main></body></html>

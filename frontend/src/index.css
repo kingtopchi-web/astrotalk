@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  html, body {
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    background-color: theme('colors.background');
+    color: theme('colors.on-background');
+    font-family: theme('fontFamily.body');
+    scroll-behavior: smooth;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: theme('fontFamily.heading');
+    color: theme('colors.on-background');
+  }
+
+  body {
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  main {
+    flex-grow: 1;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-soft;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary;
+  }
+  .text-gradient-secondary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-secondary to-secondary-dark;
+  }
+}
+::-webkit-scrollbar {
+  display: none;
+}
