@@ -26,14 +26,6 @@ function LiveSession() {
   const [isIncoming, setIsIncoming] = useState(new URLSearchParams(window.location.search).get('incoming') === 'true');
   const [callAccepted, setCallAccepted] = useState(!isIncoming);
 
-  // Force expert to be the receiver (incoming) if not specified otherwise
-  useEffect(() => {
-    if (user?.role === 'EXPERT' && !new URLSearchParams(window.location.search).has('incoming')) {
-      setIsIncoming(true);
-      setCallAccepted(false);
-    }
-  }, [user]);
-
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const socketRef = useRef(null);
@@ -44,10 +36,21 @@ function LiveSession() {
   const isExpert = user?.role === 'EXPERT';
 
   useEffect(() => {
-    fetchSessionData();
-  }, [consultationId]);
+    if (!user) return; // Wait for auth to load
 
-  const fetchSessionData = async () => {
+    const urlIncoming = new URLSearchParams(window.location.search).get('incoming') === 'true';
+    const expertShouldBeIncoming = user.role === 'EXPERT' && !new URLSearchParams(window.location.search).has('incoming');
+    const finalIsIncoming = urlIncoming || expertShouldBeIncoming;
+    
+    setIsIncoming(finalIsIncoming);
+    if (finalIsIncoming) {
+      setCallAccepted(false);
+    }
+
+    fetchSessionData(finalIsIncoming);
+  }, [consultationId, user]);
+
+  const fetchSessionData = async (incomingFlag) => {
     try {
       const token = localStorage.getItem('token');
       // Fetch consultation details
@@ -71,7 +74,7 @@ function LiveSession() {
       
       // Auto join and force start for a seamless ringing experience
       // If incoming, don't join until accepted!
-      if (!isIncoming) {
+      if (!incomingFlag) {
         if (isExpert) {
            await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
            await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
@@ -234,8 +237,19 @@ function LiveSession() {
 
         // If the other user is already in the room, they won't trigger user_joined_call again.
         // We can emit a signal to request the other user to ping us.
-        console.log("[SIGNALING] SEND webrtc_ready");
-        socket.emit('webrtc_ready', { roomId: consultationId });
+        if (isExpert) {
+          console.log("[WEBRTC] Expert creating initial offer");
+          try {
+             const offer = await peerConnection.createOffer();
+             console.log("[WEBRTC] INITIAL OFFER CREATED", offer);
+             await peerConnection.setLocalDescription(offer);
+             console.log("[SIGNALING] SEND INITIAL OFFER");
+             socket.emit('webrtc_offer', { targetRoom: consultationId, signal: offer });
+          } catch (e) { console.error("[WEBRTC] Initial Offer creation error", e); }
+        } else {
+          console.log("[SIGNALING] SEND webrtc_ready");
+          socket.emit('webrtc_ready', { roomId: consultationId });
+        }
 
         socket.on('webrtc_ready', async (data) => {
            console.log("[SIGNALING] RECEIVE webrtc_ready");
@@ -243,9 +257,9 @@ function LiveSession() {
            if (isExpert) {
              try {
                const offer = await peerConnection.createOffer();
-               console.log("[WEBRTC] OFFER CREATED", offer);
+               console.log("[WEBRTC] OFFER CREATED from webrtc_ready", offer);
                await peerConnection.setLocalDescription(offer);
-               console.log("[SIGNALING] SEND OFFER");
+               console.log("[SIGNALING] SEND OFFER from webrtc_ready");
                socket.emit('webrtc_offer', { targetRoom: consultationId, signal: offer });
              } catch (e) { console.error("[WEBRTC] Offer creation error", e); }
            }
@@ -605,63 +619,59 @@ function LiveSession() {
 
       {/* Full Screen Call Overlays for Ringing and Incoming Call */}
       {!isConnected && (
-        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-between py-8 sm:py-12 transition-colors duration-500 ${isIncoming && !callAccepted ? 'bg-[#06261b]' : 'bg-[#0b162c]'}`}>
+        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-between py-10 transition-colors duration-500 ${isIncoming && !callAccepted ? 'bg-[#06261b]' : 'bg-[#0b162c]'}`}>
           
-          {/* Top spacer to replace header and push content down slightly */}
-          <div className="pt-2 sm:pt-8"></div>
-          
-          {/* Center Avatar & Name */}
-          <div className="flex flex-col items-center flex-1 justify-center -mt-8 sm:-mt-12">
-             <div className="relative flex items-center justify-center w-48 h-48 sm:w-64 sm:h-64 mb-6">
+          <div className="flex-1 flex flex-col items-center justify-center w-full px-4">
+             <div className="relative flex items-center justify-center w-40 h-40 md:w-56 md:h-56 mb-8">
                {/* Animated Rings */}
-               <div className="absolute inset-0 rounded-full border border-white/5 animate-[ping_3s_ease-out_infinite]"></div>
-               <div className="absolute inset-4 rounded-full border border-white/10 animate-[ping_3s_ease-out_infinite_0.5s]"></div>
-               <div className="absolute inset-8 rounded-full border border-white/10 animate-[ping_3s_ease-out_infinite_1s]"></div>
+               <div className="absolute inset-0 rounded-full border border-white/10 animate-[ping_2.5s_ease-out_infinite]"></div>
+               <div className="absolute inset-4 rounded-full border border-white/20 animate-[ping_2.5s_ease-out_infinite_0.4s]"></div>
+               <div className="absolute inset-8 rounded-full border border-white/20 animate-[ping_2.5s_ease-out_infinite_0.8s]"></div>
                
                {/* Avatar */}
-               <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center text-5xl sm:text-6xl font-bold text-white z-10 shadow-2xl relative
+               <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-4xl md:text-5xl font-bold text-white z-10 shadow-2xl relative
                  ${isIncoming && !callAccepted ? 'bg-[#2dd4bf] shadow-[#2dd4bf]/20' : 'bg-[#f97316] shadow-[#f97316]/20'}`}>
                  {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
                </div>
              </div>
              
-             <h3 className="text-2xl sm:text-3xl font-bold text-white mt-2 sm:mt-4">{remoteUser?.name || 'Remote User'}</h3>
+             <h3 className="text-2xl md:text-3xl font-bold text-white mt-4">{remoteUser?.name || 'Remote User'}</h3>
              
              {isIncoming && !callAccepted ? (
-               <p className="text-emerald-400 text-sm sm:text-base font-medium mt-2 sm:mt-3 flex items-center gap-2">
+               <p className="text-emerald-400 text-sm md:text-base font-medium mt-3 flex items-center gap-2">
                  <span className="material-symbols-outlined text-[18px]">call</span>
-                 Incoming Audio Consultation...
+                 Incoming Video Call...
                </p>
              ) : (
-               <p className="text-blue-300 text-sm sm:text-base font-medium mt-2 sm:mt-3 flex items-center gap-1">
+               <p className="text-blue-300 text-sm md:text-base font-medium mt-3 flex items-center gap-1">
                  Ringing <span className="animate-pulse flex gap-0.5 ml-1"><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span></span>
                </p>
              )}
           </div>
           
           {/* Bottom Actions */}
-          <div className="pb-8 sm:pb-12 w-full px-4 sm:px-8 flex items-center justify-center gap-8 sm:gap-16">
+          <div className="pb-10 w-full px-6 flex items-center justify-center gap-10 md:gap-16">
             {isIncoming && !callAccepted ? (
                <>
-                 <div className="flex flex-col items-center gap-2 sm:gap-3">
-                   <button onClick={endCall} className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform active:scale-90">
-                     <span className="material-symbols-outlined text-3xl sm:text-4xl">phone_disabled</span>
+                 <div className="flex flex-col items-center gap-3">
+                   <button onClick={endCall} className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform active:scale-95">
+                     <span className="material-symbols-outlined text-3xl md:text-4xl">phone_disabled</span>
                    </button>
-                   <span className="text-xs sm:text-sm font-bold text-white/90">Decline</span>
+                   <span className="text-xs md:text-sm font-bold text-white/90">Decline</span>
                  </div>
-                 <div className="flex flex-col items-center gap-2 sm:gap-3">
-                   <button onClick={handleAcceptCall} className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-transform active:scale-90">
-                     <span className="material-symbols-outlined text-3xl sm:text-4xl">call</span>
+                 <div className="flex flex-col items-center gap-3">
+                   <button onClick={handleAcceptCall} className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-transform active:scale-95">
+                     <span className="material-symbols-outlined text-3xl md:text-4xl">call</span>
                    </button>
-                   <span className="text-xs sm:text-sm font-bold text-white/90">Accept</span>
+                   <span className="text-xs md:text-sm font-bold text-white/90">Accept</span>
                  </div>
                </>
             ) : (
-               <div className="flex flex-col items-center gap-2 sm:gap-3">
-                 <button onClick={endCall} className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform active:scale-90">
-                   <span className="material-symbols-outlined text-3xl sm:text-4xl">call_end</span>
+               <div className="flex flex-col items-center gap-3">
+                 <button onClick={endCall} className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform active:scale-95">
+                   <span className="material-symbols-outlined text-3xl md:text-4xl">call_end</span>
                  </button>
-                 <span className="text-xs sm:text-sm font-bold text-white/90">Cancel Call</span>
+                 <span className="text-xs md:text-sm font-bold text-white/90">Cancel Call</span>
                </div>
             )}
           </div>
