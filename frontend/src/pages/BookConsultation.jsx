@@ -31,17 +31,17 @@ function BookConsultation() {
       try {
         const promises = [];
         if (id) {
-          promises.push(axios.get(`http://localhost:5000/api/experts/${id}`));
+          promises.push(axios.get(`https://astrotalk-hlg2.onrender.com/api/experts/${id}`));
         }
         
         if (user && token) {
-          promises.push(axios.get('http://localhost:5000/api/wallet', {
+          promises.push(axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
             headers: { Authorization: `Bearer ${token}` }
           }));
         }
 
         if (serviceId) {
-          promises.push(axios.get(`http://localhost:5000/api/expert-services/public/${id}`));
+          promises.push(axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`));
         }
 
         const results = await Promise.all(promises);
@@ -115,7 +115,7 @@ function BookConsultation() {
       };
 
       // 1. Create Consultation (Pending Status)
-      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', bookingData, config);
+      const bookingResponse = await axios.post('https://astrotalk-hlg2.onrender.com/api/bookings', bookingData, config);
       const consultation = bookingResponse.data;
 
       const basePrice = service ? service.price : (expert.rates?.video || expert.pricePerMinute || 500);
@@ -124,7 +124,7 @@ function BookConsultation() {
 
       // 2. Full Wallet Payment
       if (useWallet && walletBalance >= totalAmount) {
-        await axios.post('http://localhost:5000/api/wallet/pay-consultation', {
+        await axios.post('https://astrotalk-hlg2.onrender.com/api/wallet/pay-consultation', {
           consultationId: consultation._id
         }, config);
         
@@ -133,7 +133,7 @@ function BookConsultation() {
       }
 
       // 3. Create Razorpay Order securely from backend (Full or Partial)
-      const orderResponse = await axios.post('http://localhost:5000/api/payments/create-order', {
+      const orderResponse = await axios.post('https://astrotalk-hlg2.onrender.com/api/payments/create-order', {
         consultationId: consultation._id,
         useWallet: useWallet,
         amount: totalAmount // send amount in case backend needs it for verification or custom service price
@@ -159,7 +159,7 @@ function BookConsultation() {
         handler: async function (response) {
           try {
             // 5. Verify Payment on Backend
-            await axios.post('http://localhost:5000/api/payments/verify', {
+            await axios.post('https://astrotalk-hlg2.onrender.com/api/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature

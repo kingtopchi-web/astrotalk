@@ -29,7 +29,7 @@ function Settings() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/settings', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = res.data;
@@ -57,7 +57,7 @@ function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/settings/profile', profileForm, {
+      await axios.put('https://astrotalk-hlg2.onrender.com/api/settings/profile', profileForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showMessage('success', 'Profile updated successfully');
@@ -76,7 +76,7 @@ function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/settings/password', {
+      await axios.put('https://astrotalk-hlg2.onrender.com/api/settings/password', {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       }, {
@@ -95,7 +95,7 @@ function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/settings/preferences', {
+      await axios.put('https://astrotalk-hlg2.onrender.com/api/settings/preferences', {
         notificationPreferences: notifications,
         privacySettings: privacy,
         theme,
@@ -115,7 +115,7 @@ function Settings() {
     if (!window.confirm('Are you sure you want to deactivate your account?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/settings/deactivate', {}, {
+      await axios.post('https://astrotalk-hlg2.onrender.com/api/settings/deactivate', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       localStorage.removeItem('token');

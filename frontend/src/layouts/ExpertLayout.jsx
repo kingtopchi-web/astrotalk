@@ -33,7 +33,7 @@ const ExpertLayout = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/expert/profile', {
+        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setExpert(res.data);
@@ -48,7 +48,7 @@ const ExpertLayout = () => {
 
   useEffect(() => {
     if (!expert) return;
-    const socket = io('http://localhost:5000');
+    const socket = io('https://astrotalk-hlg2.onrender.com');
     socket.on('connect', () => {
       socket.emit('join_user', expert._id);
     });

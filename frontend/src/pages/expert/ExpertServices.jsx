@@ -37,7 +37,7 @@ function ExpertServices() {
   const fetchServices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/expert-services', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert-services', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setServices(res.data);
@@ -50,7 +50,7 @@ function ExpertServices() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/categories');
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/categories');
       setCategories(res.data);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -59,7 +59,7 @@ function ExpertServices() {
 
   const fetchSubcategories = async (categoryId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
+      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${categoryId}/subcategories`);
       setSubcategories(res.data);
     } catch (err) {
       console.error('Error fetching subcategories:', err);
@@ -115,10 +115,10 @@ function ExpertServices() {
       };
 
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/expert-services/${editingId}`, payload, config);
+        await axios.put(`https://astrotalk-hlg2.onrender.com/api/expert-services/${editingId}`, payload, config);
         alert('Service updated successfully.');
       } else {
-        await axios.post('http://localhost:5000/api/expert-services', payload, config);
+        await axios.post('https://astrotalk-hlg2.onrender.com/api/expert-services', payload, config);
         alert('Service created successfully.');
       }
       setShowModal(false);
@@ -138,7 +138,7 @@ function ExpertServices() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/expert-services/${service._id}`, { status: newStatus }, {
+      await axios.put(`https://astrotalk-hlg2.onrender.com/api/expert-services/${service._id}`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert(`Service ${newStatus === 'ACTIVE' ? 'is now available for booking.' : 'deactivated successfully.'}`);
@@ -152,7 +152,7 @@ function ExpertServices() {
     if (!window.confirm('Are you sure you want to delete this service? It will be archived to preserve historical bookings.')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/expert-services/${id}`, {
+      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/expert-services/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchServices();

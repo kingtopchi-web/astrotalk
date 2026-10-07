@@ -31,8 +31,8 @@ function Support() {
     try {
       const token = localStorage.getItem('token');
       const [articlesRes, ticketsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/support/articles'),
-        axios.get('http://localhost:5000/api/support/tickets', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('https://astrotalk-hlg2.onrender.com/api/support/articles'),
+        axios.get('https://astrotalk-hlg2.onrender.com/api/support/tickets', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setArticles(articlesRes.data);
       setTickets(ticketsRes.data);
@@ -47,7 +47,7 @@ function Support() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/support/tickets', newTicket, {
+      await axios.post('https://astrotalk-hlg2.onrender.com/api/support/tickets', newTicket, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false);
@@ -65,7 +65,7 @@ function Support() {
     setLoadingTicket(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/support/tickets/${ticket._id}`, {
+      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/support/tickets/${ticket._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTicketMessages(res.data.messages);
@@ -80,7 +80,7 @@ function Support() {
     if (!replyText.trim() || !selectedTicket) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`http://localhost:5000/api/support/tickets/${selectedTicket._id}/reply`, { message: replyText }, {
+      const res = await axios.post(`https://astrotalk-hlg2.onrender.com/api/support/tickets/${selectedTicket._id}/reply`, { message: replyText }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTicketMessages([...ticketMessages, res.data.reply]);

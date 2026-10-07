@@ -24,8 +24,8 @@ function ExpertProfileEdit() {
     const init = async () => {
       try {
         const [profileRes, catRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/expert/profile', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('http://localhost:5000/api/categories')
+          axios.get('https://astrotalk-hlg2.onrender.com/api/expert/profile', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('https://astrotalk-hlg2.onrender.com/api/categories')
         ]);
         const p = profileRes.data;
         setForm({
@@ -44,7 +44,7 @@ function ExpertProfileEdit() {
 
         if (p.categoryId) {
           const catId = p.categoryId?._id || p.categoryId;
-          const subRes = await axios.get(`http://localhost:5000/api/categories/${catId}/subcategories`);
+          const subRes = await axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${catId}/subcategories`);
           setSubCategories(subRes.data);
         }
       } catch (err) {
@@ -61,7 +61,7 @@ function ExpertProfileEdit() {
     setForm(f => ({ ...f, categoryId: catId, subCategoryId: '' }));
     if (catId) {
       try {
-        const res = await axios.get(`http://localhost:5000/api/categories/${catId}/subcategories`);
+        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${catId}/subcategories`);
         setSubCategories(res.data);
       } catch (e) { setSubCategories([]); }
     } else {
@@ -79,7 +79,7 @@ function ExpertProfileEdit() {
       if (!payload.categoryId) delete payload.categoryId;
       if (!payload.subCategoryId) delete payload.subCategoryId;
       
-      await axios.patch('http://localhost:5000/api/expert/profile', payload, {
+      await axios.patch('https://astrotalk-hlg2.onrender.com/api/expert/profile', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Profile updated successfully!');

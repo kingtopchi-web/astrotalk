@@ -25,12 +25,12 @@ function ExpertDiscovery() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/categories').then(res => setCategories(res.data)).catch(() => {});
+    axios.get('https://astrotalk-hlg2.onrender.com/api/categories').then(res => setCategories(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (selectedCategory) {
-      axios.get(`http://localhost:5000/api/categories/${selectedCategory}/subcategories`)
+      axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${selectedCategory}/subcategories`)
         .then(res => setSubCategories(res.data))
         .catch(() => setSubCategories([]));
     } else {
@@ -49,7 +49,7 @@ function ExpertDiscovery() {
       if (selectedSubCategory) params.subCategoryId = selectedSubCategory;
       if (search.trim()) params.search = search.trim();
 
-      const res = await axios.get('http://localhost:5000/api/user/experts', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/experts', {
         headers: { Authorization: `Bearer ${token}` },
         params
       });

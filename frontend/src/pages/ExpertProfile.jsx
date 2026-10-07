@@ -33,8 +33,8 @@ function ExpertPublicProfile() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         const [expertRes, servicesRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/user/experts/${id}`, { headers }),
-          axios.get(`http://localhost:5000/api/expert-services/public/${id}`)
+          axios.get(`https://astrotalk-hlg2.onrender.com/api/user/experts/${id}`, { headers }),
+          axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`)
         ]);
 
         setExpert(expertRes.data);

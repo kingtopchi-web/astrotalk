@@ -17,7 +17,7 @@ function Login() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/user/login', { email, password });
+      const res = await axios.post('https://astrotalk-hlg2.onrender.com/api/auth/user/login', { email, password });
       login(res.data, res.data.token);
       navigate('/dashboard');
     } catch (err) {

@@ -22,8 +22,8 @@ function WalletRecharge() {
       const headers = { Authorization: `Bearer ${token}` };
       
       const [balRes, txRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/wallet', { headers }),
-        axios.get('http://localhost:5000/api/wallet/transactions', { headers })
+        axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', { headers }),
+        axios.get('https://astrotalk-hlg2.onrender.com/api/wallet/transactions', { headers })
       ]);
       
       setBalance(balRes.data.balance || 0);
@@ -55,7 +55,7 @@ function WalletRecharge() {
 
       // 1. Create Order
       const orderRes = await axios.post(
-        'http://localhost:5000/api/wallet/add-money',
+        'https://astrotalk-hlg2.onrender.com/api/wallet/add-money',
         { amount },
         { headers }
       );
@@ -74,7 +74,7 @@ function WalletRecharge() {
           try {
             // 3. Verify Payment
             const verifyRes = await axios.post(
-              'http://localhost:5000/api/wallet/verify-payment',
+              'https://astrotalk-hlg2.onrender.com/api/wallet/verify-payment',
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

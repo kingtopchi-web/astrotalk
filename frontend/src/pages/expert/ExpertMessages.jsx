@@ -16,7 +16,7 @@ function ExpertMessages() {
   // Initialize Socket.IO connection
   useEffect(() => {
     if (!expert) return;
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://astrotalk-hlg2.onrender.com');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -47,7 +47,7 @@ function ExpertMessages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/messages/conversations', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConversations(res.data);
@@ -63,7 +63,7 @@ function ExpertMessages() {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/messages/conversations/${activeConversation._id}/messages`, {
+        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${activeConversation._id}/messages`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);

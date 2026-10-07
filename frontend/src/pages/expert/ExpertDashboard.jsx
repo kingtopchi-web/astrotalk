@@ -50,7 +50,7 @@ function ExpertDashboard() {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/expert/dashboard', {
+        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert/dashboard', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(res.data);
@@ -66,7 +66,7 @@ function ExpertDashboard() {
     setResubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/expert/resubmit', {}, {
+      await axios.post('https://astrotalk-hlg2.onrender.com/api/expert/resubmit', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setResubmitSuccess('Your profile has been resubmitted for review!');

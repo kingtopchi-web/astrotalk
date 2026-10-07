@@ -26,10 +26,10 @@ function UserDashboard() {
       try {
         const token = localStorage.getItem('token');
         const [aptRes, savedRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/bookings/my-bookings', {
+          axios.get('https://astrotalk-hlg2.onrender.com/api/bookings/my-bookings', {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get('http://localhost:5000/api/user/saved-experts', {
+          axios.get('https://astrotalk-hlg2.onrender.com/api/user/saved-experts', {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
