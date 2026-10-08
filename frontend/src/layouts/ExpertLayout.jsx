@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { io } from 'socket.io-client';
+import { createSocket } from '../utils/socket';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -48,15 +48,23 @@ const ExpertLayout = () => {
 
   useEffect(() => {
     if (!expert) return;
-    const socket = io('https://astrotalk-hlg2.onrender.com');
+    const socket = createSocket();
+
     socket.on('connect', () => {
+      console.log('[Socket] Connected:', socket.id);
       socket.emit('join_user', expert._id);
     });
+
+    socket.on('connect_error', (err) => {
+      console.warn('[Socket] Connection error (server may be waking up):', err.message);
+    });
+
     socket.on('VIDEO_USER_WAITING', (data) => {
       setWaitingNotification(data);
     });
+
     return () => socket.disconnect();
-  }, [expert]);
+  }, [expert?._id]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

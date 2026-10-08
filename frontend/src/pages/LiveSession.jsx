@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { io } from 'socket.io-client';
+import { createSocket } from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
 
 function LiveSession() {
@@ -108,10 +108,12 @@ function LiveSession() {
 
   // Basic Socket setup - Runs once
   useEffect(() => {
-    if (!consultation || sessionStatus === 'COMPLETED' || sessionStatus === 'ERROR' || sessionStatus === 'LOADING') return;
+    // DO NOT return early based on consultation or sessionStatus! 
+    // We want the socket to connect immediately so it's ready for WebRTC.
+    if (sessionStatus === 'COMPLETED' || sessionStatus === 'ERROR') return;
     if (socketRef.current) return; // Already initialized
 
-    socketRef.current = io('https://astrotalk-hlg2.onrender.com');
+    socketRef.current = createSocket();
     const socket = socketRef.current;
 
     socket.on('connect', () => {
@@ -190,11 +192,25 @@ function LiveSession() {
     const initWebRTC = async () => {
       console.log("[WEBRTC] initWebRTC called");
       try {
-        console.log("[WEBRTC] Requesting camera and microphone permissions...");
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        let stream;
+        try {
+          console.log("[WEBRTC] Requesting camera and microphone permissions...");
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (mediaErr) {
+          console.warn("[WEBRTC] Failed to get both video and audio. Trying audio only.", mediaErr);
+          try {
+             stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+             // We don't have video, so camOn is effectively false
+             setCamOn(false);
+          } catch (audioErr) {
+             console.warn("[WEBRTC] Failed to get audio. Using empty stream for viewing only.", audioErr);
+             stream = new MediaStream();
+             setCamOn(false);
+             setMicOn(false);
+          }
+        }
+        
         console.log("[WEBRTC] Local stream acquired:", stream);
-        console.log("[WEBRTC] Video tracks:", stream.getVideoTracks());
-        console.log("[WEBRTC] Audio tracks:", stream.getAudioTracks());
         
         localStreamRef.current = stream;
         if (localVideoRef.current) {
@@ -237,6 +253,14 @@ function LiveSession() {
           console.log("[WEBRTC] Adding local track:", track.kind, track.id, track.readyState);
           peerConnection.addTrack(track, stream);
         });
+
+        // Ensure we negotiate receiving media even if local hardware is missing
+        if (stream.getAudioTracks().length === 0) {
+            peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+        }
+        if (stream.getVideoTracks().length === 0) {
+            peerConnection.addTransceiver('video', { direction: 'recvonly' });
+        }
 
         // Construct a remote stream robustly
         const remoteStream = new MediaStream();

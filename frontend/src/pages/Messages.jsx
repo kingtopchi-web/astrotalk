@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
+import { createSocket } from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
 import UserLayout from '../components/UserLayout';
 import { Send, Paperclip, Search, Check, CheckCheck, MessageSquare, MoreVertical, Phone, Video } from 'lucide-react';
@@ -17,11 +17,16 @@ function Messages() {
   // Initialize Socket.IO connection
   useEffect(() => {
     if (!user) return;
-    const newSocket = io('https://astrotalk-hlg2.onrender.com');
+    const newSocket = createSocket();
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
+      console.log('[Socket] Messages connected:', newSocket.id);
       newSocket.emit('join_user', user._id);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.warn('[Socket] Connection error (server may be waking up):', err.message);
     });
 
     newSocket.on('receive_message', (msg) => {
@@ -40,7 +45,7 @@ function Messages() {
     });
 
     return () => newSocket.close();
-  }, [user]);
+  }, [user?._id]);
 
   // Fetch conversations
   useEffect(() => {
