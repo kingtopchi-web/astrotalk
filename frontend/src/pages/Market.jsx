@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav';
 function Market() {
   const products = [
     { id: 1, name: 'Crystal Healing Set', price: 49.99, image: 'https://images.unsplash.com/photo-1555008872-f03b347ffb53?w=500&q=80', rating: 4.8 },
-    { id: 2, name: 'Meditation Singing Bowl', price: 89.00, image: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=500&q=80', rating: 4.9 },
+    { id: 2, name: 'Meditation Singing Bowl', price: 89.00, image: 'https://images.unsplash.com/photo-1512438248247-f0f6a5a8e7eb?w=500&q=80', rating: 4.9 },
     { id: 3, name: 'Organic Sage Smudge', price: 15.50, image: 'https://images.unsplash.com/photo-1611077544944-774fbe8e9329?w=500&q=80', rating: 4.7 },
     { id: 4, name: 'Tarot Card Deck', price: 35.00, image: 'https://images.unsplash.com/photo-1536768131379-34baeb32746c?w=500&q=80', rating: 4.6 }
   ];
