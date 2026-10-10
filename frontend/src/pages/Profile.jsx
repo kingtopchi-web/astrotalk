@@ -27,7 +27,7 @@ function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/profile', {
+      const res = await axios.get('http://localhost:5000/api/user/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data);
@@ -54,7 +54,7 @@ function Profile() {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.patch('https://astrotalk-hlg2.onrender.com/api/user/profile', form, {
+      const res = await axios.patch('http://localhost:5000/api/user/profile', form, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data.user);
@@ -82,26 +82,24 @@ function Profile() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   const displayName = profile?.name || user?.name || 'User';
   const displayImage = (editing ? form.profileImage : profile?.profileImage) || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff&size=150`;
 
   return (
     <UserLayout title="My Profile" subtitle="Manage your account details and preferences.">
-      <div className="flex items-center justify-end mb-8">
-        <div>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-end mb-8">
+            <div>
+            </div>
               {!editing && (
                 <button 
                   onClick={() => setEditing(true)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                  className="flex items-center gap-2 bg-primary hover:bg-primary-light text-background px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
                 >
                   <Edit2 size={16} />
                   Edit Profile
@@ -123,7 +121,7 @@ function Profile() {
               </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-surface rounded-2xl border border-border-color shadow-sm overflow-hidden">
               <div className="p-6 md:p-8">
                 <div className="flex flex-col md:flex-row gap-8">
                   
@@ -140,7 +138,7 @@ function Profile() {
                       />
                       {editing && (
                         <div className="absolute inset-0 bg-slate-900/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Edit2 size={24} className="text-white" />
+                          <Edit2 size={24} className="text-background" />
                         </div>
                       )}
                       <input 
@@ -153,7 +151,7 @@ function Profile() {
                       />
                     </div>
                     <div className="text-center">
-                      <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider border border-blue-100">
+                      <span className="inline-flex items-center gap-1 bg-primary/10 text-primary font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider border border-blue-100">
                         <UserIcon size={14} />
                         {profile?.role === 'ADMIN' ? 'SUPER ADMIN' : profile?.role}
                       </span>
@@ -166,43 +164,43 @@ function Profile() {
                       <form onSubmit={handleSave} className="space-y-5">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-slate-700">Full Name</label>
+                            <label className="block text-sm font-semibold text-on-surface">Full Name</label>
                             <input 
                               value={form.name} 
                               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-900 text-sm" 
+                              className="w-full px-4 py-2.5 rounded-lg bg-surface-light border border-border-color focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-on-surface text-sm" 
                               placeholder="Your full name"
                             />
                           </div>
                           
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-slate-700">Mobile Number</label>
+                            <label className="block text-sm font-semibold text-on-surface">Mobile Number</label>
                             <input 
                               value={form.mobile} 
                               onChange={e => setForm(f => ({ ...f, mobile: e.target.value }))}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-900 text-sm" 
+                              className="w-full px-4 py-2.5 rounded-lg bg-surface-light border border-border-color focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-on-surface text-sm" 
                               placeholder="Your mobile number"
                             />
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="block text-sm font-semibold text-slate-700">Location</label>
+                          <label className="block text-sm font-semibold text-on-surface">Location</label>
                           <input 
                             value={form.location} 
                             onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
-                            className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-900 text-sm" 
+                            className="w-full px-4 py-2.5 rounded-lg bg-surface-light border border-border-color focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-on-surface text-sm" 
                             placeholder="e.g. New York, USA"
                           />
                         </div>
                         
                         <div className="space-y-1.5">
-                          <label className="block text-sm font-semibold text-slate-700">Bio</label>
+                          <label className="block text-sm font-semibold text-on-surface">Bio</label>
                           <textarea 
                             rows={3} 
                             value={form.bio} 
                             onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-                            className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-900 text-sm resize-none" 
+                            className="w-full px-4 py-2.5 rounded-lg bg-surface-light border border-border-color focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-on-surface text-sm resize-none" 
                             placeholder="Tell us a little about yourself"
                           />
                         </div>
@@ -211,14 +209,14 @@ function Profile() {
                           <button 
                             type="submit" 
                             disabled={saving}
-                            className="flex-1 sm:flex-none py-2.5 px-6 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:opacity-70 text-sm shadow-sm"
+                            className="flex-1 sm:flex-none py-2.5 px-6 bg-primary text-background rounded-lg font-bold hover:bg-primary-light transition-colors disabled:opacity-70 text-sm shadow-sm"
                           >
                             {saving ? 'Saving...' : 'Save Changes'}
                           </button>
                           <button 
                             type="button" 
                             onClick={() => setEditing(false)}
-                            className="flex-1 sm:flex-none py-2.5 px-6 rounded-lg border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 transition-colors text-sm"
+                            className="flex-1 sm:flex-none py-2.5 px-6 rounded-lg border border-slate-300 font-bold text-on-surface hover:bg-surface-light transition-colors text-sm"
                           >
                             Cancel
                           </button>
@@ -228,27 +226,27 @@ function Profile() {
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</p>
-                            <p className="text-sm font-semibold text-slate-900">{profile?.email}</p>
+                            <p className="text-xs font-bold text-on-surface/50 uppercase tracking-wider mb-1">Email Address</p>
+                            <p className="text-sm font-semibold text-on-surface">{profile?.email}</p>
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mobile Number</p>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {profile?.mobile || <span className="text-slate-400 italic">Not provided</span>}
+                            <p className="text-xs font-bold text-on-surface/50 uppercase tracking-wider mb-1">Mobile Number</p>
+                            <p className="text-sm font-semibold text-on-surface">
+                              {profile?.mobile || <span className="text-on-surface/50 italic">Not provided</span>}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Location</p>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {profile?.location || <span className="text-slate-400 italic">Not provided</span>}
+                            <p className="text-xs font-bold text-on-surface/50 uppercase tracking-wider mb-1">Location</p>
+                            <p className="text-sm font-semibold text-on-surface">
+                              {profile?.location || <span className="text-on-surface/50 italic">Not provided</span>}
                             </p>
                           </div>
                         </div>
 
-                        <div className="pt-6 border-t border-slate-100">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">About Me</p>
-                          <p className="text-sm text-slate-700 leading-relaxed max-w-2xl">
-                            {profile?.bio || <span className="text-slate-400 italic">No bio written yet. Click edit to add something about yourself!</span>}
+                        <div className="pt-6 border-t border-border-color">
+                          <p className="text-xs font-bold text-on-surface/50 uppercase tracking-wider mb-2">About Me</p>
+                          <p className="text-sm text-on-surface leading-relaxed max-w-2xl">
+                            {profile?.bio || <span className="text-on-surface/50 italic">No bio written yet. Click edit to add something about yourself!</span>}
                           </p>
                         </div>
                       </div>
@@ -258,6 +256,8 @@ function Profile() {
                 </div>
               </div>
             </div>
+          </>
+        )}
     </UserLayout>
   );
 }

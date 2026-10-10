@@ -12,6 +12,10 @@ function Messages() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [socket, setSocket] = useState(null);
+  const [activeConsultation, setActiveConsultation] = useState(null);
+  const [seconds, setSeconds] = useState(0);
+  const [billedAmount, setBilledAmount] = useState(0);
+  const [lastMessageTime, setLastMessageTime] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Initialize Socket.IO connection
@@ -33,6 +37,12 @@ function Messages() {
       setMessages(prev => {
         // Prevent duplicate messages if we are the sender
         if (prev.find(m => m._id === msg._id)) return prev;
+        
+        // Update last message time for auto-disconnect logic if we have an active consultation
+        if (msg.sender !== user._id) {
+          setLastMessageTime(Date.now());
+        }
+        
         return [...prev, msg];
       });
       // Update the last message in conversations list
@@ -41,6 +51,15 @@ function Messages() {
           return { ...conv, lastMessage: msg.text, lastMessageAt: msg.createdAt };
         }
         return conv;
+      }));
+    });
+
+    newSocket.on('messages_read', ({ conversationId, readBy }) => {
+      setMessages(prev => prev.map(m => {
+        if (m.conversationId === conversationId && m.sender !== readBy) {
+          return { ...m, status: 'READ' };
+        }
+        return m;
       }));
     });
 
@@ -55,7 +74,7 @@ function Messages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
+      const res = await axios.get('http://localhost:5000/api/messages/conversations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConversations(res.data);
@@ -71,7 +90,7 @@ function Messages() {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${activeConversation._id}/messages`, {
+        const res = await axios.get(`http://localhost:5000/api/messages/conversations/${activeConversation._id}/messages`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);
@@ -83,8 +102,90 @@ function Messages() {
         console.error('Error fetching messages:', error);
       }
     };
+    
+    const fetchActiveChatConsultation = async (otherUserId) => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`http://localhost:5000/api/bookings/active-chat/${otherUserId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setActiveConsultation(res.data);
+        
+        // If it's LIVE/ongoing, we might calculate seconds
+        if (res.data && res.data.startTime) {
+           const started = new Date(res.data.startTime);
+           setSeconds(Math.floor((new Date() - started) / 1000));
+        } else {
+           setSeconds(0);
+        }
+        setLastMessageTime(Date.now()); // initialize
+      } catch (err) {
+        setActiveConsultation(null);
+      }
+    };
+
     fetchMessages();
+    
+    // Check if there is an active consultation for this pair
+    const otherUser = getOtherParticipant(activeConversation);
+    if (otherUser) {
+      fetchActiveChatConsultation(otherUser._id);
+    }
+
   }, [activeConversation, socket]);
+
+  // Timer for active consultation
+  useEffect(() => {
+    if (!activeConsultation) return;
+    
+    const isExpert = user.role === 'EXPERT';
+    const ratePerMinute = activeConsultation.cost / activeConsultation.durationInMinutes;
+    
+    const timer = setInterval(() => {
+      setSeconds(prev => {
+        const next = prev + 1;
+        if (next % 60 === 0 && ratePerMinute > 0) {
+          setBilledAmount(b => b + ratePerMinute);
+        }
+        return next;
+      });
+      
+      // Auto disconnect logic: If no message from expert for 1 minute (60 seconds)
+      // Only the user checks this to end it automatically? Or both?
+      // Let's have the user trigger the end if the expert hasn't replied for 1 minute.
+      if (!isExpert && lastMessageTime) {
+         const idleTime = (Date.now() - lastMessageTime) / 1000;
+         if (idleTime > 60) {
+            handleEndConsultation(true);
+         }
+      }
+      
+      // Auto disconnect if max duration reached
+      if (seconds >= activeConsultation.durationInMinutes * 60) {
+         handleEndConsultation(false);
+      }
+      
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [activeConsultation, seconds, lastMessageTime, user]);
+
+  const handleEndConsultation = async (autoDisconnected = false) => {
+    if (!activeConsultation) return;
+    try {
+      const token = localStorage.getItem('token');
+      // Use exact fractional minutes for per-second billing accuracy
+      const actualDuration = Number((seconds / 60).toFixed(2)) || 0.01;
+      await axios.post(`http://localhost:5000/api/bookings/${activeConsultation._id}/end`, { actualDuration }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setActiveConsultation(null);
+      alert(autoDisconnected ? "Session ended automatically due to inactivity or time limit." : "Session ended.");
+    } catch (err) {
+      console.error("Error ending consultation", err);
+    }
+  };
+
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -104,11 +205,12 @@ function Messages() {
 
     socket.emit('send_message', messageData);
     setInputText('');
+    setLastMessageTime(Date.now()); // Update my own last message time too, so we don't disconnect while actively typing/sending
   };
 
   const getOtherParticipant = (conv) => {
     if (!conv || !conv.participants) return null;
-    return conv.participants.find(p => p.user?._id !== user._id)?.user || null;
+    return conv.participants.find(p => p.participantId?._id !== user._id)?.participantId || null;
   };
 
   return (
@@ -195,7 +297,25 @@ function Messages() {
                   <p className="text-xs text-green-500 font-medium">Online</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                {activeConsultation && (
+                  <div className="flex items-center gap-2 mr-4 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
+                    <span className="text-sm font-bold text-blue-700">
+                      {Math.floor(seconds / 60).toString().padStart(2, '0')}:{(seconds % 60).toString().padStart(2, '0')}
+                    </span>
+                    {user?.role !== 'EXPERT' && (
+                       <span className="text-xs font-semibold text-blue-500 bg-white px-2 py-0.5 rounded shadow-sm">
+                         ₹{billedAmount.toFixed(2)}
+                       </span>
+                    )}
+                    <button 
+                      onClick={() => handleEndConsultation(false)}
+                      className="ml-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded"
+                    >
+                      End Chat
+                    </button>
+                  </div>
+                )}
                 <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"><Phone size={18} /></button>
                 <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"><Video size={18} /></button>
                 <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"><MoreVertical size={18} /></button>
@@ -210,11 +330,11 @@ function Messages() {
                 return (
                   <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] ${isMe ? 'order-1' : 'order-2'}`}>
-                      <div className={`px-4 py-2.5 rounded-2xl shadow-sm ${
+                      <div className={`px-4 py-2.5 rounded-2xl shadow-sm ${Number(
                         isMe 
                           ? 'bg-blue-600 text-white rounded-tr-sm' 
                           : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm'
-                      }`}>
+                      ).toFixed(2)}`}>
                         <p className="text-sm">{msg.text}</p>
                       </div>
                       <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -222,7 +342,9 @@ function Messages() {
                           {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </span>
                         {isMe && (
-                          msg.isRead ? <CheckCheck size={12} className="text-blue-500" /> : <Check size={12} className="text-slate-300" />
+                          msg.status === 'READ' ? <CheckCheck size={14} className="text-blue-500" /> :
+                          msg.status === 'DELIVERED' ? <CheckCheck size={14} className="text-slate-400" /> :
+                          <Check size={14} className="text-slate-400" />
                         )}
                       </div>
                     </div>

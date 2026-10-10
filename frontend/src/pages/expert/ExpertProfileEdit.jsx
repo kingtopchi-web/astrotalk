@@ -15,6 +15,7 @@ function ExpertProfileEdit() {
     name: '', mobile: '', specialty: '', qualification: '',
     specialization: '', experience: '', bio: '',
     categoryId: '', subCategoryId: '',
+    profileImage: '',
     rates: { chat: 0, audio: 0, video: 0 }
   });
 
@@ -24,8 +25,8 @@ function ExpertProfileEdit() {
     const init = async () => {
       try {
         const [profileRes, catRes] = await Promise.all([
-          axios.get('https://astrotalk-hlg2.onrender.com/api/expert/profile', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('https://astrotalk-hlg2.onrender.com/api/categories')
+          axios.get('http://localhost:5000/api/expert/profile', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('http://localhost:5000/api/categories')
         ]);
         const p = profileRes.data;
         setForm({
@@ -38,13 +39,14 @@ function ExpertProfileEdit() {
           bio: p.bio || '',
           categoryId: p.categoryId?._id || p.categoryId || '',
           subCategoryId: p.subCategoryId?._id || p.subCategoryId || '',
+          profileImage: p.profileImage || '',
           rates: { chat: p.rates?.chat || 0, audio: p.rates?.audio || 0, video: p.rates?.video || 0 }
         });
         setCategories(catRes.data);
 
         if (p.categoryId) {
           const catId = p.categoryId?._id || p.categoryId;
-          const subRes = await axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${catId}/subcategories`);
+          const subRes = await axios.get(`http://localhost:5000/api/categories/${catId}/subcategories`);
           setSubCategories(subRes.data);
         }
       } catch (err) {
@@ -61,11 +63,22 @@ function ExpertProfileEdit() {
     setForm(f => ({ ...f, categoryId: catId, subCategoryId: '' }));
     if (catId) {
       try {
-        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${catId}/subcategories`);
+        const res = await axios.get(`http://localhost:5000/api/categories/${catId}/subcategories`);
         setSubCategories(res.data);
       } catch (e) { setSubCategories([]); }
     } else {
       setSubCategories([]);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm(f => ({ ...f, profileImage: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -79,7 +92,7 @@ function ExpertProfileEdit() {
       if (!payload.categoryId) delete payload.categoryId;
       if (!payload.subCategoryId) delete payload.subCategoryId;
       
-      await axios.patch('https://astrotalk-hlg2.onrender.com/api/expert/profile', payload, {
+      await axios.patch('http://localhost:5000/api/expert/profile', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Profile updated successfully!');
@@ -135,6 +148,25 @@ function ExpertProfileEdit() {
               <span className="material-symbols-outlined text-primary">person</span>
               Account Information
             </h2>
+
+            <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
+              <div className="relative">
+                <img
+                  src={form.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(form.name || 'Expert')}&background=F97316&color=fff`}
+                  alt="Profile"
+                  className="w-24 h-24 rounded-full object-cover border-4 border-surface shadow-md"
+                />
+                <label className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-background rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                </label>
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="font-bold text-on-surface">Profile Picture</h3>
+                <p className="text-sm text-on-surface/60">Upload a professional photo to build trust with clients.</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-on-surface">Full Name</label>

@@ -13,7 +13,7 @@ function ExpertProfile() {
   useEffect(() => {
     const fetchExpert = async () => {
       try {
-        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/experts/${id}`);
+        const res = await axios.get(`http://localhost:5000/api/experts/${id}`);
         setExpert(res.data);
         setLoading(false);
       } catch (err) {
@@ -214,7 +214,7 @@ function ExpertProfile() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-extrabold text-primary block">₹{rates.chat}</span>
+                      <span className="font-extrabold text-primary block">₹{Number(rates.chat).toFixed(2)}</span>
                       <span className="text-[10px] text-on-surface-variant uppercase font-semibold">/ min</span>
                     </div>
                   </button>
@@ -233,7 +233,7 @@ function ExpertProfile() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-extrabold text-primary block">₹{rates.audio}</span>
+                      <span className="font-extrabold text-primary block">₹{Number(rates.audio).toFixed(2)}</span>
                       <span className="text-[10px] text-on-surface-variant uppercase font-semibold">/ min</span>
                     </div>
                   </button>
@@ -252,7 +252,7 @@ function ExpertProfile() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-extrabold block">₹{rates.video}</span>
+                      <span className="font-extrabold block">₹{Number(rates.video).toFixed(2)}</span>
                       <span className="text-[10px] opacity-90 uppercase font-semibold">/ min</span>
                     </div>
                   </button>
@@ -281,7 +281,7 @@ function ExpertProfile() {
         <div>
           <div className="text-xs text-on-surface-variant font-semibold">Starting from</div>
           <div className="font-heading font-extrabold text-lg text-primary">
-            ₹{Math.min(...Object.values(rates).filter(v => v > 0) || [0])} <span className="text-xs font-normal text-on-surface-variant">/ min</span>
+            ₹{Number(Math.min(...Object.values(rates).filter(v => v > 0) || [0])).toFixed(2)} <span className="text-xs font-normal text-on-surface-variant">/ min</span>
           </div>
         </div>
         <button 

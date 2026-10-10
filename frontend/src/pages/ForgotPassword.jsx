@@ -14,7 +14,7 @@ export default function ForgotPassword() {
     setError('');
     
     try {
-      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/auth/user/forgotpassword', {
+      const response = await fetch('http://localhost:5000/api/auth/user/forgotpassword', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

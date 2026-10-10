@@ -13,7 +13,14 @@ function Bookings() {
   const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') || 'upcoming';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const tab = queryParams.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [allBookings, setAllBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +28,7 @@ function Bookings() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await fetch('https://astrotalk-hlg2.onrender.com/api/bookings/my-bookings', {
+        const response = await fetch('http://localhost:5000/api/bookings/my-bookings', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -74,7 +81,7 @@ function Bookings() {
   return (
     <UserLayout title="My Bookings" subtitle="View and manage your consultation sessions.">
       <div className="flex flex-col sm:flex-row sm:items-center justify-end mb-8 gap-4">
-              <Link to="/experts" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm inline-flex items-center justify-center">
+              <Link to="/experts" className="bg-primary hover:bg-primary-light text-background px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm inline-flex items-center justify-center">
                 Find New Expert
               </Link>
             </div>
@@ -82,13 +89,13 @@ function Bookings() {
             {/* Tabs */}
             <div className="flex bg-slate-200/50 rounded-lg p-1 mb-8 max-w-sm">
               <button 
-                className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'upcoming' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'upcoming' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface/60 hover:text-on-surface'}`}
                 onClick={() => setActiveTab('upcoming')}
               >
                 Upcoming
               </button>
               <button 
-                className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'past' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'past' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface/60 hover:text-on-surface'}`}
                 onClick={() => setActiveTab('past')}
               >
                 Past
@@ -98,29 +105,29 @@ function Bookings() {
             {/* Bookings List */}
             <div className="flex flex-col gap-4">
               {bookings.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Calendar size={32} className="text-slate-400" />
+                <div className="bg-surface rounded-2xl border border-border-color p-12 text-center shadow-sm">
+                  <div className="w-16 h-16 bg-surface-light rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Calendar size={32} className="text-on-surface/50" />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900">No {activeTab} bookings</h3>
-                  <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                  <h3 className="text-lg font-bold text-on-surface">No {activeTab} bookings</h3>
+                  <p className="text-sm text-on-surface/60 mt-1 max-w-sm mx-auto">
                     You don't have any {activeTab} consultation sessions at the moment.
                   </p>
                 </div>
               ) : (
                 bookings.map(booking => (
-                  <div key={booking.id} className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200 hover:border-blue-200 transition-colors">
+                  <div key={booking.id} className="bg-surface rounded-2xl p-5 md:p-6 shadow-sm border border-border-color hover:border-blue-200 transition-colors">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       
                       <div className="flex items-start gap-4">
                         <img 
                           src={`https://ui-avatars.com/api/?name=${encodeURIComponent(booking.expertName)}&background=f8fafc&color=334155`}
                           alt={booking.expertName}
-                          className="w-12 h-12 rounded-xl border border-slate-200"
+                          className="w-12 h-12 rounded-xl border border-border-color"
                         />
                         <div>
-                          <h3 className="font-bold text-slate-900 text-lg">{booking.expertName}</h3>
-                          <div className="flex items-center text-sm font-medium text-slate-500 mt-1 gap-3">
+                          <h3 className="font-bold text-on-surface text-lg">{booking.expertName}</h3>
+                          <div className="flex items-center text-sm font-medium text-on-surface/60 mt-1 gap-3">
                             <div className="flex items-center gap-1.5">
                               <Calendar size={14} />
                               {booking.date}
@@ -133,25 +140,25 @@ function Bookings() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between md:flex-col md:items-end gap-3 md:gap-2 pt-4 md:pt-0 border-t border-slate-100 md:border-0 mt-2 md:mt-0">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                      <div className="flex items-center justify-between md:flex-col md:items-end gap-3 md:gap-2 pt-4 md:pt-0 border-t border-border-color md:border-0 mt-2 md:mt-0">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${Number(
                           booking.status === 'Confirmed' ? 'bg-green-100 text-green-700' : 
-                          booking.status === 'Completed' ? 'bg-slate-100 text-slate-700' :
+                          booking.status === 'Completed' ? 'bg-surface-light text-on-surface' :
                           'bg-amber-100 text-amber-700'
-                        }`}>
+                        ).toFixed(2)}`}>
                           {booking.status}
                         </span>
                         
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-bold text-slate-600 flex items-center gap-1.5">
+                          <span className="text-sm font-bold text-on-surface/80 flex items-center gap-1.5">
                             {booking.type === 'Video' ? <Video size={16} className="text-blue-500" /> : <Phone size={16} className="text-blue-500" />}
                             {booking.type}
                           </span>
 
-                          <span className="text-sm font-bold text-slate-800 ml-2">₹{booking.cost}</span>
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded ml-2 ${
+                          <span className="text-sm font-bold text-on-surface ml-2">₹{Number(booking.cost).toFixed(2)}</span>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded ml-2 ${Number(
                             booking.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                          }`}>
+                          ).toFixed(2)}`}>
                             {booking.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
                           </span>
                           
@@ -166,7 +173,7 @@ function Bookings() {
                               </Link>
                               <Link 
                                 to={booking.meetingLink || `/live/${booking.id}?type=video`} 
-                                className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1 shadow-sm transition-all"
+                                className="bg-orange-500 hover:bg-orange-600 text-background text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1 shadow-sm transition-all"
                               >
                                 <Video size={14} />
                                 <span>Video</span>

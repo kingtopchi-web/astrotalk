@@ -121,6 +121,12 @@ exports.addReply = async (req, res) => {
 
     await ticket.save();
 
+    const io = req.app.get('io');
+    if (io) {
+      // Notify the user who created the ticket dynamically
+      io.to(`user_${ticket.user}`).emit('receive_ticket_reply', { ticketId: ticket._id, reply });
+    }
+
     res.status(201).json({ message: 'Reply added successfully', reply });
   } catch (error) {
     res.status(500).json({ message: 'Error adding reply', error: error.message });

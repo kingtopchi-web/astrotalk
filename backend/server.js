@@ -2,9 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const path = require('path');
 const expertRoutes = require('./routes/expertRoutes');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
@@ -39,6 +40,8 @@ app.use('/api/support', supportRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/expert-services', expertServiceRoutes);
 app.use('/api/video', videoRoutes);
+const publicRoutes = require('./routes/publicRoutes');
+app.use('/api/public', publicRoutes);
 
 // Public category endpoints (no auth needed for registration forms)
 const Category = require('./models/Category');
@@ -115,13 +118,42 @@ io.on('connection', (socket) => {
       const Message = require('./models/Message');
       const Conversation = require('./models/Conversation');
       
+      const conversation = await Conversation.findById(data.conversationId);
+      if (!conversation) return;
+
+      let status = 'SENT';
+      
+      // Find recipient
+      const recipient = conversation.participants.find(p => p.participantId.toString() !== data.senderId);
+      if (recipient) {
+        const recipientId = recipient.participantId.toString();
+        
+        // Get all socket IDs for recipient
+        const recipientSockets = io.sockets.adapter.rooms.get(`user_${recipientId}`);
+        if (recipientSockets && recipientSockets.size > 0) {
+          status = 'DELIVERED'; // At least they are online
+          
+          // Check if any of these sockets are also in the conversation room
+          const conversationSockets = io.sockets.adapter.rooms.get(`conversation_${data.conversationId}`);
+          if (conversationSockets) {
+            for (const socketId of recipientSockets) {
+              if (conversationSockets.has(socketId)) {
+                status = 'READ';
+                break;
+              }
+            }
+          }
+        }
+      }
+
       const message = new Message({
         conversationId: data.conversationId,
         sender: data.senderId,
         senderModel: data.senderModel || 'User',
         text: data.text,
         fileUrl: data.fileUrl,
-        messageType: data.fileUrl ? 'file' : 'text'
+        messageType: data.fileUrl ? 'file' : 'text',
+        status: status
       });
       await message.save();
 

@@ -49,7 +49,6 @@ const buildNav = (stats = {}) => [
     icon: MessageSquare,
     items: [
       { name: 'Support Tickets', path: '/messages', icon: MessageSquare },
-      { name: 'Video Sessions', path: '/video-sessions', icon: Video },
       { name: 'Notifications', path: '/notifications', icon: Bell },
     ],
   },
@@ -57,9 +56,7 @@ const buildNav = (stats = {}) => [
     section: 'FINANCE',
     icon: CreditCard,
     items: [
-      { name: 'Payments', path: '/payments', icon: CreditCard },
       { name: 'Transactions', path: '/transactions', icon: ArrowLeftRight },
-      { name: 'Refunds', path: '/refunds', icon: RefreshCw },
       { name: 'Revenue', path: '/revenue', icon: TrendingUp },
     ],
   },
@@ -114,10 +111,10 @@ const NavItem = ({ item, collapsed, onClick }) => {
       onClick={onClick}
       title={collapsed ? item.name : undefined}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-sm font-medium group relative
-        ${isActive
+        ${Number(isActive
           ? 'bg-blue-50 text-blue-700 font-semibold'
           : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-        } ${collapsed ? 'justify-center' : ''}`}
+        ).toFixed(2)} ${collapsed ? 'justify-center' : ''}`}
     >
       <span className={`shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
         <Icon size={16} />
@@ -163,11 +160,11 @@ const SidebarSectionDropdown = ({
       <div className="relative group my-1">
         <button
           title={section}
-          className={`w-10 h-10 mx-auto flex items-center justify-center rounded-lg transition-colors relative ${
+          className={`w-10 h-10 mx-auto flex items-center justify-center rounded-lg transition-colors relative ${Number(
             hasActiveChild
               ? 'bg-blue-50 text-blue-600 font-semibold'
               : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-          }`}
+          ).toFixed(2)}`}
         >
           <SectionIcon size={18} />
           {badge !== undefined && (
@@ -198,18 +195,18 @@ const SidebarSectionDropdown = ({
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-150 select-none group ${
+        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-150 select-none group ${Number(
           hasActiveChild
             ? 'text-blue-700 bg-blue-50/70'
             : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/70'
-        }`}
+        ).toFixed(2)}`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <SectionIcon
             size={16}
-            className={`shrink-0 transition-colors ${
+            className={`shrink-0 transition-colors ${Number(
               hasActiveChild ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-            }`}
+            ).toFixed(2)}`}
           />
           <span className="truncate text-[11px]">{section}</span>
         </div>
@@ -218,9 +215,9 @@ const SidebarSectionDropdown = ({
           {badge !== undefined && <Badge count={badge} color={badgeColor || 'blue'} />}
           <ChevronDown
             size={14}
-            className={`text-slate-400 transition-transform duration-200 group-hover:text-slate-600 ${
+            className={`text-slate-400 transition-transform duration-200 group-hover:text-slate-600 ${Number(
               isOpen ? 'rotate-180 text-blue-600' : ''
-            }`}
+            ).toFixed(2)}`}
           />
         </div>
       </button>

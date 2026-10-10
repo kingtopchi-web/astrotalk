@@ -266,19 +266,19 @@ function AdminDashboard() {
                     <td className="px-4 py-3 text-slate-600">{expert.email}</td>
                     <td className="px-4 py-3 text-slate-600">{expert.categoryId?.name || 'N/A'}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${Number(
                         expert.verificationStatus === 'APPROVED' ? 'bg-green-100 text-green-700 border border-green-200' : 
                         expert.verificationStatus === 'PENDING' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
                         'bg-red-100 text-red-700 border border-red-200'
-                      }`}>
+                      ).toFixed(2)}`}>
                         {expert.verificationStatus}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${Number(
                         expert.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 
                         'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}>
+                      ).toFixed(2)}`}>
                         {expert.status}
                       </span>
                     </td>

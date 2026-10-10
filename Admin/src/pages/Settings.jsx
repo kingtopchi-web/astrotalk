@@ -10,47 +10,53 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Settings state initialized from localStorage or defaults
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem('stitch_admin_settings');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* fallback */ }
-    }
-    return {
-      // General
-      platformName: 'Stitch Consultation Marketplace',
-      supportEmail: 'support@stitchplatform.com',
-      contactPhone: '+91 98765 43210',
-      currency: 'INR',
-      timezone: 'Asia/Kolkata (IST)',
-      address: 'Plot 42, Tech Park, Bengaluru, Karnataka, India',
-      
-      // Consultation & Commission
-      platformCommissionRate: '15',
-      minimumConsultationDuration: '15',
-      cancellationWindowHours: '2',
-      autoApproveExperts: false,
-      enableInstantBooking: true,
-      
-      // Security
-      sessionTimeoutMinutes: '60',
-      requireEmailVerification: true,
-      twoFactorAdmin: false,
-      maxLoginAttempts: '5',
-      
-      // Notifications
-      emailNewBookings: true,
-      emailExpertApplications: true,
-      smsSessionReminders: true,
-      adminAlertWeeklyDigest: true,
-      
-      // Payments
-      paymentGateway: 'Razorpay',
-      gatewayMode: 'test',
-      payoutCycle: 'weekly',
-      minPayoutAmount: '1000',
-    };
+  const [formData, setFormData] = useState({
+    // General
+    platformName: 'Stitch Consultation Marketplace',
+    supportEmail: 'support@stitchplatform.com',
+    contactPhone: '+91 98765 43210',
+    currency: 'INR',
+    timezone: 'Asia/Kolkata (IST)',
+    address: 'Plot 42, Tech Park, Bengaluru, Karnataka, India',
+    
+    // Consultation & Commission
+    platformCommissionRate: '20',
+    minimumConsultationDuration: '15',
+    cancellationWindowHours: '2',
+    autoApproveExperts: false,
+    enableInstantBooking: true,
+    
+    // Security
+    sessionTimeoutMinutes: '60',
+    requireEmailVerification: true,
+    twoFactorAdmin: false,
+    maxLoginAttempts: '5',
+    
+    // Notifications
+    emailNewBookings: true,
+    emailExpertApplications: true,
+    smsSessionReminders: true,
+    adminAlertWeeklyDigest: true,
   });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('http://localhost:5000/api/admin/settings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFormData(prev => ({ ...prev, ...data }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -61,15 +67,28 @@ export default function Settings() {
     setSaveSuccess(false);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setTimeout(() => {
-      localStorage.setItem('stitch_admin_settings', JSON.stringify(formData));
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('http://localhost:5000/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 4000);
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    } finally {
       setSaving(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
-    }, 600);
+    }
   };
 
   const tabs = [
@@ -77,7 +96,6 @@ export default function Settings() {
     { id: 'consultation', label: 'Consultations & Rates', icon: Percent },
     { id: 'security', label: 'Security & Access', icon: Shield },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'payments', label: 'Payment Gateway', icon: CreditCard },
   ];
 
   return (
@@ -131,11 +149,11 @@ export default function Settings() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${Number(
                   isActive
                     ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                ).toFixed(2)}`}
               >
                 <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
                 <span>{tab.label}</span>
@@ -244,7 +262,7 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Platform Commission Rate (%)
+                    Platform Fee (%)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -437,76 +455,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* 5. PAYMENTS TAB */}
-          {activeTab === 'payments' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Payment Gateway & Payouts</h2>
-                <p className="text-sm text-slate-500">Manage transaction processors and expert payout thresholds.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Primary Gateway
-                  </label>
-                  <select
-                    name="paymentGateway"
-                    value={formData.paymentGateway}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="Razorpay">Razorpay (Cards, UPI, Netbanking)</option>
-                    <option value="Stripe">Stripe (International Credit/Debit)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Environment Mode
-                  </label>
-                  <select
-                    name="gatewayMode"
-                    value={formData.gatewayMode}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="test">Test / Sandbox Mode</option>
-                    <option value="live">Live / Production Mode</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Expert Payout Schedule
-                  </label>
-                  <select
-                    name="payoutCycle"
-                    value={formData.payoutCycle}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="daily">Daily Settlements</option>
-                    <option value="weekly">Weekly Settlements (Recommended)</option>
-                    <option value="monthly">Monthly Settlements</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Minimum Payout Threshold (₹)
-                  </label>
-                  <input
-                    type="number"
-                    name="minPayoutAmount"
-                    value={formData.minPayoutAmount}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -14,7 +14,10 @@ import {
   Globe,
   Award,
   BookOpen,
-  Briefcase
+  Briefcase,
+  Video,
+  Phone,
+  X
 } from 'lucide-react';
 
 function ExpertPublicProfile() {
@@ -26,6 +29,106 @@ function ExpertPublicProfile() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('Services');
 
+  // Call Modal State
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [callType, setCallType] = useState('video');
+  const [callMinutes, setCallMinutes] = useState(15);
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  const openCallModal = (type) => {
+    setCallType(type);
+    setCallMinutes(15);
+    setShowCallModal(true);
+  };
+
+
+
+  const calculateCallPrice = () => {
+    if (!expert) return 0;
+    let rate = 50;
+    if (callType === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
+    if (callType === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
+    if (callType === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
+    return rate * callMinutes;
+  };
+
+  const handleCallPayment = async () => {
+    try {
+      setProcessingPayment(true);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const orderRes = await axios.post(
+        'http://localhost:5000/api/wallet/create-call-order',
+        { expertId: id, minutes: callMinutes, type: callType },
+        { headers }
+      );
+      
+      const orderData = orderRes.data;
+      
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'ExpertHub',
+        description: `Payment for ${callMinutes} mins ${callType} call`,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await axios.post(
+              'http://localhost:5000/api/wallet/verify-call-payment',
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                expertId: id,
+                amount: orderData.amount / 100, // Convert back to INR
+                type: callType,
+                minutes: callMinutes
+              },
+              { headers }
+            );
+            
+            if (verifyRes.data.success) {
+              alert('Payment successful!');
+              setShowCallModal(false);
+              if (callType === 'chat') {
+                axios.post(
+                  'http://localhost:5000/api/messages/conversations',
+                  { expertId: id },
+                  { headers }
+                ).then(() => {
+                  navigate('/messages');
+                }).catch(err => {
+                  console.error(err);
+                  navigate('/messages');
+                });
+              } else {
+                navigate(`/live/${verifyRes.data.consultationId}?type=${callType}`);
+              }
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Payment verification failed.');
+          }
+        },
+        theme: { color: '#2563eb' }
+      };
+      
+      if (!window.Razorpay) throw new Error('Razorpay SDK not loaded');
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', () => alert('Payment Failed'));
+      rzp.open();
+      
+    } catch (err) {
+      console.error(err);
+      alert('Failed to initiate payment');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+
   useEffect(() => {
     const fetchExpertAndServices = async () => {
       try {
@@ -33,8 +136,8 @@ function ExpertPublicProfile() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         const [expertRes, servicesRes] = await Promise.all([
-          axios.get(`https://astrotalk-hlg2.onrender.com/api/user/experts/${id}`, { headers }),
-          axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`)
+          axios.get(`http://localhost:5000/api/user/experts/${id}`, { headers }),
+          axios.get(`http://localhost:5000/api/expert-services/public/${id}`)
         ]);
 
         setExpert(expertRes.data);
@@ -172,7 +275,7 @@ function ExpertPublicProfile() {
               </div>
               <div>
                 <p className="text-xl font-extrabold text-slate-900">{services.length} <span className="text-sm font-medium text-slate-500">Active Services</span></p>
-                {services.length > 0 && <p className="text-xs font-medium text-slate-400">Starting from ₹{Math.min(...services.map(s => s.price))}</p>}
+                {services.length > 0 && <p className="text-xs font-medium text-slate-400">Starting from ₹{Number(Math.min(...services.map(s => s.price))).toFixed(2)}</p>}
               </div>
             </div>
             
@@ -181,18 +284,35 @@ function ExpertPublicProfile() {
                 setActiveTab('Services');
                 window.scrollTo({ top: 500, behavior: 'smooth' });
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mb-3"
+              className="w-full bg-white hover:bg-slate-50 text-blue-600 border border-blue-200 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mb-3"
             >
               <CalendarIcon size={18} />
-              View & Book Services
+              Book Service
             </button>
+
             <button 
-              className="w-full bg-white hover:bg-slate-50 text-blue-600 border border-blue-200 font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 mb-6"
+              onClick={() => openCallModal('video')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mb-3"
             >
-              <MessageSquare size={18} />
-              Send Message
+              <Video size={18} />
+              Video Call Now
+            </button>
+
+            <button 
+              onClick={() => openCallModal('audio')}
+              className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 mb-3"
+            >
+              <Phone size={18} />
+              Audio Call Now
             </button>
             
+            <button 
+              onClick={() => openCallModal('chat')}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 mb-6"
+            >
+              <MessageSquare size={18} />
+              Chat Now
+            </button>
             <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-bold text-green-600">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               Available today, 10:00 AM - 06:00 PM
@@ -212,11 +332,11 @@ function ExpertPublicProfile() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`text-sm font-bold whitespace-nowrap pb-3 border-b-2 transition-colors ${
+                  className={`text-sm font-bold whitespace-nowrap pb-3 border-b-2 transition-colors ${Number(
                     activeTab === tab 
                       ? 'border-blue-600 text-blue-600' 
                       : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                  ).toFixed(2)}`}
                 >
                   {tab}
                 </button>
@@ -248,7 +368,7 @@ function ExpertPublicProfile() {
                         </div>
                       </div>
                       <div className="flex flex-col items-center justify-center md:border-l border-slate-100 md:pl-6 shrink-0">
-                        <p className="text-2xl font-extrabold text-slate-900 mb-4">₹{service.price}</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-4">₹{Number(service.price).toFixed(2)}</p>
                         <button 
                           onClick={() => navigate(`/book/${id}?serviceId=${service._id}`)}
                           className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors whitespace-nowrap"
@@ -381,6 +501,54 @@ function ExpertPublicProfile() {
         </div>
 
       </main>
+
+      {/* Call Modal */}
+      {showCallModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                {callType === 'video' ? <Video size={20} className="text-blue-600"/> : callType === 'audio' ? <Phone size={20} className="text-blue-600"/> : <MessageSquare size={20} className="text-blue-600"/>}
+                Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} Session
+              </h3>
+              <button onClick={() => setShowCallModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">How many minutes do you want to talk?</label>
+                <div className="flex items-center justify-between border border-slate-200 rounded-xl overflow-hidden">
+                  <button 
+                    onClick={() => setCallMinutes(Math.max(5, callMinutes - 5))}
+                    className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold border-r border-slate-200"
+                  >-</button>
+                  <div className="flex-1 text-center font-extrabold text-xl">{callMinutes} mins</div>
+                  <button 
+                    onClick={() => setCallMinutes(callMinutes + 5)}
+                    className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold border-l border-slate-200"
+                  >+</button>
+                </div>
+                <p className="text-xs text-slate-500 mt-2 text-center">Expert Rate: ₹{Number(calculateCallPrice() / callMinutes).toFixed(2)} / min</p>
+              </div>
+              
+              <div className="bg-blue-50 rounded-xl p-4 flex items-center justify-between mb-6 border border-blue-100">
+                <span className="font-bold text-slate-700">Total Amount</span>
+                <span className="text-2xl font-extrabold text-blue-700">₹{Number(calculateCallPrice()).toFixed(2)}</span>
+              </div>
+              
+              <button 
+                onClick={handleCallPayment}
+                disabled={processingPayment}
+                className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {processingPayment ? 'Processing...' : `Pay ₹${calculateCallPrice()} & Start ${callType === 'chat' ? 'Chat' : 'Call'}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

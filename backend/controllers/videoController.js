@@ -184,16 +184,8 @@ exports.endSession = async (req, res) => {
     }
     await session.save();
 
-    const consultation = await Consultation.findById(consultationId);
-    if (consultation) {
-      consultation.status = 'completed';
-      // Calculate earnings (if not already done)
-      if (consultation.cost && consultation.cost > 0) {
-        consultation.expertEarning = consultation.cost * 0.8; // 80% to expert
-        consultation.platformFee = consultation.cost * 0.2;
-      }
-      await consultation.save();
-    }
+    // The consultation status update and pro-rata billing is handled by 
+    // POST /api/bookings/:id/end route now. We do not update Consultation here.
 
     const io = req.app.get('io');
     if (io) {

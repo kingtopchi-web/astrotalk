@@ -17,7 +17,7 @@ function ExpertEarnings() {
   const fetchEarnings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert/earnings', {
+      const res = await axios.get('http://localhost:5000/api/expert/earnings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEarnings(res.data);
@@ -31,7 +31,7 @@ function ExpertEarnings() {
   const handleRequestPayout = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://astrotalk-hlg2.onrender.com/api/expert/payouts/request', {}, {
+      await axios.post('http://localhost:5000/api/expert/payouts/request', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Payout request submitted successfully!');
@@ -60,7 +60,7 @@ function ExpertEarnings() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-500 mb-1">Total Earnings</p>
-              <p className="text-3xl font-extrabold text-slate-900">₹{earnings.totalEarnings}</p>
+              <p className="text-3xl font-extrabold text-slate-900">₹{Number(earnings.totalEarnings).toFixed(2)}</p>
             </div>
             <div className="bg-green-50 p-3 rounded-xl text-green-600">
               <TrendingUp size={24} />
@@ -75,7 +75,7 @@ function ExpertEarnings() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-500 mb-1">Available for Payout</p>
-              <p className="text-3xl font-extrabold text-slate-900">₹{earnings.availablePayout}</p>
+              <p className="text-3xl font-extrabold text-slate-900">₹{Number(earnings.availablePayout).toFixed(2)}</p>
             </div>
             <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
               <DollarSign size={24} />
@@ -121,26 +121,26 @@ function ExpertEarnings() {
                       {new Date(item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </td>
                     <td className="py-4 px-6 text-sm font-medium text-slate-900">
-                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${Number(
                         item.type === 'EARNING' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                      }`}>
+                      ).toFixed(2)}`}>
                         {item.type}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-sm text-slate-600">
                       {item.description}
                     </td>
-                    <td className={`py-4 px-6 text-sm font-bold text-right ${
+                    <td className={`py-4 px-6 text-sm font-bold text-right ${Number(
                       item.type === 'EARNING' ? 'text-green-600' : 'text-slate-900'
-                    }`}>
-                      {item.type === 'EARNING' ? '+' : '-'}₹{item.amount}
+                    ).toFixed(2)}`}>
+                      {item.type === 'EARNING' ? '+' : '-'}₹{Number(item.amount).toFixed(2)}
                     </td>
                     <td className="py-4 px-6 text-sm text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${Number(
                         item.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                         item.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-red-100 text-red-700'
-                      }`}>
+                      ).toFixed(2)}`}>
                         {item.status}
                       </span>
                     </td>

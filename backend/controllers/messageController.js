@@ -37,10 +37,20 @@ exports.getMessages = async (req, res) => {
     const messages = await Message.find({ conversationId }).sort({ createdAt: 1 });
     
     // Mark messages as read
-    await Message.updateMany(
-      { conversationId, sender: { $ne: req.user._id }, isRead: false },
-      { $set: { isRead: true } }
+    const result = await Message.updateMany(
+      { conversationId, sender: { $ne: req.user._id }, status: { $ne: 'READ' } },
+      { $set: { status: 'READ' } }
     );
+
+    if (result.modifiedCount > 0) {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`conversation_${conversationId}`).emit('messages_read', {
+          conversationId,
+          readBy: req.user._id
+        });
+      }
+    }
 
     res.json(messages);
   } catch (error) {

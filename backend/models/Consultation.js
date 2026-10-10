@@ -18,7 +18,7 @@ const consultationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['call', 'chat', 'video'],
+    enum: ['call', 'chat', 'video', 'audio'],
     required: true,
   },
   status: {

@@ -22,8 +22,8 @@ function WalletRecharge() {
       const headers = { Authorization: `Bearer ${token}` };
       
       const [balRes, txRes] = await Promise.all([
-        axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', { headers }),
-        axios.get('https://astrotalk-hlg2.onrender.com/api/wallet/transactions', { headers })
+        axios.get('http://localhost:5000/api/wallet', { headers }),
+        axios.get('http://localhost:5000/api/wallet/transactions', { headers })
       ]);
       
       setBalance(balRes.data.balance || 0);
@@ -55,7 +55,7 @@ function WalletRecharge() {
 
       // 1. Create Order
       const orderRes = await axios.post(
-        'https://astrotalk-hlg2.onrender.com/api/wallet/add-money',
+        'http://localhost:5000/api/wallet/add-money',
         { amount },
         { headers }
       );
@@ -74,7 +74,7 @@ function WalletRecharge() {
           try {
             // 3. Verify Payment
             const verifyRes = await axios.post(
-              'https://astrotalk-hlg2.onrender.com/api/wallet/verify-payment',
+              'http://localhost:5000/api/wallet/verify-payment',
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -123,8 +123,8 @@ function WalletRecharge() {
         {/* Top Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Balance Card */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-lg text-background relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-surface/10 rounded-full blur-2xl"></div>
             <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl"></div>
             
             <div className="relative z-10 flex flex-col h-full justify-between">
@@ -133,7 +133,7 @@ function WalletRecharge() {
                   <CreditCard size={24} className="text-blue-200" />
                   <span className="text-blue-100 font-medium">Available Balance</span>
                 </div>
-                <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold text-white backdrop-blur-md">Verified</span>
+                <span className="bg-surface/20 px-3 py-1 rounded-full text-xs font-bold text-background backdrop-blur-md">Verified</span>
               </div>
               <div>
                 <div className="text-5xl font-extrabold tracking-tight">₹{balance.toFixed(2)}</div>
@@ -143,10 +143,10 @@ function WalletRecharge() {
           </div>
 
           {/* Add Money Card */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="bg-surface rounded-2xl p-6 shadow-sm border border-border-color flex flex-col justify-between">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Add Money</h3>
-              <p className="text-sm text-slate-500 mb-4">Top up your wallet securely</p>
+              <h3 className="text-lg font-bold text-on-surface mb-1">Add Money</h3>
+              <p className="text-sm text-on-surface/60 mb-4">Top up your wallet securely</p>
               
               {error && <div className="text-red-500 text-sm mb-3 font-medium bg-red-50 p-2 rounded">{error}</div>}
 
@@ -156,21 +156,21 @@ function WalletRecharge() {
                     key={amt} 
                     onClick={() => handleAddMoney(amt)}
                     disabled={addingMoney}
-                    className="flex-1 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-100 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 border border-blue-100"
+                    className="flex-1 py-2 rounded-xl bg-primary/10 text-primary font-bold hover:bg-blue-100 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 border border-blue-100"
                   >
-                    +₹{amt}
+                    +₹{Number(amt).toFixed(2)}
                   </button>
                 ))}
               </div>
 
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/50 font-bold">₹</span>
                 <input 
                   type="number"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
                   placeholder="Enter custom amount"
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-medium text-slate-700"
+                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-medium text-on-surface"
                   disabled={addingMoney}
                 />
               </div>
@@ -179,7 +179,7 @@ function WalletRecharge() {
             <button 
               onClick={() => handleAddMoney(parseFloat(customAmount))}
               disabled={addingMoney || !customAmount}
-              className="w-full mt-4 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-4 bg-primary text-background font-bold py-3 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Plus size={18} />
               {addingMoney ? 'Processing...' : 'Proceed to Pay'}
@@ -188,16 +188,16 @@ function WalletRecharge() {
         </div>
 
         {/* Transaction History */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <div className="bg-surface rounded-2xl p-6 shadow-sm border border-border-color">
           <div className="flex items-center gap-2 mb-6">
-            <History size={20} className="text-slate-600" />
-            <h2 className="text-lg font-bold text-slate-800">Transaction History</h2>
+            <History size={20} className="text-on-surface/80" />
+            <h2 className="text-lg font-bold text-on-surface">Transaction History</h2>
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-slate-500">Loading transactions...</div>
+            <div className="text-center py-8 text-on-surface/60">Loading transactions...</div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 flex flex-col items-center">
+            <div className="text-center py-12 text-on-surface/50 flex flex-col items-center">
               <RefreshCcw size={32} className="mb-3 opacity-20" />
               <p>No transactions found</p>
             </div>
@@ -210,16 +210,16 @@ function WalletRecharge() {
                 const bgColor = tx.status === 'FAILED' ? 'bg-red-50' : isCredit ? 'bg-emerald-50' : 'bg-rose-50';
 
                 return (
-                  <div key={tx._id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <div key={tx._id} className="flex items-center justify-between p-4 rounded-xl border border-border-color hover:bg-surface-light transition-colors">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${bgColor}`}>
                         <Icon size={20} className={iconColor} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-800">
+                        <h4 className="text-sm font-bold text-on-surface">
                           {tx.type === 'CREDIT' ? 'Wallet Top-up' : tx.type === 'DEBIT' ? 'Consultation Booking' : 'Refund'}
                         </h4>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-on-surface/60 mt-0.5">
                           {new Date(tx.createdAt).toLocaleString()} 
                           {tx.status === 'FAILED' && <span className="text-red-500 ml-2 font-semibold">Failed</span>}
                           {tx.status === 'PENDING' && <span className="text-orange-500 ml-2 font-semibold">Pending</span>}
@@ -228,11 +228,11 @@ function WalletRecharge() {
                     </div>
                     <div className="text-right">
                       <div className={`text-base font-extrabold ${iconColor}`}>
-                        {isCredit ? '+' : '-'}₹{tx.amount}
+                        {isCredit ? '+' : '-'}₹{Number(tx.amount).toFixed(2)}
                       </div>
                       {tx.status === 'SUCCESS' && (
-                        <div className="text-xs text-slate-400 font-medium mt-0.5">
-                          Bal: ₹{tx.balanceAfter}
+                        <div className="text-xs text-on-surface/50 font-medium mt-0.5">
+                          Bal: ₹{Number(tx.balanceAfter).toFixed(2)}
                         </div>
                       )}
                     </div>

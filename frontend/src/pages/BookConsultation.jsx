@@ -31,17 +31,17 @@ function BookConsultation() {
       try {
         const promises = [];
         if (id) {
-          promises.push(axios.get(`https://astrotalk-hlg2.onrender.com/api/experts/${id}`));
+          promises.push(axios.get(`http://localhost:5000/api/experts/${id}`));
         }
         
         if (user && token) {
-          promises.push(axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+          promises.push(axios.get('http://localhost:5000/api/wallet', {
             headers: { Authorization: `Bearer ${token}` }
           }));
         }
 
         if (serviceId) {
-          promises.push(axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`));
+          promises.push(axios.get(`http://localhost:5000/api/expert-services/public/${id}`));
         }
 
         const results = await Promise.all(promises);
@@ -115,7 +115,7 @@ function BookConsultation() {
       };
 
       // 1. Create Consultation (Pending Status)
-      const bookingResponse = await axios.post('https://astrotalk-hlg2.onrender.com/api/bookings', bookingData, config);
+      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', bookingData, config);
       const consultation = bookingResponse.data;
 
       const basePrice = service ? service.price : (expert.rates?.video || expert.pricePerMinute || 500);
@@ -124,7 +124,7 @@ function BookConsultation() {
 
       // 2. Full Wallet Payment
       if (useWallet && walletBalance >= totalAmount) {
-        await axios.post('https://astrotalk-hlg2.onrender.com/api/wallet/pay-consultation', {
+        await axios.post('http://localhost:5000/api/wallet/pay-consultation', {
           consultationId: consultation._id
         }, config);
         
@@ -133,7 +133,7 @@ function BookConsultation() {
       }
 
       // 3. Create Razorpay Order securely from backend (Full or Partial)
-      const orderResponse = await axios.post('https://astrotalk-hlg2.onrender.com/api/payments/create-order', {
+      const orderResponse = await axios.post('http://localhost:5000/api/payments/create-order', {
         consultationId: consultation._id,
         useWallet: useWallet,
         amount: totalAmount // send amount in case backend needs it for verification or custom service price
@@ -159,7 +159,7 @@ function BookConsultation() {
         handler: async function (response) {
           try {
             // 5. Verify Payment on Backend
-            await axios.post('https://astrotalk-hlg2.onrender.com/api/payments/verify', {
+            await axios.post('http://localhost:5000/api/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
@@ -266,13 +266,13 @@ function BookConsultation() {
                 key={day.toISOString()}
                 disabled={isPast}
                 onClick={() => setSelectedDate(day)}
-                className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-semibold mx-auto transition-all ${
+                className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-semibold mx-auto transition-all ${Number(
                   isSelected 
                     ? 'bg-blue-600 text-white shadow-md' 
                     : isPast 
                       ? 'text-slate-300 cursor-not-allowed'
                       : 'text-slate-700 hover:bg-blue-50'
-                }`}
+                ).toFixed(2)}`}
               >
                 {day.getDate()}
               </button>
@@ -416,7 +416,7 @@ function BookConsultation() {
               </div>
               
               <div className="text-center md:text-right shrink-0 bg-slate-50 py-4 px-8 rounded-2xl border border-slate-100">
-                <p className="text-3xl font-extrabold text-slate-900 mb-1">₹{basePrice}</p>
+                <p className="text-3xl font-extrabold text-slate-900 mb-1">₹{Number(basePrice).toFixed(2)}</p>
                 <p className="text-xs font-semibold text-slate-500 mb-3">per session</p>
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
                   <ShieldCheck size={14} /> Verified Expert
@@ -452,11 +452,11 @@ function BookConsultation() {
                       <button
                         key={slot}
                         onClick={() => setSelectedTime(slot)}
-                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all border ${
+                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all border ${Number(
                           selectedTime === slot 
                             ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
                             : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
-                        }`}
+                        ).toFixed(2)}`}
                       >
                         {slot}
                       </button>
@@ -484,24 +484,24 @@ function BookConsultation() {
                     <div 
                       key={type.id}
                       onClick={() => setConsultationType(type.id)}
-                      className={`flex items-start p-4 rounded-2xl cursor-pointer transition-all border ${
+                      className={`flex items-start p-4 rounded-2xl cursor-pointer transition-all border ${Number(
                         consultationType === type.id 
                           ? 'border-blue-600 bg-blue-50/50 shadow-sm ring-1 ring-blue-600' 
                           : 'border-slate-200 bg-white hover:border-blue-300'
-                      }`}
+                      ).toFixed(2)}`}
                     >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mr-4 ${
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mr-4 ${Number(
                         consultationType === type.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
-                      }`}>
+                      ).toFixed(2)}`}>
                         <type.icon size={20} />
                       </div>
                       <div className="flex-1">
                         <h4 className={`text-sm font-bold mb-1 ${consultationType === type.id ? 'text-blue-900' : 'text-slate-900'}`}>{type.id}</h4>
                         <p className={`text-xs font-medium leading-relaxed ${consultationType === type.id ? 'text-blue-700' : 'text-slate-500'}`}>{type.desc}</p>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-2 ${
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-2 ${Number(
                         consultationType === type.id ? 'border-blue-600' : 'border-slate-300'
-                      }`}>
+                      ).toFixed(2)}`}>
                         {consultationType === type.id && <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>}
                       </div>
                     </div>
@@ -584,11 +584,11 @@ function BookConsultation() {
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-slate-500">Session Fee</span>
-                    <span className="text-sm font-bold text-slate-900">₹{basePrice}</span>
+                    <span className="text-sm font-bold text-slate-900">₹{Number(basePrice).toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-slate-500">Platform Fee (2%)</span>
-                    <span className="text-sm font-bold text-slate-900">₹{platformFee}</span>
+                    <span className="text-sm font-bold text-slate-900">₹{Number(platformFee).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -601,12 +601,12 @@ function BookConsultation() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900">Use Wallet Balance</p>
-                        <p className="text-xs font-medium text-slate-500">Available: ₹{walletBalance}</p>
+                        <p className="text-xs font-medium text-slate-500">Available: ₹{Number(walletBalance).toFixed(2)}</p>
                       </div>
                     </div>
                     {useWallet && (
                       <span className="text-sm font-bold text-emerald-600">
-                        -₹{Math.min(walletBalance, totalAmount)}
+                        -₹{Number(Math.min(walletBalance, totalAmount)).toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -615,7 +615,7 @@ function BookConsultation() {
                 <div className="flex items-center justify-between bg-blue-50/50 p-4 rounded-2xl border border-blue-100 mb-6">
                   <span className="text-base font-bold text-blue-900">To Pay</span>
                   <span className="text-xl font-extrabold text-blue-600">
-                    ₹{useWallet ? Math.max(0, totalAmount - walletBalance) : totalAmount}
+                    ₹{Number(useWallet ? Math.max(0, totalAmount - walletBalance) : totalAmount).toFixed(2)}
                   </span>
                 </div>
                 

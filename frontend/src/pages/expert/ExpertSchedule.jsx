@@ -36,7 +36,7 @@ function ExpertSchedule() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('https://astrotalk-hlg2.onrender.com/api/expert/profile', 
+      await axios.patch('http://localhost:5000/api/expert/profile', 
         { onlineStatus: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -59,7 +59,7 @@ function ExpertSchedule() {
     setSuccessMsg('');
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('https://astrotalk-hlg2.onrender.com/api/expert/profile', 
+      await axios.patch('http://localhost:5000/api/expert/profile', 
         { availability },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -87,11 +87,11 @@ function ExpertSchedule() {
           </div>
           <button 
             onClick={handleStatusToggle}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors ${Number(
               onlineStatus === 'online' 
                 ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+            ).toFixed(2)}`}
           >
             <div className={`w-2 h-2 rounded-full ${onlineStatus === 'online' ? 'bg-green-600' : 'bg-slate-400'}`}></div>
             {onlineStatus === 'online' ? 'Online' : 'Offline'}

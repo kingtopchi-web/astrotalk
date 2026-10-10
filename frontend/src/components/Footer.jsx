@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-300 relative pt-16">
+    <footer className="bg-black text-slate-300 relative pt-16">
       {/* Top subtle gradient line */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
       

@@ -14,7 +14,7 @@ function Experts() {
   useEffect(() => {
     const fetchExperts = async () => {
       try {
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/experts');
+        const res = await axios.get('http://localhost:5000/api/experts');
         setExperts(res.data);
         setLoading(false);
       } catch (err) {
@@ -70,11 +70,11 @@ function Experts() {
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
-                className={`snap-center shrink-0 px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap ${
+                className={`snap-center shrink-0 px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap ${Number(
                   activeCategory === category 
                     ? 'bg-primary text-white shadow-md' 
                     : 'bg-surface border border-border text-on-surface-variant hover:bg-surface-hover'
-                }`}
+                ).toFixed(2)}`}
               >
                 {category}
               </button>
@@ -157,7 +157,7 @@ function Experts() {
                 <div className="bg-surface/50 border-t border-border p-4 flex items-center justify-between">
                   <div className="flex flex-col">
                      <span className="text-[10px] text-on-surface-variant uppercase font-semibold">Starting at</span>
-                     <span className="font-extrabold text-on-surface">₹{expert.pricePerMinute || 0}<span className="text-xs font-normal text-on-surface-variant">/min</span></span>
+                     <span className="font-extrabold text-on-surface">₹{Number(expert.pricePerMinute || 0).toFixed(2)}<span className="text-xs font-normal text-on-surface-variant">/min</span></span>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                     <span className="material-symbols-outlined text-[20px]">arrow_forward</span>

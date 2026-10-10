@@ -5,6 +5,33 @@ const SubCategory = require('../models/SubCategory');
 const Admin = require('../models/Admin');
 const Consultation = require('../models/Consultation');
 const Payment = require('../models/Payment');
+const WalletTransaction = require('../models/WalletTransaction');
+const Setting = require('../models/Setting');
+
+exports.getSettings = async (req, res) => {
+  try {
+    let settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    if (!settings) {
+      settings = await Setting.create({ singletonKey: 'GLOBAL_SETTINGS' });
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching settings', error: error.message });
+  }
+};
+
+exports.updateSettings = async (req, res) => {
+  try {
+    const settings = await Setting.findOneAndUpdate(
+      { singletonKey: 'GLOBAL_SETTINGS' },
+      { $set: req.body },
+      { new: true, upsert: true }
+    );
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating settings', error: error.message });
+  }
+};
 
 exports.getAllPayments = async (req, res) => {
   try {
@@ -34,6 +61,80 @@ exports.getAllPayments = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching payments', error: error.message });
+  }
+};
+
+exports.getAllTransactions = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    let query = {};
+    if (req.query.type) query.type = req.query.type;
+
+    const transactions = await WalletTransaction.find(query)
+      .populate('user', 'name email role')
+      .populate('consultation')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await WalletTransaction.countDocuments(query);
+
+    res.json({
+      data: transactions,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching transactions', error: error.message });
+  }
+};
+
+exports.getRevenue = async (req, res) => {
+  try {
+    const revenueStats = await Consultation.aggregate([
+      { $match: { status: 'completed' } },
+      {
+        $group: {
+          _id: null,
+          totalConsultations: { $sum: 1 },
+          totalRevenue: { $sum: "$cost" },
+          totalPlatformFee: { $sum: "$platformFee" },
+          totalExpertEarnings: { $sum: "$expertEarning" }
+        }
+      }
+    ]);
+    
+    // Also get revenue grouped by month
+    const monthlyRevenue = await Consultation.aggregate([
+      { $match: { status: 'completed' } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          platformFee: { $sum: "$platformFee" },
+          totalRevenue: { $sum: "$cost" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Get recent consultations for details table
+    const recentConsultations = await Consultation.find({ status: 'completed' })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      data: revenueStats.length > 0 ? revenueStats[0] : { totalConsultations: 0, totalRevenue: 0, totalPlatformFee: 0, totalExpertEarnings: 0 },
+      monthly: monthlyRevenue,
+      recentConsultations
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching revenue', error: error.message });
   }
 };
 

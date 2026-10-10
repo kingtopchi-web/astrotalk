@@ -2,6 +2,43 @@
 @config "../tailwind.config.js";
 
 @layer base {
+  :root {
+    --color-primary: #F7C83C;
+    --color-primary-dark: #DCA714;
+    --color-primary-light: #FFF3B0;
+    --color-secondary: #FF7A00;
+    --color-secondary-dark: #CC6200;
+    --color-secondary-light: #FFEDD5;
+    --color-accent: #10B981;
+    --color-surface: #121212;
+    --color-surface-muted: #1A1A1A;
+    --color-surface-card: #18181B;
+    --color-background: #09090B;
+    --color-on-background: #FFFFFF;
+    --color-on-surface: #F4F4F5;
+    --color-on-surface-variant: #A1A1AA;
+    --color-border: #27272A;
+  }
+
+  .light-theme {
+    --color-primary: #F7C83C;
+    --color-primary-dark: #DCA714;
+    --color-primary-light: #F7C83C;
+    --color-secondary: #FF7A00;
+    --color-secondary-dark: #CC6200;
+    --color-secondary-light: #FFEDD5;
+    --color-accent: #10B981;
+    --color-surface: #FFFFFF;
+    --color-surface-muted: #F8F9FA;
+    --color-surface-card: #FFFFFF;
+    --color-background: #FFFDF0; /* Light cream */
+    --color-on-background: #111827;
+    --color-on-surface: #1F2937;
+    --color-on-surface-variant: #4B5563;
+    --color-border: #E5E7EB;
+  }
+
+
   html, body {
     width: 100vw;
     margin: 0;
@@ -45,13 +82,22 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-soft;
+    @apply bg-surface/70 backdrop-blur-md border border-border shadow-soft;
+  }
+  .glass-panel-dark {
+    @apply bg-background/80 backdrop-blur-md border border-border shadow-soft;
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-light;
   }
   .text-gradient-secondary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-secondary to-secondary-dark;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-secondary to-secondary-light;
+  }
+  .bg-gradient-premium {
+    @apply bg-gradient-to-br from-surface-muted via-background to-surface-muted;
+  }
+  .bg-gradient-hero {
+    @apply bg-background;
   }
 }
 ::-webkit-scrollbar {

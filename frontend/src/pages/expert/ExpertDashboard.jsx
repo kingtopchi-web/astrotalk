@@ -40,8 +40,8 @@ function ExpertDashboard() {
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitSuccess, setResubmitSuccess] = useState('');
   const [stats, setStats] = useState({
-    todaysConsultations: 0,
-    pendingRequests: 0,
+    scheduledConsultations: 0,
+    upcomingConsultations: 0,
     totalEarnings: 0,
     unreadMessages: 0
   });
@@ -50,7 +50,7 @@ function ExpertDashboard() {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert/dashboard', {
+        const res = await axios.get('http://localhost:5000/api/expert/dashboard', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(res.data);
@@ -66,7 +66,7 @@ function ExpertDashboard() {
     setResubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://astrotalk-hlg2.onrender.com/api/expert/resubmit', {}, {
+      await axios.post('http://localhost:5000/api/expert/resubmit', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setResubmitSuccess('Your profile has been resubmitted for review!');
@@ -167,8 +167,8 @@ function ExpertDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-start justify-between">
           <div>
-            <p className="text-sm font-semibold text-slate-500 mb-1">Today's Consultations</p>
-            <p className="text-2xl font-bold text-slate-900">{stats.todaysConsultations}</p>
+            <p className="text-sm font-semibold text-slate-500 mb-1">Scheduled Consultations</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.scheduledConsultations}</p>
           </div>
           <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
             <CalendarDays size={20} />
@@ -176,8 +176,8 @@ function ExpertDashboard() {
         </div>
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-start justify-between">
           <div>
-            <p className="text-sm font-semibold text-slate-500 mb-1">Pending Requests</p>
-            <p className="text-2xl font-bold text-slate-900">{stats.pendingRequests}</p>
+            <p className="text-sm font-semibold text-slate-500 mb-1">Upcoming Consultations</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.upcomingConsultations}</p>
           </div>
           <div className="bg-yellow-50 p-3 rounded-xl text-yellow-600">
             <Hourglass size={20} />
@@ -195,7 +195,7 @@ function ExpertDashboard() {
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-start justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-500 mb-1">Total Earnings</p>
-            <p className="text-2xl font-bold text-slate-900">₹{stats.totalEarnings}</p>
+            <p className="text-2xl font-bold text-slate-900">₹{Number(stats.totalEarnings).toFixed(2)}</p>
           </div>
           <div className="bg-purple-50 p-3 rounded-xl text-purple-600">
             <CreditCard size={20} />
@@ -254,7 +254,7 @@ function ExpertDashboard() {
               <div key={r.label} className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-between">
                 <span className="text-sm font-semibold text-slate-600">{r.label}</span>
                 <div className="text-right">
-                  <span className="text-lg font-extrabold text-slate-900">₹{r.value || 0}</span>
+                  <span className="text-lg font-extrabold text-slate-900">₹{Number(r.value || 0).toFixed(2)}</span>
                   <span className="text-xs text-slate-500 ml-1">/min</span>
                 </div>
               </div>

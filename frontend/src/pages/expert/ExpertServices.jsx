@@ -37,7 +37,7 @@ function ExpertServices() {
   const fetchServices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert-services', {
+      const res = await axios.get('http://localhost:5000/api/expert-services', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setServices(res.data);
@@ -50,7 +50,7 @@ function ExpertServices() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/categories');
+      const res = await axios.get('http://localhost:5000/api/categories');
       setCategories(res.data);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -59,7 +59,7 @@ function ExpertServices() {
 
   const fetchSubcategories = async (categoryId) => {
     try {
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/categories/${categoryId}/subcategories`);
+      const res = await axios.get(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
       setSubcategories(res.data);
     } catch (err) {
       console.error('Error fetching subcategories:', err);
@@ -115,10 +115,10 @@ function ExpertServices() {
       };
 
       if (editingId) {
-        await axios.put(`https://astrotalk-hlg2.onrender.com/api/expert-services/${editingId}`, payload, config);
+        await axios.put(`http://localhost:5000/api/expert-services/${editingId}`, payload, config);
         alert('Service updated successfully.');
       } else {
-        await axios.post('https://astrotalk-hlg2.onrender.com/api/expert-services', payload, config);
+        await axios.post('http://localhost:5000/api/expert-services', payload, config);
         alert('Service created successfully.');
       }
       setShowModal(false);
@@ -138,7 +138,7 @@ function ExpertServices() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`https://astrotalk-hlg2.onrender.com/api/expert-services/${service._id}`, { status: newStatus }, {
+      await axios.put(`http://localhost:5000/api/expert-services/${service._id}`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert(`Service ${newStatus === 'ACTIVE' ? 'is now available for booking.' : 'deactivated successfully.'}`);
@@ -152,7 +152,7 @@ function ExpertServices() {
     if (!window.confirm('Are you sure you want to delete this service? It will be archived to preserve historical bookings.')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/expert-services/${id}`, {
+      await axios.delete(`http://localhost:5000/api/expert-services/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchServices();
@@ -242,17 +242,17 @@ function ExpertServices() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="font-bold text-slate-900">₹{service.price}</p>
+                      <p className="font-bold text-slate-900">₹{Number(service.price).toFixed(2)}</p>
                       <p className="text-sm text-slate-500 flex items-center gap-1 mt-0.5"><Clock size={14}/> {service.duration} mins</p>
                     </td>
                     <td className="p-4">
                       <p className="text-sm font-semibold text-slate-700">{service.totalBookings} Bookings</p>
-                      <p className="text-xs text-slate-500 mt-0.5">₹{service.totalRevenue} Earned</p>
+                      <p className="text-xs text-slate-500 mt-0.5">₹{Number(service.totalRevenue).toFixed(2)} Earned</p>
                     </td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${Number(
                         service.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
-                      }`}>
+                      ).toFixed(2)}`}>
                         {service.status}
                       </span>
                     </td>

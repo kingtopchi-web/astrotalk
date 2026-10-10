@@ -17,7 +17,7 @@ const ExpertRegister = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('https://astrotalk-hlg2.onrender.com/api/categories')
+    fetch('http://localhost:5000/api/categories')
       .then(r => r.json())
       .then(data => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
@@ -27,7 +27,7 @@ const ExpertRegister = () => {
     setFormData(f => ({ ...f, categoryId: catId, subCategoryId: '' }));
     if (catId) {
       try {
-        const res = await fetch(`https://astrotalk-hlg2.onrender.com/api/categories/${catId}/subcategories`);
+        const res = await fetch(`http://localhost:5000/api/categories/${catId}/subcategories`);
         const data = await res.json();
         setSubCategories(Array.isArray(data) ? data : []);
       } catch { setSubCategories([]); }
@@ -47,7 +47,7 @@ const ExpertRegister = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/auth/expert/register', {
+      const response = await fetch('http://localhost:5000/api/auth/expert/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

@@ -27,15 +27,15 @@ exports.getDashboardStats = async (req, res) => {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const todaysConsultationsCount = await Consultation.countDocuments({
+    const scheduledConsultationsCount = await Consultation.countDocuments({
       expert: expertId,
-      startTime: { $gte: startOfToday, $lte: endOfToday },
-      status: { $in: ['scheduled', 'ongoing', 'completed'] }
+      status: 'scheduled'
     });
 
-    const pendingRequestsCount = await Consultation.countDocuments({
+    const upcomingConsultationsCount = await Consultation.countDocuments({
       expert: expertId,
-      status: 'pending'
+      status: 'scheduled',
+      startTime: { $gte: new Date() }
     });
 
     const completedConsultations = await Consultation.find({
@@ -57,8 +57,8 @@ exports.getDashboardStats = async (req, res) => {
     }
 
     res.json({
-      todaysConsultations: todaysConsultationsCount,
-      pendingRequests: pendingRequestsCount,
+      scheduledConsultations: scheduledConsultationsCount,
+      upcomingConsultations: upcomingConsultationsCount,
       totalEarnings,
       unreadMessages: unreadMessagesCount
     });

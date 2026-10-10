@@ -17,7 +17,7 @@ function ExpertConsultations() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/expert/consultations${filter !== 'all' ? `?status=${filter}` : ''}`, {
+      const res = await axios.get(`http://localhost:5000/api/expert/consultations${filter !== 'all' ? `?status=${filter}` : ''}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConsultations(res.data);
@@ -31,7 +31,7 @@ function ExpertConsultations() {
   const updateStatus = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`https://astrotalk-hlg2.onrender.com/api/expert/consultations/${id}/status`, 
+      await axios.patch(`http://localhost:5000/api/expert/consultations/${id}/status`, 
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -136,7 +136,7 @@ function ExpertConsultations() {
 
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-lg font-bold text-slate-900">
-                      ₹{consultation.cost}
+                      ₹{Number(consultation.cost).toFixed(2)}
                     </div>
                     
                     {/* Action Buttons */}

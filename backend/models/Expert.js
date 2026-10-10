@@ -61,6 +61,7 @@ const expertSchema = new mongoose.Schema({
     email: { type: Boolean, default: true },
     push: { type: Boolean, default: true }
   },
+  walletBalance: { type: Number, default: 0 },
   bankDetails: {
     accountName: { type: String, default: '' },
     accountNumber: { type: String, default: '' },

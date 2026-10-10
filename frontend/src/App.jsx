@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -10,6 +11,10 @@ import WalletRecharge from './pages/WalletRecharge';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Experts from './pages/Experts';
+import Categories from './pages/Categories';
+import FreeServices from './pages/FreeServices';
+import Blog from './pages/Blog';
+import Notifications from './pages/Notifications';
 import Market from './pages/Market';
 import Bookings from './pages/Bookings';
 import Profile from './pages/Profile';
@@ -39,10 +44,27 @@ import ExpertSettings from './pages/expert/ExpertSettings';
 
 import './index.css';
 
+import { useLocation } from 'react-router-dom';
+
+function ThemeManager() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    if (location.pathname === '/') {
+      document.documentElement.classList.remove('light-theme');
+    } else {
+      document.documentElement.classList.add('light-theme');
+    }
+  }, [location.pathname]);
+  
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <ThemeManager />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -55,9 +77,15 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/experts" element={<Experts />} />
-          <Route path="/expert/:id" element={<ExpertPublicProfile />} />
-          <Route path="/market" element={<Market />} />
+          <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT', 'ADMIN']} />}>
+            <Route path="/experts" element={<Experts />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/free-services" element={<FreeServices />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/expert/:id" element={<ExpertPublicProfile />} />
+            <Route path="/market" element={<Market />} />
+          </Route>
 
           {/* User Protected Routes */}
           <Route element={<ProtectedRoute allowedRoles={['USER']} />}>

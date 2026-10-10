@@ -97,15 +97,15 @@ const DetailModal = ({ expert, onClose, onAction }) => {
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center bg-blue-50 rounded-xl p-3">
               <p className="text-[10px] text-slate-400 uppercase font-semibold mb-0.5">Chat Rate</p>
-              <p className="text-sm font-bold text-blue-700">₹{expert.rates?.chat || expert.pricePerMinute || 0}/min</p>
+              <p className="text-sm font-bold text-blue-700">₹{Number(expert.rates?.chat || expert.pricePerMinute || 0).toFixed(2)}/min</p>
             </div>
             <div className="text-center bg-purple-50 rounded-xl p-3">
               <p className="text-[10px] text-slate-400 uppercase font-semibold mb-0.5">Audio Rate</p>
-              <p className="text-sm font-bold text-purple-700">₹{expert.rates?.audio || 0}/min</p>
+              <p className="text-sm font-bold text-purple-700">₹{Number(expert.rates?.audio || 0).toFixed(2)}/min</p>
             </div>
             <div className="text-center bg-orange-50 rounded-xl p-3">
               <p className="text-[10px] text-slate-400 uppercase font-semibold mb-0.5">Video Rate</p>
-              <p className="text-sm font-bold text-orange-700">₹{expert.rates?.video || 0}/min</p>
+              <p className="text-sm font-bold text-orange-700">₹{Number(expert.rates?.video || 0).toFixed(2)}/min</p>
             </div>
           </div>
 

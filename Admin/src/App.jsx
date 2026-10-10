@@ -17,8 +17,11 @@ import Analytics from './pages/Analytics';
 import ExpertApplications from './pages/ExpertApplications';
 import ConsultationsList from './pages/ConsultationsList';
 import AdminPlaceholder from './pages/AdminPlaceholder';
-import PaymentsList from './pages/PaymentsList';
 import SupportTickets from './pages/SupportTickets';
+import TransactionsList from './pages/TransactionsList';
+import Refunds from './pages/Refunds';
+import Revenue from './pages/Revenue';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -51,16 +54,15 @@ function App() {
           <Route path="/notifications" element={<AdminPlaceholder title="Notifications" description="Notification management coming soon." />} />
 
           {/* FINANCE */}
-          <Route path="/payments" element={<PaymentsList />} />
-          <Route path="/transactions" element={<PaymentsList />} />
-          <Route path="/refunds" element={<AdminPlaceholder title="Refunds" description="Refund management coming soon." />} />
-          <Route path="/revenue" element={<AdminPlaceholder title="Revenue" description="Revenue dashboard coming soon." />} />
+          <Route path="/transactions" element={<TransactionsList />} />
+          <Route path="/refunds" element={<Refunds />} />
+          <Route path="/revenue" element={<Revenue />} />
 
           {/* CONTENT */}
           <Route path="/reviews" element={<AdminPlaceholder title="Reviews & Ratings" description="Review moderation coming soon." />} />
 
           {/* SYSTEM */}
-          <Route path="/settings" element={<AdminPlaceholder title="Settings" description="Platform settings coming soon." />} />
+          <Route path="/settings" element={<Settings />} />
 
           {/* ADMIN */}
           <Route path="/profile" element={<AdminProfile />} />

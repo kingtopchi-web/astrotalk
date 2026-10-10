@@ -16,7 +16,7 @@ const ExpertClients = () => {
   const fetchClients = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://astrotalk-hlg2.onrender.com/api/experts/my-clients', {
+      const response = await axios.get('http://localhost:5000/api/experts/my-clients', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (Array.isArray(response.data)) {

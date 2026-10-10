@@ -3,12 +3,62 @@ const router = express.Router();
 const Expert = require('../models/Expert');
 
 // @route   GET /api/experts
-// @desc    Get all experts
+// @desc    Get all experts with filtering and search
 router.get('/', async (req, res) => {
   try {
-    const experts = await Expert.find({});
-    res.json(experts);
+    const { 
+      search, 
+      category, 
+      subCategory, 
+      status, 
+      rating, 
+      minPrice, 
+      maxPrice, 
+      page = 1, 
+      limit = 10 
+    } = req.query;
+
+    let query = {};
+
+    // Search by name, specialty, or specialization
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { specialty: { $regex: search, $options: 'i' } },
+        { specialization: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (category) query.categoryId = category;
+    if (subCategory) query.subCategoryId = subCategory;
+    if (status) query.status = status; // e.g., 'APPROVED'
+    if (rating) query.rating = { $gte: Number(rating) };
+
+    if (minPrice || maxPrice) {
+      query['rates.chat'] = {};
+      if (minPrice) query['rates.chat'].$gte = Number(minPrice);
+      if (maxPrice) query['rates.chat'].$lte = Number(maxPrice);
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const experts = await Expert.find(query)
+      .populate('categoryId', 'name')
+      .populate('subCategoryId', 'name')
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ rating: -1, createdAt: -1 });
+
+    const total = await Expert.countDocuments(query);
+
+    res.json({
+      experts,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
   } catch (error) {
+    console.error('Experts Fetch Error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 });

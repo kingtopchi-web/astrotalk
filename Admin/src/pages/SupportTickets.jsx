@@ -213,9 +213,9 @@ export default function SupportTickets() {
                   const isAdmin = msg.senderModel === 'Admin';
                   return (
                     <div key={index} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${Number(
                         isAdmin ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm'
-                      }`}>
+                      ).toFixed(2)}`}>
                         <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
                       </div>
                       <span className="text-[10px] text-slate-400 font-medium mt-1 mx-1">

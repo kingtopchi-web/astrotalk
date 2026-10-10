@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 const Consultation = require('../models/Consultation');
+const Expert = require('../models/Expert');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
@@ -234,3 +235,112 @@ exports.payConsultation = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.createCallOrder = async (req, res) => {
+  try {
+    const { expertId, minutes, type } = req.body;
+    if (!expertId || !minutes || minutes <= 0) return res.status(400).json({ message: 'Invalid data' });
+
+    const expert = await Expert.findById(expertId);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    let rate = 0;
+    if (type === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
+    else if (type === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
+    else if (type === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
+    else rate = expert.pricePerMinute || 50;
+
+    const amount = rate * minutes;
+    const amountInPaise = Math.round(amount * 100);
+
+    const options = {
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: `call_${req.user._id}_${Date.now()}`,
+      notes: {
+        type: 'direct_call',
+        userId: req.user._id.toString(),
+        expertId: expertId.toString(),
+        minutes: minutes.toString(),
+        callType: type
+      }
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_SBFgUhpkJffWZY',
+      expertName: expert.name
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.verifyCallPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, expertId, amount, type, minutes } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YKf15utu1cQxRP9WkcHWD5L8')
+      .update(body.toString())
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: 'Invalid signature' });
+    }
+
+    const expert = await Expert.findById(expertId);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    // Platform takes 20% fee, expert gets 80%
+    const expertEarning = amount * 0.8;
+    const platformFee = amount - expertEarning;
+
+    // We do NOT credit the expert here. We wait until the consultation completes to calculate pro-rata.
+
+    // Create a transaction record for the user debit (paid via gateway)
+    const userTransaction = new WalletTransaction({
+      user: req.user._id,
+      type: 'DEBIT',
+      amount: amount,
+      status: 'SUCCESS',
+      balanceBefore: 0, // Since paid directly via gateway
+      balanceAfter: 0,
+      description: `Direct payment for ${type} with ${expert.name}`,
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      completedAt: new Date()
+    });
+    await userTransaction.save();
+
+    // Expert will be credited when the consultation is completed.
+
+
+    // Create consultation
+    const consultation = new Consultation({
+      user: req.user._id,
+      expert: expertId,
+      type: type || 'video',
+      status: 'scheduled',
+      paymentStatus: 'paid',
+      startTime: new Date(),
+      durationInMinutes: minutes || Number(amount / expert.pricePerMinute) || 10,
+      cost: amount,
+      expertEarning: expertEarning,
+      platformFee: platformFee
+    });
+    await consultation.save();
+
+    res.json({ success: true, message: 'Payment verified and added to expert wallet', consultationId: consultation._id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

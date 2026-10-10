@@ -16,7 +16,7 @@ function ExpertMessages() {
   // Initialize Socket.IO connection
   useEffect(() => {
     if (!expert) return;
-    const newSocket = io('https://astrotalk-hlg2.onrender.com');
+    const newSocket = io('http://localhost:5000');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -36,6 +36,15 @@ function ExpertMessages() {
       }));
     });
 
+    newSocket.on('messages_read', ({ conversationId, readBy }) => {
+      setMessages(prev => prev.map(m => {
+        if (m.conversationId === conversationId && m.sender !== readBy) {
+          return { ...m, status: 'READ' };
+        }
+        return m;
+      }));
+    });
+
     return () => newSocket.close();
   }, [expert]);
 
@@ -47,7 +56,7 @@ function ExpertMessages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
+      const res = await axios.get('http://localhost:5000/api/messages/conversations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConversations(res.data);
@@ -63,7 +72,7 @@ function ExpertMessages() {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${activeConversation._id}/messages`, {
+        const res = await axios.get(`http://localhost:5000/api/messages/conversations/${activeConversation._id}/messages`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);
@@ -200,11 +209,11 @@ function ExpertMessages() {
               return (
                 <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[70%] ${isMe ? 'order-1' : 'order-2'}`}>
-                    <div className={`px-4 py-2.5 rounded-2xl shadow-sm ${
+                    <div className={`px-4 py-2.5 rounded-2xl shadow-sm ${Number(
                       isMe 
                         ? 'bg-blue-600 text-white rounded-tr-sm' 
                         : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm'
-                    }`}>
+                    ).toFixed(2)}`}>
                       <p className="text-sm">{msg.text}</p>
                     </div>
                     <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -212,7 +221,9 @@ function ExpertMessages() {
                         {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </span>
                       {isMe && (
-                        msg.isRead ? <CheckCheck size={12} className="text-blue-500" /> : <Check size={12} className="text-slate-300" />
+                        msg.status === 'READ' ? <CheckCheck size={14} className="text-blue-500" /> :
+                        msg.status === 'DELIVERED' ? <CheckCheck size={14} className="text-slate-400" /> :
+                        <Check size={14} className="text-slate-400" />
                       )}
                     </div>
                   </div>

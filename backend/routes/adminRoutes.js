@@ -28,6 +28,10 @@ const {
   getConsultationById,
   updateConsultationStatus,
   getConsultationStats,
+  getAllTransactions,
+  getRevenue,
+  getSettings,
+  updateSettings
 } = require('../controllers/adminController');
 
 // All routes require authentication and ADMIN role
@@ -37,6 +41,10 @@ router.use(authorizeRoles('ADMIN'));
 // Profile
 router.get('/profile', getAdminProfile);
 router.patch('/profile', updateAdminProfile);
+
+// Settings
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
 
 // Sidebar stats (lightweight)
 router.get('/sidebar-stats', getSidebarStats);
@@ -76,5 +84,9 @@ router.patch('/consultations/:id/status', updateConsultationStatus);
 
 // Payments
 router.get('/payments', getAllPayments);
+
+// Transactions & Revenue
+router.get('/transactions', getAllTransactions);
+router.get('/revenue', getRevenue);
 
 module.exports = router;

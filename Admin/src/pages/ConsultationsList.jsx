@@ -110,7 +110,7 @@ const DetailModal = ({ consultation, onClose, onStatusUpdate }) => {
             </div>
             <div className="text-center bg-green-50 rounded-xl p-3">
               <p className="text-[10px] text-slate-400 uppercase font-semibold mb-0.5">Cost</p>
-              <p className="text-sm font-bold text-green-700">₹{consultation.cost}</p>
+              <p className="text-sm font-bold text-green-700">₹{Number(consultation.cost).toFixed(2)}</p>
             </div>
           </div>
 
@@ -366,7 +366,7 @@ export default function ConsultationsList({ filterStatus }) {
                       <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
                         {c.startTime ? new Date(c.startTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A'}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-slate-800">₹{c.cost}</td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-slate-800">₹{Number(c.cost).toFixed(2)}</td>
                       <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                       <td className="px-4 py-3 text-center">
                         <button
