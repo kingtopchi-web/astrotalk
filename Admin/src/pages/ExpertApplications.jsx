@@ -5,7 +5,7 @@ import {
   ChevronRight, RefreshCw, X, AlertCircle, FileText
 } from 'lucide-react';
 
-const API = 'http://localhost:5000/api/admin';
+const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
 
 const VerifBadge = ({ status }) => {
   const map = {

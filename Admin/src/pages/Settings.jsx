@@ -46,7 +46,7 @@ export default function Settings() {
   const fetchSettings = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/settings', {
+      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/admin/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -72,7 +72,7 @@ export default function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/settings', {
+      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/admin/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

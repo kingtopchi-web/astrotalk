@@ -8,7 +8,7 @@ function Categories() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/public/categories')
+    axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories')
       .then(res => {
         setCategories(res.data);
         setLoading(false);

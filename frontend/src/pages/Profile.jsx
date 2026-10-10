@@ -27,7 +27,7 @@ function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/user/profile', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data);
@@ -54,7 +54,7 @@ function Profile() {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.patch('http://localhost:5000/api/user/profile', form, {
+      const res = await axios.patch('https://astrotalk-hlg2.onrender.com/api/user/profile', form, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data.user);

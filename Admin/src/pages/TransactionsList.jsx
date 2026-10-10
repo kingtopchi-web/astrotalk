@@ -13,7 +13,7 @@ function TransactionsList() {
   const fetchTransactions = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get('http://localhost:5000/api/admin/transactions', {
+      const response = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/transactions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTransactions(response.data.data || []);

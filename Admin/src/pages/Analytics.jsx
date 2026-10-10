@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { Users, UserCheck, CalendarClock, TrendingUp, BarChart3, RefreshCw } from 'lucide-react';
 
-const API = 'http://localhost:5000/api/admin';
+const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
 const COLORS = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#ef4444'];
 
 const StatCard = ({ label, value, icon: Icon, color = 'blue', sub }) => {

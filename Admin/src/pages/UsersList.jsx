@@ -29,7 +29,7 @@ const UsersList = () => {
       if (statusFilter) params.status = statusFilter;
       if (search) params.search = search;
 
-      const res = await axios.get('http://localhost:5000/api/admin/users', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -77,7 +77,7 @@ const UsersList = () => {
     if (!window.confirm(`Set "${user.name}" account status to ${newStatus}?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.patch(`http://localhost:5000/api/admin/users/${user._id}/status`,
+      await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/users/${user._id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -91,7 +91,7 @@ const UsersList = () => {
     if (!window.confirm(`Are you sure you want to delete user "${user.name}"?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`http://localhost:5000/api/admin/users/${user._id}`,
+      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/admin/users/${user._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchUsers();

@@ -65,7 +65,7 @@ function ExpertDiscovery() {
       const headers = { Authorization: `Bearer ${token}` };
       
       const orderRes = await axios.post(
-        'http://localhost:5000/api/wallet/create-call-order',
+        'https://astrotalk-hlg2.onrender.com/api/wallet/create-call-order',
         { expertId: selectedExpert._id, minutes: callMinutes, type: callType },
         { headers }
       );
@@ -82,7 +82,7 @@ function ExpertDiscovery() {
         handler: async function (response) {
           try {
             const verifyRes = await axios.post(
-              'http://localhost:5000/api/wallet/verify-call-payment',
+              'https://astrotalk-hlg2.onrender.com/api/wallet/verify-call-payment',
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -100,7 +100,7 @@ function ExpertDiscovery() {
               setShowCallModal(false);
               if (callType === 'chat') {
                 axios.post(
-                  'http://localhost:5000/api/messages/conversations',
+                  'https://astrotalk-hlg2.onrender.com/api/messages/conversations',
                   { expertId: selectedExpert._id },
                   { headers }
                 ).then(() => {
@@ -135,12 +135,12 @@ function ExpertDiscovery() {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/public/categories').then(res => setCategories(res.data)).catch(() => {});
+    axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories').then(res => setCategories(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (selectedCategory) {
-      axios.get(`http://localhost:5000/api/public/categories/${selectedCategory}/subcategories`)
+      axios.get(`https://astrotalk-hlg2.onrender.com/api/public/categories/${selectedCategory}/subcategories`)
         .then(res => setSubCategories(res.data))
         .catch(() => setSubCategories([]));
     } else {
@@ -158,7 +158,7 @@ function ExpertDiscovery() {
       if (selectedSubCategory) params.subCategoryId = selectedSubCategory;
       if (search.trim()) params.search = search.trim();
 
-      const res = await axios.get('http://localhost:5000/api/public/experts', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/public/experts', {
         params
       });
       setExperts(res.data.data);

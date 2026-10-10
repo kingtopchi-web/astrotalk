@@ -13,7 +13,7 @@ function ExpertProfile() {
   useEffect(() => {
     const fetchExpert = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/experts/${id}`);
+        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/experts/${id}`);
         setExpert(res.data);
         setLoading(false);
       } catch (err) {

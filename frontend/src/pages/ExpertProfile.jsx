@@ -59,7 +59,7 @@ function ExpertPublicProfile() {
       const headers = { Authorization: `Bearer ${token}` };
       
       const orderRes = await axios.post(
-        'http://localhost:5000/api/wallet/create-call-order',
+        'https://astrotalk-hlg2.onrender.com/api/wallet/create-call-order',
         { expertId: id, minutes: callMinutes, type: callType },
         { headers }
       );
@@ -76,7 +76,7 @@ function ExpertPublicProfile() {
         handler: async function (response) {
           try {
             const verifyRes = await axios.post(
-              'http://localhost:5000/api/wallet/verify-call-payment',
+              'https://astrotalk-hlg2.onrender.com/api/wallet/verify-call-payment',
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -94,7 +94,7 @@ function ExpertPublicProfile() {
               setShowCallModal(false);
               if (callType === 'chat') {
                 axios.post(
-                  'http://localhost:5000/api/messages/conversations',
+                  'https://astrotalk-hlg2.onrender.com/api/messages/conversations',
                   { expertId: id },
                   { headers }
                 ).then(() => {
@@ -136,8 +136,8 @@ function ExpertPublicProfile() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         const [expertRes, servicesRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/user/experts/${id}`, { headers }),
-          axios.get(`http://localhost:5000/api/expert-services/public/${id}`)
+          axios.get(`https://astrotalk-hlg2.onrender.com/api/user/experts/${id}`, { headers }),
+          axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`)
         ]);
 
         setExpert(expertRes.data);

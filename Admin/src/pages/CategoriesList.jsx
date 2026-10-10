@@ -19,7 +19,7 @@ function CategoriesList() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get('http://localhost:5000/api/admin/categories', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/categories', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(res.data);
@@ -75,11 +75,11 @@ function CategoriesList() {
       }
 
       if (isEditing) {
-        await axios.patch(`http://localhost:5000/api/admin/categories/${currentCategory._id}`, payload, {
+        await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/categories/${currentCategory._id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('http://localhost:5000/api/admin/categories', payload, {
+        await axios.post('https://astrotalk-hlg2.onrender.com/api/admin/categories', payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -94,7 +94,7 @@ function CategoriesList() {
     if (!window.confirm(`Are you sure you want to delete category "${category.name}"?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`http://localhost:5000/api/admin/categories/${category._id}`, {
+      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/admin/categories/${category._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchCategories();

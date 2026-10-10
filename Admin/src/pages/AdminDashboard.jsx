@@ -36,8 +36,8 @@ function AdminDashboard() {
         const headers = { Authorization: `Bearer ${token}` };
         
         const [statsRes, expertsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/admin/dashboard/stats', { headers }),
-          axios.get('http://localhost:5000/api/admin/experts?limit=5', { headers })
+          axios.get('https://astrotalk-hlg2.onrender.com/api/admin/dashboard/stats', { headers }),
+          axios.get('https://astrotalk-hlg2.onrender.com/api/admin/experts?limit=5', { headers })
         ]);
         
         setStats(statsRes.data);

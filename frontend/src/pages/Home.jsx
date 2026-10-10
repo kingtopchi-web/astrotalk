@@ -33,7 +33,7 @@ function Home() {
     const fetchExperts = async () => {
       setLoading(true);
       try {
-        let url = 'http://localhost:5000/api/public/experts';
+        let url = 'https://astrotalk-hlg2.onrender.com/api/public/experts';
         if (activeCategory !== 'all') {
           url += `?categoryId=${activeCategory}`;
         }
@@ -56,7 +56,7 @@ function Home() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/public/categories');
+        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories');
         if (res.data) setDbCategories(res.data);
       } catch (err) {
         console.error('Failed to fetch categories', err);

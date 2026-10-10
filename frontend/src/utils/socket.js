@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = 'https://astrotalk-hlg2.onrender.com';
 
 /**
  * Creates a new Socket.IO connection with robust reconnection settings.

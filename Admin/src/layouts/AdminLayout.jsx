@@ -9,7 +9,7 @@ import {
   XCircle, Clock
 } from 'lucide-react';
 
-const API = 'http://localhost:5000/api/admin';
+const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
 
 // ─── Sidebar section + item config ───────────────────────────────────────────
 const buildNav = (stats = {}) => [

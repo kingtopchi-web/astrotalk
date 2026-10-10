@@ -36,7 +36,7 @@ function ExpertSchedule() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('http://localhost:5000/api/expert/profile', 
+      await axios.patch('https://astrotalk-hlg2.onrender.com/api/expert/profile', 
         { onlineStatus: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -59,7 +59,7 @@ function ExpertSchedule() {
     setSuccessMsg('');
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('http://localhost:5000/api/expert/profile', 
+      await axios.patch('https://astrotalk-hlg2.onrender.com/api/expert/profile', 
         { availability },
         { headers: { Authorization: `Bearer ${token}` } }
       );

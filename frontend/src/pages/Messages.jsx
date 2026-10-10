@@ -74,7 +74,7 @@ function Messages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/messages/conversations', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConversations(res.data);
@@ -90,7 +90,7 @@ function Messages() {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/messages/conversations/${activeConversation._id}/messages`, {
+        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${activeConversation._id}/messages`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);
@@ -106,7 +106,7 @@ function Messages() {
     const fetchActiveChatConsultation = async (otherUserId) => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/bookings/active-chat/${otherUserId}`, {
+        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/active-chat/${otherUserId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setActiveConsultation(res.data);
@@ -176,7 +176,7 @@ function Messages() {
       const token = localStorage.getItem('token');
       // Use exact fractional minutes for per-second billing accuracy
       const actualDuration = Number((seconds / 60).toFixed(2)) || 0.01;
-      await axios.post(`http://localhost:5000/api/bookings/${activeConsultation._id}/end`, { actualDuration }, {
+      await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${activeConsultation._id}/end`, { actualDuration }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setActiveConsultation(null);

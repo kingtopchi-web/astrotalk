@@ -54,14 +54,14 @@ function LiveSession() {
     try {
       const token = localStorage.getItem('token');
       // Fetch consultation details
-      const res = await axios.get(`http://localhost:5000/api/bookings/${consultationId}`, {
+      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConsultation(res.data);
       setRemoteUser(isExpert ? res.data.user : res.data.expert);
 
       // Fetch video session status
-      const statusRes = await axios.get(`http://localhost:5000/api/video/sessions/${consultationId}/status`, {
+      const statusRes = await axios.get(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -76,10 +76,10 @@ function LiveSession() {
       // If incoming, don't join until accepted!
       if (!incomingFlag) {
         if (isExpert) {
-           await axios.post(`http://localhost:5000/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
-           await axios.post(`http://localhost:5000/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
         } else {
-           await axios.post(`http://localhost:5000/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
         }
       }
       
@@ -95,10 +95,10 @@ function LiveSession() {
     try {
       const token = localStorage.getItem('token');
       if (isExpert) {
-         await axios.post(`http://localhost:5000/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
-         await axios.post(`http://localhost:5000/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
       } else {
-         await axios.post(`http://localhost:5000/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
       }
       setCallAccepted(true);
     } catch (err) {
@@ -442,7 +442,7 @@ function LiveSession() {
     // Heartbeat
     const heartbeat = setInterval(() => {
        const token = localStorage.getItem('token');
-       axios.post(`http://localhost:5000/api/video/sessions/${consultationId}/heartbeat`, {}, {
+       axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/heartbeat`, {}, {
          headers: { Authorization: `Bearer ${token}` }
        }).catch(() => {});
     }, 15000);
@@ -480,17 +480,17 @@ function LiveSession() {
       const actualDuration = Number((seconds / 60).toFixed(2)) || 0.01;
 
       if (isExpert) {
-        await axios.post(`http://localhost:5000/api/video/expert/sessions/${consultationId}/end`, {}, {
+        await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/end`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post(`http://localhost:5000/api/video/sessions/${consultationId}/leave`, {}, {
+        await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/leave`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
 
       // Also call the new end endpoint to process pro-rata payment
-      await axios.post(`http://localhost:5000/api/bookings/${consultationId}/end`, { actualDuration }, {
+      await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}/end`, { actualDuration }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

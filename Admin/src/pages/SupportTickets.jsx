@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MessageSquare, AlertCircle, Clock, CheckCircle2, Search, X, Send } from 'lucide-react';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://astrotalk-hlg2.onrender.com/api';
 
 export default function SupportTickets() {
   const [tickets, setTickets] = useState([]);

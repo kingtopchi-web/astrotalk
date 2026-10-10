@@ -17,7 +17,7 @@ function ExpertEarnings() {
   const fetchEarnings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/expert/earnings', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert/earnings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEarnings(res.data);
@@ -31,7 +31,7 @@ function ExpertEarnings() {
   const handleRequestPayout = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/expert/payouts/request', {}, {
+      await axios.post('https://astrotalk-hlg2.onrender.com/api/expert/payouts/request', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Payout request submitted successfully!');

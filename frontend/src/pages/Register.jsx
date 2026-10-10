@@ -19,7 +19,7 @@ function Register() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/user/register', { name, email, password, mobile });
+      const res = await axios.post('https://astrotalk-hlg2.onrender.com/api/auth/user/register', { name, email, password, mobile });
       login(res.data, res.data.token);
       navigate('/');
     } catch (err) {

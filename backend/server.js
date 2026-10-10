@@ -60,6 +60,10 @@ app.get('/api/categories/:categoryId/subcategories', async (req, res) => {
 });
 
 // Basic Route
+app.get('/', (req, res) => {
+  res.send('ExpertHub API is running. Welcome!');
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running!' });
 });

@@ -43,7 +43,7 @@ const ExpertsList = () => {
       if (statusFilter) params.status = statusFilter;
       if (search) params.search = search;
 
-      const res = await axios.get('http://localhost:5000/api/admin/experts', {
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/experts', {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -92,7 +92,7 @@ const ExpertsList = () => {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.patch(`http://localhost:5000/api/admin/experts/${expert._id}/approve`, {}, {
+      await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/experts/${expert._id}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchExperts();
@@ -117,7 +117,7 @@ const ExpertsList = () => {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.patch(`http://localhost:5000/api/admin/experts/${targetExpert._id}/reject`,
+      await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/experts/${targetExpert._id}/reject`,
         { reason: rejectReason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -134,7 +134,7 @@ const ExpertsList = () => {
     if (!window.confirm(`Set "${expert.name}" account status to ${newStatus}?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.patch(`http://localhost:5000/api/admin/experts/${expert._id}/status`,
+      await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/experts/${expert._id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -148,7 +148,7 @@ const ExpertsList = () => {
     if (!window.confirm(`Are you sure you want to delete expert "${expert.name}"?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`http://localhost:5000/api/admin/experts/${expert._id}`,
+      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/admin/experts/${expert._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchExperts();
