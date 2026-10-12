@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
-import { ArrowLeft, ArrowRight, BadgeCheck, Star, Calendar as CalendarIcon, Clock, Video, Phone, MessageSquare, ShieldCheck, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, Star, Calendar as CalendarIcon, Clock, Video, Phone, MessageSquare, ShieldCheck, ChevronLeft, ChevronRight, Lock, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function BookConsultation() {
@@ -25,6 +25,16 @@ function BookConsultation() {
   const [consultationType, setConsultationType] = useState('Video Call');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showShortfallModal, setShowShortfallModal] = useState(false);
+  const [shortfallData, setShortfallData] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast((prev) => (prev?.message === message ? null : prev));
+    }, 4000);
+  };
 
   useEffect(() => {
     const fetchExpertAndWallet = async () => {
@@ -122,74 +132,131 @@ function BookConsultation() {
       const platformFee = Math.round(basePrice * 0.02);
       const totalAmount = basePrice + platformFee;
 
-      // 2. Full Wallet Payment
-      if (useWallet && walletBalance >= totalAmount) {
-        await axios.post('https://astrotalk-hlg2.onrender.com/api/wallet/pay-consultation', {
-          consultationId: consultation._id
-        }, config);
-        
-        navigate('/bookings');
-        return; // Done!
-      }
-
-      // 3. Create Razorpay Order securely from backend (Full or Partial)
-      const orderResponse = await axios.post('https://astrotalk-hlg2.onrender.com/api/payments/create-order', {
-        consultationId: consultation._id,
-        useWallet: useWallet,
-        amount: totalAmount // send amount in case backend needs it for verification or custom service price
-      }, config);
-
-      const { orderId, amount, currency, keyId } = orderResponse.data;
-
-      // 4. Open Razorpay Checkout
-      const options = {
-        key: keyId,
-        amount: amount,
-        currency: currency,
-        name: "Stitch Expert Platform",
-        description: `Consultation with ${expert.name}`,
-        order_id: orderId,
-        prefill: {
-          name: user.name || '',
-          email: user.email || '',
-        },
-        theme: {
-          color: "#2563EB" // blue-600
-        },
-        handler: async function (response) {
+      // Recharges wallet via Razorpay for the shortfall
+      const handleTopupShortfall = (rechargeAmount) => {
+        return new Promise(async (resolve, reject) => {
           try {
-            // 5. Verify Payment on Backend
-            await axios.post('https://astrotalk-hlg2.onrender.com/api/payments/verify', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            }, config);
-            
-            navigate('/bookings');
-          } catch (verifyError) {
-            console.error('Payment verification failed:', verifyError);
-            alert('Payment verification failed. If money was deducted, it will be refunded.');
+            const orderRes = await axios.post(
+              'https://astrotalk-hlg2.onrender.com/api/wallet/add-money',
+              { amount: Math.ceil(rechargeAmount) },
+              config
+            );
+            const orderData = orderRes.data;
+
+            const options = {
+              key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.keyId || 'rzp_test_YourTestKey',
+              amount: orderData.amount,
+              currency: orderData.currency,
+              name: "ExpertHub Wallet",
+              description: `Add ₹${Math.ceil(rechargeAmount)} to Wallet for consultation`,
+              order_id: orderData.orderId,
+              prefill: {
+                name: user?.name || '',
+                email: user?.email || '',
+              },
+              theme: { color: "#2563EB" },
+              handler: async function (response) {
+                try {
+                  const verifyRes = await axios.post(
+                    'https://astrotalk-hlg2.onrender.com/api/wallet/verify-payment',
+                    {
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_signature: response.razorpay_signature
+                    },
+                    config
+                  );
+
+                  if (verifyRes.data.success || verifyRes.data.message) {
+                    const wRes = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', config);
+                    setWalletBalance(wRes.data.balance || 0);
+                    resolve(true);
+                  } else {
+                    reject(new Error('Wallet recharge verification failed'));
+                  }
+                } catch (err) {
+                  reject(err);
+                }
+              }
+            };
+
+            if (!window.Razorpay) {
+              reject(new Error('Razorpay SDK failed to load.'));
+              return;
+            }
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', () => reject(new Error('Wallet recharge cancelled or failed')));
+            rzp.open();
+          } catch (err) {
+            reject(err);
           }
+        });
+      };
+
+      // Check wallet balance against totalAmount
+      let currentBal = walletBalance;
+      try {
+        const wRes = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', config);
+        currentBal = wRes.data.balance || 0;
+        setWalletBalance(currentBal);
+      } catch (e) {}
+
+      const executeBookingAndDeduction = async () => {
+        try {
+          showToast('Processing wallet payment...', 'info');
+
+          // Always pay consultation from wallet
+          await axios.post('https://astrotalk-hlg2.onrender.com/api/wallet/pay-consultation', {
+            consultationId: consultation._id
+          }, config);
+          
+          showToast('Consultation booked successfully! Payment deducted from wallet.', 'success');
+          setShowShortfallModal(false);
+          setTimeout(() => {
+            navigate('/bookings');
+          }, 800);
+        } catch (error) {
+          console.error('Payment error:', error);
+          const errorMsg = error.response?.data?.message || error.message || 'Payment deduction failed.';
+          showToast(errorMsg, 'error');
+        } finally {
+          setIsSubmitting(false);
         }
       };
 
-      if (!window.Razorpay) {
-        throw new Error('Razorpay SDK failed to load. Please check your internet connection or disable adblockers.');
+      // If wallet balance is insufficient, show custom modal instead of alert/confirm
+      if (currentBal < totalAmount) {
+        setIsSubmitting(false);
+        const shortfall = Math.ceil(totalAmount - currentBal);
+        setShortfallData({
+          shortfall,
+          neededAmount: totalAmount,
+          currentBalance: currentBal,
+          onConfirm: async () => {
+            try {
+              setShowShortfallModal(false);
+              setIsSubmitting(true);
+              showToast(`Opening Razorpay to add ₹${shortfall} to wallet...`, 'info');
+              await handleTopupShortfall(shortfall);
+              showToast('Wallet recharge successful! Finalizing booking...', 'success');
+              await executeBookingAndDeduction();
+            } catch (err) {
+              console.error(err);
+              showToast(err.message || 'Recharge cancelled or failed', 'error');
+              setIsSubmitting(false);
+            }
+          }
+        });
+        setShowShortfallModal(true);
+        return;
       }
 
-      const rzp = new window.Razorpay(options);
-      
-      rzp.on('payment.failed', function (response){
-        alert('Payment Failed! ' + response.error.description);
-      });
-
-      rzp.open();
-
+      await executeBookingAndDeduction();
     } catch (error) {
       console.error('Booking/Payment error:', error);
       const errorMsg = error.response?.data?.message || error.message || 'Failed to process booking.';
-      alert(`Error: ${errorMsg}`);
-    } finally {
+      showToast(errorMsg, 'error');
       setIsSubmitting(false);
     }
   };
@@ -592,38 +659,40 @@ function BookConsultation() {
                   </div>
                 </div>
 
-                {/* Wallet Balance Usage */}
-                {walletBalance > 0 && (
-                  <div className="flex items-start justify-between bg-white p-4 rounded-2xl border border-slate-200 mb-4 cursor-pointer" onClick={() => setUseWallet(!useWallet)}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded flex items-center justify-center border ${useWallet ? 'bg-blue-600 border-blue-600' : 'border-slate-300 bg-white'}`}>
-                        {useWallet && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">Use Wallet Balance</p>
-                        <p className="text-xs font-medium text-slate-500">Available: ₹{Number(walletBalance).toFixed(2)}</p>
-                      </div>
+                {/* Wallet Balance Status */}
+                <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Wallet size={18} />
                     </div>
-                    {useWallet && (
-                      <span className="text-sm font-bold text-emerald-600">
-                        -₹{Number(Math.min(walletBalance, totalAmount)).toFixed(2)}
-                      </span>
-                    )}
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Payment Method: Wallet</p>
+                      <p className="text-xs font-medium text-slate-500">Your Balance: ₹{Number(walletBalance).toFixed(2)}</p>
+                    </div>
                   </div>
-                )}
+                  {walletBalance < totalAmount ? (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                      ₹{(totalAmount - walletBalance).toFixed(0)} shortfall
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Sufficient
+                    </span>
+                  )}
+                </div>
                 
                 <div className="flex items-center justify-between bg-blue-50/50 p-4 rounded-2xl border border-blue-100 mb-6">
-                  <span className="text-base font-bold text-blue-900">To Pay</span>
+                  <span className="text-base font-bold text-blue-900">Total Consultation Fee</span>
                   <span className="text-xl font-extrabold text-blue-600">
-                    ₹{Number(useWallet ? Math.max(0, totalAmount - walletBalance) : totalAmount).toFixed(2)}
+                    ₹{Number(totalAmount).toFixed(2)}
                   </span>
                 </div>
                 
                 <div className="flex items-start gap-3 mb-6">
                   <ShieldCheck size={16} className="text-green-500 shrink-0 mt-0.5" />
                   <p className="text-xs font-semibold text-slate-500 leading-relaxed">
-                    Your payment is secure and encrypted.<br/>
-                    We never share your payment details.
+                    Payment directly deducted from wallet.<br/>
+                    {walletBalance < totalAmount && 'Shortfall amount will be added to your wallet securely via Razorpay.'}
                   </p>
                 </div>
 
@@ -632,7 +701,13 @@ function BookConsultation() {
                   disabled={isSubmitting || !selectedTime}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mb-3"
                 >
-                  {isSubmitting ? 'Processing...' : (useWallet && walletBalance >= totalAmount) ? 'Pay with Wallet' : 'Continue to Payment'} 
+                  {isSubmitting ? (
+                    'Processing...'
+                  ) : walletBalance < totalAmount ? (
+                    `Add ₹${Math.ceil(totalAmount - walletBalance)} & Book with Wallet`
+                  ) : (
+                    `Pay ₹${totalAmount} from Wallet`
+                  )} 
                   {!isSubmitting && <ArrowRight size={18} />}
                 </button>
                 
@@ -649,6 +724,61 @@ function BookConsultation() {
           
         </div>
       </main>
+
+      {/* Shortfall Modal */}
+      {showShortfallModal && shortfallData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative border border-slate-100">
+            <button 
+              onClick={() => setShowShortfallModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+            >
+              ✕
+            </button>
+            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+              <Wallet size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Insufficient Wallet Balance</h3>
+            <p className="text-sm text-slate-600 mb-4">
+              You need <span className="font-bold text-slate-900">₹{shortfallData.neededAmount}</span> for this booking. Your current balance is <span className="font-bold text-slate-900">₹{shortfallData.currentBalance}</span>.
+            </p>
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-5 flex items-center justify-between">
+              <span className="text-sm text-slate-600 font-medium">Amount to add:</span>
+              <span className="text-lg font-extrabold text-blue-600">₹{shortfallData.shortfall}</span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowShortfallModal(false)}
+                className="flex-1 py-3 px-4 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={shortfallData.onConfirm}
+                className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                Add ₹{shortfallData.shortfall} & Pay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-semibold border ${
+            toast.type === 'error'
+              ? 'bg-rose-950/90 text-rose-200 border-rose-800 backdrop-blur-md'
+              : toast.type === 'info'
+              ? 'bg-slate-900/95 text-slate-100 border-slate-700 backdrop-blur-md'
+              : 'bg-emerald-950/90 text-emerald-200 border-emerald-800 backdrop-blur-md'
+          }`}>
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-xs opacity-70 hover:opacity-100">✕</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

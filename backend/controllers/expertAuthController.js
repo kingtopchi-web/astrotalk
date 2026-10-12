@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Expert = require('../models/Expert');
+const { sendNotification } = require('../utils/notificationDispatcher');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -30,6 +31,18 @@ const registerExpert = async (req, res) => {
     });
 
     if (expert) {
+      const io = req.app.get('io');
+      sendNotification({
+        recipientRole: 'ADMIN',
+        recipientModel: 'Admin',
+        title: 'New Expert Registration',
+        message: `${expert.name} has submitted an application for approval (${expert.specialty || 'General'}).`,
+        type: 'expert_registration',
+        link: '/admin/experts',
+        actionText: 'Review application',
+        badge: 'New'
+      }, io).catch(e => console.error('Expert reg notification error:', e));
+
       res.status(201).json({
         _id: expert._id,
         name: expert.name,

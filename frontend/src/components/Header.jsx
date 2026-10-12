@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationDropdown from './NotificationDropdown';
 
 function Header() {
   const { auth, logout } = useAuth();
@@ -132,13 +133,25 @@ function Header() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 glass-panel-dark border-b border-border transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center flex-1">
-          <Link to="/" className="flex items-center gap-2 group">
-             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background transform group-hover:scale-105 transition-transform border border-primary-light">
-               <span className="material-symbols-outlined font-bold text-[20px]">hub</span>
-             </div>
-             <span className="font-heading font-extrabold text-xl text-on-background">
+        {/* Logo & Mobile Back to Home */}
+        <div className="flex items-center flex-1 gap-2.5">
+          {location.pathname !== '/' && (
+            <Link
+              to="/"
+              className="md:hidden flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
+              title="Back to Home"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Home</span>
+            </Link>
+          )}
+          <Link to="/" className="flex items-center gap-2.5 group">
+             <img 
+               src="/logo.png" 
+               alt="ExpertHub Logo" 
+               className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
+             />
+             <span className="font-heading font-extrabold text-xl text-on-background tracking-tight">
                ExpertHub
              </span>
           </Link>
@@ -211,10 +224,10 @@ function Header() {
 
                
                {/* Notifications */}
-               <button onClick={() => navigate('/notifications')} aria-label="Notifications" className="relative text-on-surface-variant hover:text-primary transition-colors">
-                 <span className="material-symbols-outlined text-[24px]">notifications</span>
-                 <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-accent border-2 border-surface"></span>
-               </button>
+               <NotificationDropdown 
+                 role={auth.user?.role || 'USER'} 
+                 viewAllPath={auth.user?.role === 'EXPERT' ? '/expert/notifications' : '/notifications'} 
+               />
                
                {/* Profile Dropdown Trigger */}
                <div className="relative group h-full flex items-center">
@@ -223,7 +236,16 @@ function Header() {
                    className="flex items-center gap-2 focus:outline-none py-4"
                  >
                    <div className="w-10 h-10 rounded-full bg-secondary-light border border-secondary/20 overflow-hidden group-hover:border-secondary transition-colors relative">
-                      <span className="material-symbols-outlined text-secondary mt-1.5 w-full text-center">person</span>
+                      <img 
+                        src={auth.user?.profileImage || localStorage.getItem('user_avatar') || `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user?.name || 'User')}&background=2563eb&color=fff`} 
+                        alt={auth.user?.name || 'Profile'}
+                        className="w-full h-full object-cover rounded-full"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user?.name || 'User')}&background=2563eb&color=fff`;
+                        }}
+                      />
                    </div>
                  </button>
   
@@ -299,10 +321,10 @@ function Header() {
           </button>
           
           {auth.token && (
-            <button onClick={() => navigate('/notifications')} aria-label="Notifications" className="relative text-on-surface-variant hover:text-primary transition-colors p-1">
-              <span className="material-symbols-outlined text-[24px]">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent border border-surface"></span>
-            </button>
+            <NotificationDropdown 
+              role={auth.user?.role || 'USER'} 
+              viewAllPath={auth.user?.role === 'EXPERT' ? '/expert/notifications' : '/notifications'} 
+            />
           )}
 
           <button 

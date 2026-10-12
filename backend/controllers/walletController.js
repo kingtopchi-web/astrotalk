@@ -152,18 +152,34 @@ exports.verifyPayment = async (req, res) => {
     transaction.completedAt = new Date();
     await transaction.save();
 
-    // Send email (optional)
-    if (user.email) {
-      try {
-        await sendEmail({
-          email: user.email,
-          subject: 'Wallet Top-up Successful',
-          message: `Your wallet top-up of ₹${transaction.amount} was successful.`
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    }
+    // Dynamic Notifications
+    const io = req.app.get('io');
+    const { sendNotification } = require('../utils/notificationDispatcher');
+
+    // 1. User Notification: Wallet Update
+    await sendNotification({
+      recipient: user._id,
+      recipientRole: 'USER',
+      recipientModel: 'User',
+      title: 'Wallet Update',
+      message: `Your wallet recharge of ₹${transaction.amount} has been credited. Current balance: ₹${balanceAfter}.`,
+      actionText: 'View transactions',
+      link: '/wallet',
+      type: 'wallet_update',
+      badge: 'New'
+    }, io);
+
+    // 2. Admin Notification: Payment Alert
+    await sendNotification({
+      recipientRole: 'ADMIN',
+      recipientModel: 'Admin',
+      title: 'Payment / Refund Alert',
+      message: `User ${user.name || 'User'} completed a wallet recharge of ₹${transaction.amount}.`,
+      actionText: 'Open transaction details',
+      link: '/admin/transactions',
+      type: 'payment_alert',
+      badge: 'New'
+    }, io);
 
     res.json({ message: 'Payment verified and wallet updated' });
   } catch (error) {
@@ -218,18 +234,16 @@ exports.payConsultation = async (req, res) => {
     consultation.status = 'scheduled';
     await consultation.save();
 
-    // Send email
+    // Send email in background without blocking response
     if (user.email) {
-      try {
-        await sendEmail({
-          email: user.email,
-          subject: 'Consultation Payment Successful',
-          message: `₹${consultation.cost} was deducted from your wallet for your consultation with ${consultation.expert.name}.`
-        });
-      } catch (err) {}
+      sendEmail({
+        email: user.email,
+        subject: 'Consultation Payment Successful',
+        message: `₹${consultation.cost} was deducted from your wallet for your consultation with ${consultation.expert.name}.`
+      }).catch(err => console.error('Email send background error:', err.message));
     }
 
-    res.json({ message: 'Payment successful using Wallet' });
+    res.json({ message: 'Payment successful using Wallet', success: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -343,4 +357,117 @@ exports.verifyCallPayment = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.payCallWithWallet = async (req, res) => {
+  try {
+    const { expertId, minutes, type } = req.body;
+    if (!expertId || !minutes || minutes <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid call parameters' });
+    }
+
+    const expert = await Expert.findById(expertId);
+    if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
+
+    let rate = 0;
+    if (type === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
+    else if (type === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
+    else if (type === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
+    else rate = expert.pricePerMinute || 50;
+
+    const totalCost = rate * minutes;
+
+    const user = await User.findById(req.user._id);
+    if (user.walletBalance < totalCost) {
+      return res.status(400).json({
+        success: false,
+        requiresRecharge: true,
+        message: 'Insufficient wallet balance',
+        currentBalance: user.walletBalance,
+        requiredAmount: totalCost,
+        shortfall: totalCost - user.walletBalance
+      });
+    }
+
+    // Deduct from wallet
+    const balanceBefore = user.walletBalance;
+    const balanceAfter = balanceBefore - totalCost;
+    user.walletBalance = balanceAfter;
+    await user.save();
+
+    // 80% to expert, 20% platform fee
+    const expertEarning = totalCost * 0.8;
+    const platformFee = totalCost - expertEarning;
+
+    // Record wallet transaction
+    const userTransaction = new WalletTransaction({
+      user: user._id,
+      type: 'DEBIT',
+      amount: totalCost,
+      status: 'SUCCESS',
+      balanceBefore,
+      balanceAfter,
+      description: `Wallet payment for ${minutes} mins ${type} with ${expert.name}`,
+      completedAt: new Date()
+    });
+
+    // Create Consultation record
+    const consultation = new Consultation({
+      user: user._id,
+      expert: expertId,
+      type: type || 'video',
+      status: 'scheduled',
+      paymentStatus: 'paid',
+      startTime: new Date(),
+      durationInMinutes: minutes,
+      cost: totalCost,
+      expertEarning,
+      platformFee
+    });
+    await consultation.save();
+
+    userTransaction.consultation = consultation._id;
+    await userTransaction.save();
+
+    // Dynamic Notifications
+    const io = req.app.get('io');
+    const { sendNotification } = require('../utils/notificationDispatcher');
+
+    // 1. User Notification
+    sendNotification({
+      recipient: user._id,
+      recipientRole: 'USER',
+      recipientModel: 'User',
+      title: 'Booking Confirmed',
+      message: `Your ${type} consultation with ${expert.name} has been paid via wallet (₹${totalCost}).`,
+      actionText: 'Open booking details',
+      link: '/bookings',
+      type: 'booking_confirmed',
+      badge: 'New'
+    }, io).catch(e => console.error('Booking notification error:', e));
+
+    // 2. Expert Notification
+    sendNotification({
+      recipient: expert._id,
+      recipientRole: 'EXPERT',
+      recipientModel: 'Expert',
+      title: 'New Consultation Request',
+      message: `${user.name || 'A user'} booked a ${minutes}-minute ${type} session.`,
+      actionText: 'View request',
+      link: '/expert/consultations',
+      type: 'consultation_request',
+      badge: 'New'
+    }, io).catch(e => console.error('Consultation request notification error:', e));
+
+    res.json({
+      success: true,
+      message: 'Paid successfully from wallet',
+      consultationId: consultation._id,
+      remainingBalance: balanceAfter
+    });
+  } catch (error) {
+    console.error('Wallet call payment error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 

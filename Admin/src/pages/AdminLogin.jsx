@@ -32,10 +32,18 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-secondary">
-          AuraExpert <span className="text-primary">Admin</span>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <img 
+          src="/logo.png" 
+          alt="ExpertHub Real Guidance" 
+          className="w-20 h-20 object-contain mx-auto rounded-2xl shadow-md border border-gray-100" 
+        />
+        <h2 className="mt-4 text-center text-3xl font-extrabold text-secondary tracking-tight">
+          ExpertHub <span className="text-primary">Admin</span>
         </h2>
+        <p className="mt-1 text-center text-xs font-semibold uppercase tracking-wider text-amber-600">
+          Real Guidance • Control Panel
+        </p>
         <p className="mt-2 text-center text-sm text-gray-600">
           Sign in to your administrator account
         </p>

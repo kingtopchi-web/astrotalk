@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare } from 'lucide-react';
+import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
 
 function ExpertDiscovery() {
@@ -32,107 +32,199 @@ function ExpertDiscovery() {
   const [callMinutes, setCallMinutes] = useState(15);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState(null);
+  const [savedExpertIds, setSavedExpertIds] = useState(new Set());
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+  
+  // Modern Toast and Shortfall Prompt state
+  const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' | 'info' }
+  const [showShortfallModal, setShowShortfallModal] = useState(false);
+  const [shortfallData, setShortfallData] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const navigate = useNavigate();
 
-  const openCallModal = (expert, type) => {
+  // Load saved experts for currently logged-in user
+  useEffect(() => {
+    const fetchSaved = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/saved-experts', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (Array.isArray(res.data)) {
+          setSavedExpertIds(new Set(res.data.map(exp => (typeof exp === 'object' ? exp._id : exp))));
+        }
+      } catch (err) {
+        console.error('Failed to load saved experts:', err);
+      }
+    };
+    fetchSaved();
+  }, []);
+
+  const handleToggleSave = async (expertId, e) => {
+    e.stopPropagation();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const isCurrentlySaved = savedExpertIds.has(expertId);
+    setSavedExpertIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlySaved) next.delete(expertId);
+      else next.add(expertId);
+      return next;
+    });
+
+    try {
+      const res = await axios.post(
+        `https://astrotalk-hlg2.onrender.com/api/user/saved-experts/${expertId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.savedExperts) {
+        setSavedExpertIds(new Set(res.data.savedExperts.map(id => id.toString())));
+      }
+    } catch (err) {
+      console.error('Save expert error:', err);
+      // Revert state on error
+      setSavedExpertIds(prev => {
+        const reverted = new Set(prev);
+        if (isCurrentlySaved) reverted.add(expertId);
+        else reverted.delete(expertId);
+        return reverted;
+      });
+    }
+  };
+
+  const fetchUserWallet = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return 0;
+    try {
+      setLoadingWallet(true);
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const bal = Number(res.data?.balance || 0);
+      setWalletBalance(bal);
+      return bal;
+    } catch (err) {
+      console.error('Wallet fetch error:', err);
+      return 0;
+    } finally {
+      setLoadingWallet(false);
+    }
+  };
+
+  const openCallModal = async (expert, type) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast("Please login first", 'info');
+      navigate('/login');
+      return;
+    }
     setSelectedExpert(expert);
     setCallType(type);
-    setCallMinutes(15);
+    
+    const curBal = await fetchUserWallet();
+    const rate = type === 'video' 
+      ? (expert.rates?.video || expert.pricePerMinute || 50)
+      : type === 'audio' 
+      ? (expert.rates?.audio || expert.pricePerMinute || 30)
+      : (expert.rates?.chat || expert.pricePerMinute || 20);
+
+    // Require at least 1 minute rate to start
+    if (curBal < rate) {
+      setShortfallData({
+        currentBalance: curBal,
+        neededAmount: rate,
+        shortfall: Math.ceil(rate - curBal)
+      });
+      setShowShortfallModal(true);
+      return;
+    }
+
     setShowCallModal(true);
   };
 
-
-
-  const calculateCallPrice = () => {
-    if (!selectedExpert) return 0;
-    let rate = 50;
-    if (callType === 'video') rate = selectedExpert.rates?.video || selectedExpert.pricePerMinute || 50;
-    if (callType === 'audio') rate = selectedExpert.rates?.audio || selectedExpert.pricePerMinute || 30;
-    if (callType === 'chat') rate = selectedExpert.rates?.chat || selectedExpert.pricePerMinute || 20;
-    return rate * callMinutes;
+  const getPerMinuteRate = () => {
+    if (!selectedExpert) return 30;
+    if (callType === 'video') return selectedExpert.rates?.video || selectedExpert.pricePerMinute || 50;
+    if (callType === 'audio') return selectedExpert.rates?.audio || selectedExpert.pricePerMinute || 30;
+    if (callType === 'chat') return selectedExpert.rates?.chat || selectedExpert.pricePerMinute || 20;
+    return 30;
   };
 
-  const handleCallPayment = async () => {
+  const executeSessionBookingAndPayment = async () => {
     try {
       setProcessingPayment(true);
       const token = localStorage.getItem('token');
-      if(!token) {
-        alert("Please login first");
-        navigate('/login');
-        return;
-      }
       const headers = { Authorization: `Bearer ${token}` };
-      
-      const orderRes = await axios.post(
-        'https://astrotalk-hlg2.onrender.com/api/wallet/create-call-order',
-        { expertId: selectedExpert._id, minutes: callMinutes, type: callType },
+
+      // 1. Create Pay-As-You-Go booking (NO upfront wallet deduction!)
+      const bookingRes = await axios.post(
+        'https://astrotalk-hlg2.onrender.com/api/bookings',
+        {
+          expertId: selectedExpert._id,
+          date: new Date().toISOString(),
+          type: callType === 'audio' ? 'Audio' : callType === 'chat' ? 'Chat' : 'Video',
+          duration: 60,
+          isInstant: true
+        },
         { headers }
       );
-      
-      const orderData = orderRes.data;
-      
-      const options = {
-        key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'ExpertHub',
-        description: `Payment for ${callMinutes} mins ${callType} call`,
-        order_id: orderData.orderId,
-        handler: async function (response) {
-          try {
-            const verifyRes = await axios.post(
-              'https://astrotalk-hlg2.onrender.com/api/wallet/verify-call-payment',
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                expertId: selectedExpert._id,
-                amount: orderData.amount / 100,
-                type: callType,
-                minutes: callMinutes
-              },
-              { headers }
-            );
-            
-            if (verifyRes.data.success) {
-              alert('Payment successful!');
-              setShowCallModal(false);
-              if (callType === 'chat') {
-                axios.post(
-                  'https://astrotalk-hlg2.onrender.com/api/messages/conversations',
-                  { expertId: selectedExpert._id },
-                  { headers }
-                ).then(() => {
-                  navigate('/messages');
-                }).catch(err => {
-                  console.error(err);
-                  navigate('/messages');
-                });
-              } else {
-                navigate(`/live/${verifyRes.data.consultationId}?type=${callType}`);
-              }
-            }
-          } catch (err) {
-            console.error(err);
-            alert('Payment verification failed.');
-          }
-        },
-        theme: { color: '#2563eb' }
-      };
-      
-      if (!window.Razorpay) throw new Error('Razorpay SDK not loaded');
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', () => alert('Payment Failed'));
-      rzp.open();
-      
+
+      const consultationId = bookingRes.data._id;
+
+      showToast('Connecting session... Billed per-second from wallet.', 'success');
+      setShowCallModal(false);
+      setShowShortfallModal(false);
+
+      // Instant redirect
+      if (callType === 'chat') {
+        axios.post(
+          'https://astrotalk-hlg2.onrender.com/api/messages/conversations',
+          { expertId: selectedExpert._id },
+          { headers }
+        ).catch(() => {});
+        navigate('/messages');
+      } else {
+        navigate(`/live/${consultationId}?type=${callType}`);
+      }
     } catch (err) {
       console.error(err);
-      alert('Failed to initiate payment');
+      showToast(err.response?.data?.message || err.message || 'Connection failed', 'error');
     } finally {
       setProcessingPayment(false);
     }
   };
+
+  const handleConfirmShortfallTopup = async () => {
+    if (!shortfallData) return;
+    try {
+      setProcessingPayment(true);
+      await handleTopupShortfall(shortfallData.shortfall);
+      setShowShortfallModal(false);
+      await executeSessionBookingAndPayment();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'Wallet recharge was cancelled.', 'error');
+      setProcessingPayment(false);
+    }
+  };
+
+  useEffect(() => {
+    if (catParam) {
+      setSelectedCategory(catParam);
+    }
+  }, [catParam]);
 
   useEffect(() => {
     axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories').then(res => setCategories(res.data)).catch(() => {});
@@ -288,8 +380,27 @@ function ExpertDiscovery() {
                   <div
                     key={expert._id}
                     onClick={() => navigate(`/expert/${expert._id}`)}
-                    className={`bg-surface rounded-2xl shadow-sm border border-border-color p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all ${viewMode === 'list' ? 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' : ''}`}
+                    className={`bg-surface rounded-2xl shadow-sm border border-border-color p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all relative group ${viewMode === 'list' ? 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' : ''}`}
                   >
+                    {/* Heart Save / Bookmark Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleSave(expert._id, e)}
+                      aria-label={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
+                      title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
+                      className={`absolute top-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 ${
+                        savedExpertIds.has(expert._id)
+                          ? 'bg-rose-50 text-rose-500 border border-rose-200 shadow-sm'
+                          : 'bg-surface-light/80 hover:bg-rose-50 text-on-surface/40 hover:text-rose-500 border border-border-color/60 hover:border-rose-200'
+                      }`}
+                    >
+                      <Heart
+                        size={17}
+                        className={`transition-transform hover:scale-110 active:scale-90 ${
+                          savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
+                        }`}
+                      />
+                    </button>
                     {/* Avatar + Status */}
                     <div className={`flex items-start gap-3 ${viewMode === 'grid' ? 'mb-3' : 'min-w-[200px]'}`}>
                       <div className="relative shrink-0">
@@ -386,46 +497,136 @@ function ExpertDiscovery() {
       {/* Call Modal */}
       {showCallModal && selectedExpert && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-border-color">
             <div className="p-4 border-b border-border-color flex items-center justify-between">
               <h3 className="font-bold text-lg text-on-surface flex items-center gap-2">
                 {callType === 'video' ? <Video size={20} className="text-primary"/> : callType === 'audio' ? <Phone size={20} className="text-emerald-500"/> : <MessageSquare size={20} className="text-blue-500" />}
-                Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} Session with {selectedExpert.name}
+                Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} with {selectedExpert.name}
               </h3>
               <button onClick={() => setShowCallModal(false)} className="text-on-surface/50 hover:text-on-surface/80">
                 <X size={24} />
               </button>
             </div>
             <div className="p-6">
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-on-surface mb-2">How many minutes do you want to talk?</label>
-                <div className="flex items-center justify-between border border-border-color rounded-xl overflow-hidden">
-                  <button 
-                    onClick={() => setCallMinutes(Math.max(5, callMinutes - 5))}
-                    className="px-4 py-3 bg-surface-light hover:bg-surface-light text-on-surface/80 font-bold border-r border-border-color"
-                  >-</button>
-                  <div className="flex-1 text-center font-extrabold text-xl">{callMinutes} mins</div>
-                  <button 
-                    onClick={() => setCallMinutes(callMinutes + 5)}
-                    className="px-4 py-3 bg-surface-light hover:bg-surface-light text-on-surface/80 font-bold border-l border-border-color"
-                  >+</button>
+              {/* Pay as you go Rate Info */}
+              <div className="bg-primary/10 rounded-xl p-4 mb-4 border border-primary/20 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
+                  <p className="text-2xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-sm font-medium text-on-surface/70"> / min</span></p>
                 </div>
-                <p className="text-xs text-on-surface/60 mt-2 text-center">Expert Rate: ₹{Number(calculateCallPrice() / callMinutes).toFixed(2)} / min</p>
+                <div className="text-right">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                    Per-Second Billing
+                  </span>
+                </div>
               </div>
               
-              <div className="bg-primary/10 rounded-xl p-4 flex items-center justify-between mb-6 border border-primary/20">
-                <span className="font-bold text-on-surface">Total Amount</span>
-                <span className="text-2xl font-extrabold text-primary">₹{Number(calculateCallPrice()).toFixed(2)}</span>
+              {/* Wallet Status Info */}
+              <div className="bg-surface-light border border-border-color rounded-xl p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                    <Wallet size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-on-surface/60 font-medium">Your Wallet Balance</p>
+                    <p className="text-base font-bold text-on-surface">₹{walletBalance.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-on-surface/60">Estimated talk time</p>
+                  <p className="text-sm font-bold text-emerald-600">~{Math.max(1, Math.floor(walletBalance / (getPerMinuteRate() * 1.2)))} mins</p>
+                </div>
+              </div>
+
+              {/* No Upfront payment guarantee notice */}
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 mb-6 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
+                <span className="text-base mt-0.5">💡</span>
+                <div>
+                  <p className="font-bold">पहले कोई एडवांस पैसा नहीं कटेगा!</p>
+                  <p className="opacity-90 mt-0.5">कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।</p>
+                </div>
               </div>
               
               <button 
-                onClick={handleCallPayment}
+                onClick={executeSessionBookingAndPayment}
                 disabled={processingPayment}
-                className="w-full bg-primary text-background font-bold py-3.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm"
+                className="w-full bg-primary text-background font-bold py-3.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-base"
               >
-                {processingPayment ? 'Processing...' : `Pay ₹${calculateCallPrice()} & Start ${callType === 'chat' ? 'Chat' : 'Call'}`}
+                {processingPayment ? (
+                  'Connecting...'
+                ) : (
+                  <>
+                    <Phone size={18} />
+                    <span>Start Session Now / अभी शुरू करें</span>
+                  </>
+                )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shortfall Modal */}
+      {showShortfallModal && shortfallData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-surface border border-border-color rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowShortfallModal(false)}
+              className="absolute top-4 right-4 text-on-surface/50 hover:text-on-surface p-1 rounded-lg"
+            >
+              ✕
+            </button>
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mb-4">
+              <Wallet size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-on-surface mb-1">Insufficient Wallet Balance</h3>
+            <p className="text-xs text-amber-600 font-semibold mb-3">अपर्याप्त बैलेंस</p>
+            <p className="text-sm text-on-surface/70 mb-4">
+              इस विशेषज्ञ से बात शुरू करने के लिए आपके वॉलेट में कम से कम 1 मिनट का बैलेंस (<span className="font-bold text-on-surface">₹{shortfallData.neededAmount}</span>) होना आवश्यक है।
+            </p>
+            <div className="bg-surface-light rounded-xl p-3.5 border border-border-color mb-5 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-on-surface/60">वर्तमान वॉलेट बैलेंस:</span>
+                <span className="font-bold text-on-surface">₹{shortfallData.currentBalance.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border-color pt-2">
+                <span className="text-on-surface/60">कम से कम जोड़ने योग्य राशि:</span>
+                <span className="font-black text-primary text-base">₹{shortfallData.shortfall}</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowShortfallModal(false)}
+                className="flex-1 py-3 px-4 border border-border-color rounded-xl font-bold text-on-surface/70 hover:bg-surface-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowShortfallModal(false);
+                  navigate('/wallet');
+                }}
+                className="flex-1 py-3 px-4 bg-primary text-background rounded-xl font-bold hover:bg-primary-light transition-colors shadow-sm"
+              >
+                Recharge Wallet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-semibold border ${
+            toast.type === 'error'
+              ? 'bg-rose-950/90 text-rose-200 border-rose-800 backdrop-blur-md'
+              : toast.type === 'info'
+              ? 'bg-slate-900/95 text-slate-100 border-slate-700 backdrop-blur-md'
+              : 'bg-emerald-950/90 text-emerald-200 border-emerald-800 backdrop-blur-md'
+          }`}>
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-xs opacity-70 hover:opacity-100">✕</button>
           </div>
         </div>
       )}

@@ -53,6 +53,14 @@ const consultationSchema = new mongoose.Schema({
   },
   meetingLink: {
     type: String, // e.g. a dynamic room URL for video calls
+  },
+  chatStarted: {
+    type: Boolean,
+    default: false
+  },
+  chatStartedAt: {
+    type: Date,
+    default: null
   }
 }, { timestamps: true });
 

@@ -2,6 +2,7 @@ const VideoSession = require('../models/VideoSession');
 const Consultation = require('../models/Consultation');
 const Expert = require('../models/Expert');
 const User = require('../models/User');
+const { sendNotification } = require('../utils/notificationDispatcher');
 
 exports.userJoinSession = async (req, res) => {
   try {
@@ -59,8 +60,22 @@ exports.userJoinSession = async (req, res) => {
         expertId: consultation.expert._id,
         serviceName: consultation.service ? consultation.service.name : 'Consultation',
         scheduledAt: consultation.startTime,
-        waitingSince: session.userJoinedAt
+        waitingSince: session.userJoinedAt,
+        type: consultation.type
       });
+
+      const isVideo = consultation.type === 'video';
+      sendNotification({
+        recipient: consultation.expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: isVideo ? 'Incoming Video Call' : 'Incoming Audio Call',
+        message: `${req.user.name || 'A user'} is requesting an ${isVideo ? 'video' : 'audio'} session.`,
+        type: 'incoming_call',
+        link: `/live/${consultation._id}?type=${isVideo ? 'video' : 'audio'}&incoming=true`,
+        actionText: 'Join Call',
+        badge: 'Incoming'
+      }, io).catch(e => console.error('Incoming call notification error:', e));
     }
 
     res.json({ message: 'Joined waiting room', session });
@@ -74,13 +89,18 @@ exports.userLeaveSession = async (req, res) => {
     const { consultationId } = req.params;
     const session = await VideoSession.findOne({ consultationId, userId: req.user._id });
     if (session && session.status !== 'COMPLETED') {
-      session.status = 'USER_LEFT';
+      session.status = 'COMPLETED';
+      session.endedAt = new Date();
       await session.save();
       
       const io = req.app.get('io');
       if (io) {
         io.to(`user_${session.expertId}`).emit('VIDEO_USER_LEFT', { consultationId });
         io.to(`call_room_${consultationId}`).emit('VIDEO_USER_LEFT', { consultationId });
+        io.to(`user_${session.expertId}`).emit('VIDEO_SESSION_ENDED', { consultationId });
+        io.to(`call_room_${consultationId}`).emit('VIDEO_SESSION_ENDED', { consultationId });
+        io.to(`user_${session.expertId}`).emit('session_ended', { consultationId, reason: 'User ended call' });
+        io.to(`call_room_${consultationId}`).emit('session_ended', { consultationId, reason: 'User ended call' });
       }
     }
     res.json({ message: 'Left session' });
@@ -129,6 +149,18 @@ exports.expertJoinSession = async (req, res) => {
     if (io) {
       io.to(`user_${session.userId}`).emit('VIDEO_EXPERT_JOINED', { consultationId, sessionId: session._id });
       io.to(`call_room_${consultationId}`).emit('VIDEO_EXPERT_JOINED', { consultationId });
+
+      sendNotification({
+        recipient: session.userId,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: 'Expert Ready to Connect',
+        message: 'Your video consultation is ready to start.',
+        type: 'expert_ready',
+        link: `/consultations/${consultationId}`,
+        actionText: 'Join consultation',
+        badge: 'Live'
+      }, io).catch(e => console.error('Expert ready notification error:', e));
     }
 
     res.json({ message: 'Expert joined', session });

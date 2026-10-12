@@ -12,7 +12,8 @@ import {
   Bell, 
   Search,
   User,
-  HelpCircle
+  HelpCircle,
+  Home
 } from 'lucide-react';
 
 const UserLayout = ({ children, title = '', subtitle = '' }) => {
@@ -46,10 +47,8 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         <div className="p-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-background font-bold shadow-md shadow-primary/20">
-              E
-            </div>
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0 shadow-sm" />
             <span className="text-xl font-bold text-on-surface tracking-tight">ExpertHub</span>
           </Link>
         </div>
@@ -101,9 +100,19 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
         
         {/* Mobile Header */}
         <header className="md:hidden bg-surface border-b border-border-color p-4 flex justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-background font-bold">E</div>
-            <h1 className="text-xl font-bold text-on-surface">ExpertHub</h1>
+          <div className="flex items-center gap-2.5">
+            <Link
+              to="/"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
+              title="Back to Home"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Home</span>
+            </Link>
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.png" alt="ExpertHub" className="w-7 h-7 object-contain rounded-md shrink-0" />
+              <h1 className="text-lg font-bold text-on-surface">ExpertHub</h1>
+            </Link>
           </div>
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-on-surface/80">
             <Menu size={24} />
@@ -116,8 +125,8 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
             <div className="fixed inset-0 bg-on-background/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
             <aside className="relative flex flex-col w-64 bg-surface-light text-on-surface h-screen shadow-2xl">
               <div className="p-4 border-b border-border-color">
-                <div className="flex items-center gap-2 px-2 py-1">
-                  <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-background font-bold">E</div>
+                <div className="flex items-center gap-2.5 px-2 py-1">
+                  <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
                   <span className="text-xl font-bold text-on-surface tracking-tight">ExpertHub</span>
                 </div>
               </div>
@@ -175,52 +184,111 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
             <button className="text-on-surface/60 hover:text-primary transition-colors relative">
               <Bell size={20} />
             </button>
-            <div className="relative">
+            {/* User Profile Trigger & Dropdown */}
+            <div 
+              className="relative group py-2"
+              onMouseEnter={() => setIsDropdownOpen(true)}
+              onMouseLeave={() => setIsDropdownOpen(false)}
+            >
               <div 
-                className="flex items-center gap-3 border-l border-border-color pl-4 cursor-pointer"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-3 border-l border-border-color pl-4 cursor-pointer select-none"
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
               >
-                <div className="text-right">
-                  <p className="text-sm font-bold text-on-surface">{displayName}</p>
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold text-on-surface leading-snug">{displayName}</p>
                   <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">
                     {user?.role === 'ADMIN' ? 'SUPER ADMIN' : user?.role || 'User'}
                   </p>
                 </div>
-                <img
-                  src={user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff`}
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full shadow-sm border border-border-color object-cover"
-                />
+                <div className="relative">
+                  <img
+                    src={user?.profileImage || localStorage.getItem('user_avatar') || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff`}
+                    alt={displayName}
+                    className="w-10 h-10 rounded-full shadow-sm border-2 border-border-color group-hover:border-primary object-cover transition-colors"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff`;
+                    }}
+                  />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface"></span>
+                </div>
               </div>
 
-              {isDropdownOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setIsDropdownOpen(false)}
-                  ></div>
-                  <div className="absolute right-0 mt-2 w-48 bg-surface rounded-xl shadow-lg border border-border-color py-2 z-20">
+              {/* Hover & Click Dropdown Menu */}
+              <div 
+                className={`absolute right-0 top-full pt-2 w-60 z-30 transition-all duration-200 transform ${
+                  isDropdownOpen 
+                    ? 'opacity-100 visible translate-y-0 pointer-events-auto' 
+                    : 'opacity-0 invisible -translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto'
+                }`}
+              >
+                <div className="bg-surface rounded-2xl shadow-xl border border-border-color py-2 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border-color bg-surface-light/40">
+                    <p className="text-sm font-bold text-on-surface truncate">{displayName}</p>
+                    <p className="text-xs text-on-surface/60 truncate mt-0.5">{user?.email || 'Logged in'}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary uppercase">
+                      {user?.role === 'ADMIN' ? 'SUPER ADMIN' : user?.role || 'User'}
+                    </span>
+                  </div>
+
+                  <div className="py-1">
                     <Link 
                       to="/profile" 
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-light transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <User size={16} className="text-on-surface/50" />
-                      <span>Profile</span>
+                      <span>My Profile</span>
                     </Link>
+                    <Link 
+                      to="/bookings" 
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <MessageSquare size={16} className="text-on-surface/50" />
+                      <span>My Appointments</span>
+                    </Link>
+                    <Link 
+                      to="/wallet" 
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <CreditCard size={16} className="text-on-surface/50" />
+                      <span>Wallet & Balance</span>
+                    </Link>
+                    <Link 
+                      to="/settings" 
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <Settings size={16} className="text-on-surface/50" />
+                      <span>Account Settings</span>
+                    </Link>
+                    <Link 
+                      to="/support" 
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <HelpCircle size={16} className="text-on-surface/50" />
+                      <span>Help & Support</span>
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-border-color pt-1">
                     <button 
                       onClick={() => {
                         setIsDropdownOpen(false);
                         handleLogout();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors w-full text-left font-medium"
                     >
-                      <LogOut size={16} className="text-red-400" />
+                      <LogOut size={16} className="text-red-500" />
                       <span>Logout</span>
                     </button>
                   </div>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </header>

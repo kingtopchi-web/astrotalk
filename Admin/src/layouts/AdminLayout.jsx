@@ -8,6 +8,7 @@ import {
   Search, ChevronDown, ChevronRight, CalendarClock, CheckCircle,
   XCircle, Clock
 } from 'lucide-react';
+import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 
 const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
 
@@ -58,13 +59,6 @@ const buildNav = (stats = {}) => [
     items: [
       { name: 'Transactions', path: '/transactions', icon: ArrowLeftRight },
       { name: 'Revenue', path: '/revenue', icon: TrendingUp },
-    ],
-  },
-  {
-    section: 'CONTENT',
-    icon: Star,
-    items: [
-      { name: 'Reviews & Ratings', path: '/reviews', icon: Star },
     ],
   },
   {
@@ -256,13 +250,15 @@ const SidebarContent = ({
     <div className={`flex flex-col h-full ${collapsed ? 'w-[60px]' : 'w-64'} transition-all duration-300`}>
       {/* Logo */}
       <div className={`flex items-center gap-3 border-b border-slate-200 shrink-0 ${collapsed ? 'justify-center py-4 px-2' : 'px-5 py-4'}`}>
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
-          S
-        </div>
+        <img 
+          src="/logo.png" 
+          alt="ExpertHub Real Guidance" 
+          className="w-8 h-8 object-contain rounded-lg shadow-sm shrink-0" 
+        />
         {!collapsed && (
           <div>
-            <p className="text-base font-bold text-slate-900 leading-none">Stitch</p>
-            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">Admin Portal</p>
+            <p className="text-base font-bold text-slate-900 leading-none tracking-tight">ExpertHub</p>
+            <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mt-0.5">Real Guidance • Admin</p>
           </div>
         )}
       </div>
@@ -337,7 +333,6 @@ function AdminLayout() {
     'CONSULTATIONS': false,
     'COMMUNICATION': false,
     'FINANCE': false,
-    'CONTENT': false,
     'SYSTEM': false,
     'ADMIN': false,
   });
@@ -489,12 +484,7 @@ function AdminLayout() {
 
           <div className="ml-auto flex items-center gap-3">
             {/* Notifications bell */}
-            <button className="relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">
-              <Bell size={18} />
-              {stats.pendingConsultations > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
-              )}
-            </button>
+            <AdminNotificationDropdown />
 
             {/* Profile dropdown */}
             <div className="relative" ref={dropdownRef}>

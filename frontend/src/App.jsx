@@ -15,7 +15,6 @@ import Categories from './pages/Categories';
 import FreeServices from './pages/FreeServices';
 import Blog from './pages/Blog';
 import Notifications from './pages/Notifications';
-import Market from './pages/Market';
 import Bookings from './pages/Bookings';
 import Profile from './pages/Profile';
 import UserDashboard from './pages/UserDashboard';
@@ -41,6 +40,7 @@ import ExpertEarnings from './pages/expert/ExpertEarnings';
 import ExpertServices from './pages/expert/ExpertServices';
 import ExpertClients from './pages/expert/ExpertClients';
 import ExpertSettings from './pages/expert/ExpertSettings';
+import ExpertNotifications from './pages/expert/ExpertNotifications';
 
 import './index.css';
 
@@ -74,17 +74,16 @@ function App() {
 
           {/* Semi-Public Routes (content available after login) */}
           <Route path="/" element={<Home />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT', 'ADMIN']} />}>
             <Route path="/experts" element={<Experts />} />
-            <Route path="/categories" element={<Categories />} />
             <Route path="/free-services" element={<FreeServices />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/expert/:id" element={<ExpertPublicProfile />} />
-            <Route path="/market" element={<Market />} />
           </Route>
 
           {/* User Protected Routes */}
@@ -117,6 +116,7 @@ function App() {
               <Route path="/expert/profile/edit" element={<ExpertProfileEdit />} />
               <Route path="/expert/clients" element={<ExpertClients />} />
               <Route path="/expert/settings" element={<ExpertSettings />} />
+              <Route path="/expert/notifications" element={<ExpertNotifications />} />
             </Route>
           </Route>
 

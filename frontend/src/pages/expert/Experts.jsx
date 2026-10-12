@@ -145,12 +145,17 @@ function Experts() {
                       <span className="text-secondary/70 font-semibold ml-0.5">({expert.reviewsCount || '120'})</span>
                     </div>
 
-                    {expert.languages && expert.languages.length > 0 && (
-                      <p className="text-xs text-on-surface-variant line-clamp-1 flex items-center gap-1 mb-4">
-                        <span className="material-symbols-outlined text-[14px]">translate</span>
-                        {expert.languages.join(', ')}
-                      </p>
-                    )}
+                    {(() => {
+                      const langs = expert.languages && expert.languages.length > 0
+                        ? Array.from(new Set([...expert.languages, 'Hindi']))
+                        : ['English', 'Hindi'];
+                      return (
+                        <p className="text-xs text-on-surface-variant line-clamp-1 flex items-center gap-1 mb-4">
+                          <span className="material-symbols-outlined text-[14px]">translate</span>
+                          {langs.join(', ')}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
 

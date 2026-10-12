@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
+import { createSocket } from '../../utils/socket';
 import { useOutletContext } from 'react-router-dom';
 import { Send, Paperclip, Search, Check, CheckCheck, MessageSquare, MoreVertical, Phone, Video } from 'lucide-react';
 
@@ -11,12 +11,87 @@ function ExpertMessages() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [socket, setSocket] = useState(null);
+  const [activeConsultation, setActiveConsultation] = useState(null);
+  const [chatStarted, setChatStarted] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [waitingCountdown, setWaitingCountdown] = useState(120);
+  const [errorMessage, setErrorMessage] = useState('');
+  const isEndingRef = useRef(false);
   const messagesEndRef = useRef(null);
+
+  const getOtherParticipant = (conv) => {
+    if (!conv || !conv.participants) return null;
+    return conv.participants.find(p => p.participantId?._id !== expert._id)?.participantId || null;
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setConversations(res.data);
+      return res.data;
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    }
+  };
+
+  const fetchMessages = async (convId) => {
+    const targetId = convId || activeConversation?._id;
+    if (!targetId) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${targetId}/messages`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessages(res.data);
+      if (socket) {
+        socket.emit('join_conversation', targetId);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const fetchActiveChatConsultation = async (userId) => {
+    if (!userId) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/active-chat/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const consult = res.data;
+      setActiveConsultation(consult);
+
+      if (consult?.chatStarted) {
+        setChatStarted(true);
+        if (consult.chatStartedAt) {
+          const started = new Date(consult.chatStartedAt);
+          setSeconds(Math.max(0, Math.floor((new Date() - started) / 1000)));
+        } else {
+          setSeconds(0);
+        }
+      } else {
+        setChatStarted(false);
+        setSeconds(0);
+        if (consult?.startTime) {
+          const elapsed = Math.floor((new Date() - new Date(consult.startTime)) / 1000);
+          setWaitingCountdown(Math.max(0, 120 - elapsed));
+        } else {
+          setWaitingCountdown(120);
+        }
+      }
+    } catch (err) {
+      setActiveConsultation(null);
+      setChatStarted(false);
+    }
+  };
 
   // Initialize Socket.IO connection
   useEffect(() => {
     if (!expert) return;
-    const newSocket = io('https://astrotalk-hlg2.onrender.com');
+    const newSocket = createSocket();
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -36,6 +111,47 @@ function ExpertMessages() {
       }));
     });
 
+    newSocket.on('new_chat_consultation', (data) => {
+      console.log('[Socket] Expert received new_chat_consultation:', data);
+      fetchConversations().then((convs) => {
+        const otherUser = getOtherParticipant(activeConversation);
+        if (otherUser && (otherUser._id === data.partnerId || otherUser._id === data.consultation?.user)) {
+          fetchActiveChatConsultation(otherUser._id);
+          fetchMessages(activeConversation?._id);
+        } else if (convs) {
+          // If the expert hasn't selected this conversation yet, auto-select it!
+          const targetUser = data.partnerId || data.consultation?.user;
+          const matchingConv = convs.find(c => {
+            const p = c.participants?.find(part => part.participantId?._id !== expert._id)?.participantId?._id;
+            return p === targetUser;
+          });
+          if (matchingConv) {
+            setActiveConversation(matchingConv);
+          }
+        }
+      });
+    });
+
+    newSocket.on('chat_session_started', (data) => {
+      setChatStarted(true);
+      setActiveConsultation(prev => prev ? { ...prev, chatStarted: true, chatStartedAt: data.chatStartedAt } : prev);
+      setSeconds(0);
+    });
+
+    newSocket.on('session_ended', (data) => {
+      setActiveConsultation(null);
+      setChatStarted(false);
+      if (data?.reason) {
+        setErrorMessage(data.reason);
+      }
+    });
+
+    newSocket.on('chat_error', (data) => {
+      if (data?.message) {
+        setErrorMessage(data.message);
+      }
+    });
+
     newSocket.on('messages_read', ({ conversationId, readBy }) => {
       setMessages(prev => prev.map(m => {
         if (m.conversationId === conversationId && m.sender !== readBy) {
@@ -46,70 +162,131 @@ function ExpertMessages() {
     });
 
     return () => newSocket.close();
-  }, [expert]);
+  }, [expert, activeConversation]);
 
-  // Fetch conversations
+  // Fetch conversations on mount
   useEffect(() => {
     fetchConversations();
   }, []);
-
-  const fetchConversations = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setConversations(res.data);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    }
-  };
 
   // Fetch messages when a conversation is selected
   useEffect(() => {
     if (!activeConversation) return;
 
-    const fetchMessages = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${activeConversation._id}/messages`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setMessages(res.data);
-        
-        if (socket) {
-          socket.emit('join_conversation', activeConversation._id);
-        }
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      }
-    };
-    fetchMessages();
+    fetchMessages(activeConversation._id);
+
+    const otherUser = getOtherParticipant(activeConversation);
+    if (otherUser) {
+      fetchActiveChatConsultation(otherUser._id);
+    }
   }, [activeConversation, socket]);
+
+  // 1. Initial 2-minute countdown (120 seconds) for expert to reply
+  useEffect(() => {
+    if (!activeConsultation || chatStarted) return;
+
+    const waitTimer = setInterval(() => {
+      setWaitingCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(waitTimer);
+          if (!isEndingRef.current) {
+            isEndingRef.current = true;
+            handleEndConsultation(true, 0, 'You did not reply within 2 minutes. The chat session has expired.');
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(waitTimer);
+  }, [activeConsultation, chatStarted]);
+
+  // 2. Timer when chat is active
+  useEffect(() => {
+    if (!activeConsultation || !chatStarted) return;
+
+    const timer = setInterval(() => {
+      setSeconds(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeConsultation, chatStarted]);
+
+  const handleEndConsultation = async (autoDisconnected = false, finalSecs = null, reason = '') => {
+    if (!activeConsultation) return;
+    try {
+      const token = localStorage.getItem('token');
+      const usedSeconds = finalSecs !== null ? finalSecs : (chatStarted ? seconds : 0);
+      const actualDuration = chatStarted ? (Number((usedSeconds / 60).toFixed(2)) || 0.01) : 0;
+
+      await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${activeConsultation._id}/end`, {
+        actualDuration,
+        reason: reason || (autoDisconnected ? 'Expert did not reply within 2 minutes' : 'Session ended')
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setActiveConsultation(null);
+      setChatStarted(false);
+      if (reason) setErrorMessage(reason);
+    } catch (err) {
+      console.error("Error ending consultation", err);
+    }
+  };
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const validateMessageText = (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return { isValid: false, error: 'Message cannot be empty.' };
+
+    // Check for digits
+    if (/\d/.test(trimmed)) {
+      return { isValid: false, error: 'Numbers/digits are not allowed in messages. Please type text using alphabets only.' };
+    }
+
+    // Check for email
+    if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(trimmed) || /@/.test(trimmed)) {
+      return { isValid: false, error: 'Sharing email addresses or contact information is not allowed.' };
+    }
+
+    // Check for links / URLs
+    if (/(https?:\/\/|www\.|\.com|\.in|\.org|\.net|\.io|\.co)/i.test(trimmed)) {
+      return { isValid: false, error: 'Sharing links, URLs or websites is not allowed.' };
+    }
+
+    // Only allow letters (any language including Hindi/English), spaces and standard punctuation
+    const allowedRegex = /^[\p{L}\s.,!?'"\-()]+$/u;
+    if (!allowedRegex.test(trimmed)) {
+      return { isValid: false, error: 'Only alphabets and basic punctuation are allowed. Numbers, symbols, and special characters cannot be sent.' };
+    }
+
+    return { isValid: true };
+  };
+
   const handleSendMessage = () => {
-    if (!inputText.trim() || !activeConversation || !socket) return;
+    if (!inputText.trim() || !activeConversation || !socket || !activeConsultation) return;
+
+    const validation = validateMessageText(inputText);
+    if (!validation.isValid) {
+      setErrorMessage(validation.error);
+      return;
+    }
 
     const messageData = {
       conversationId: activeConversation._id,
       senderId: expert._id,
       senderModel: 'Expert',
-      text: inputText,
+      text: inputText.trim(),
       fileUrl: null
     };
 
     socket.emit('send_message', messageData);
     setInputText('');
-  };
-
-  const getOtherParticipant = (conv) => {
-    if (!conv || !conv.participants) return null;
-    return conv.participants.find(p => p.participantId?._id !== expert._id)?.participantId || null;
   };
 
   return (
@@ -194,7 +371,29 @@ function ExpertMessages() {
                 <p className="text-xs text-green-500 font-medium">Online</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {activeConsultation && (
+                <div className="flex items-center gap-2 mr-3 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
+                  {!chatStarted ? (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                      <span>Reply within {Math.floor(waitingCountdown / 60)}m {waitingCountdown % 60}s to start session!</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>{Math.floor(seconds / 60).toString().padStart(2, '0')}:{(seconds % 60).toString().padStart(2, '0')}</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => handleEndConsultation(false)}
+                    className="ml-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    End Chat
+                  </button>
+                </div>
+              )}
               <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"><Phone size={18} /></button>
               <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"><Video size={18} /></button>
               <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"><MoreVertical size={18} /></button>
@@ -233,33 +432,43 @@ function ExpertMessages() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat Input */}
+          {/* Chat Input or Session Status */}
           <div className="p-4 bg-white border-t border-slate-100">
-            <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-              <button className="p-2 text-slate-400 hover:text-slate-600 rounded-full transition-colors shrink-0">
-                <Paperclip size={20} />
-              </button>
-              <textarea 
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder="Type a message..." 
-                className="flex-1 bg-transparent border-none outline-none resize-none max-h-32 min-h-[40px] py-2 text-sm text-slate-800 placeholder-slate-400"
-                rows="1"
-              />
-              <button 
-                onClick={handleSendMessage}
-                disabled={!inputText.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2.5 rounded-xl transition-colors shrink-0 shadow-sm"
-              >
-                <Send size={18} className="ml-0.5" />
-              </button>
-            </div>
+            {!activeConsultation ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-center gap-2.5 text-center text-slate-500 text-xs font-medium">
+                <span className="material-symbols-outlined text-amber-500 text-lg">lock</span>
+                <span>Chat session is inactive or ended. You can reply once the user initiates a new chat session.</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5 w-full">
+                <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+                  <textarea 
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder={!chatStarted ? `Reply to user to start session (${Math.floor(waitingCountdown / 60)}m ${waitingCountdown % 60}s remaining, alphabets only)...` : "Type a message (alphabets only, no numbers/links/files)..."} 
+                    className="flex-1 bg-transparent border-none outline-none resize-none max-h-32 min-h-[40px] py-2 text-sm text-slate-800 placeholder-slate-400"
+                    rows="1"
+                  />
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!inputText.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2.5 rounded-xl transition-colors shrink-0 shadow-sm cursor-pointer"
+                  >
+                    <Send size={18} className="ml-0.5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-2 font-medium">
+                  <span className="material-symbols-outlined text-[13px] text-blue-500">info</span>
+                  <span>Note: Only text (alphabets) allowed. Numbers, documents, images, emails, and links are restricted.</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -271,6 +480,30 @@ function ExpertMessages() {
           <p className="text-slate-500 mt-2 max-w-sm text-center">
             Select a conversation from the sidebar to view your chat with a user.
           </p>
+        </div>
+      )}
+
+      {/* Session Notification / Inactivity Disconnect Modal */}
+      {errorMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white border border-amber-200 rounded-3xl p-6 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-3xl">timer_off</span>
+            </div>
+            
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Chat Notice / सूचना</h3>
+            
+            <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+              {errorMessage}
+            </p>
+
+            <button
+              onClick={() => setErrorMessage('')}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors text-sm cursor-pointer"
+            >
+              Okay / ठीक है
+            </button>
+          </div>
         </div>
       )}
     </div>

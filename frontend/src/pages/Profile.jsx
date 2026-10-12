@@ -9,6 +9,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
+import { compressAvatar, saveAvatarToDB } from '../utils/avatarStorage';
 
 function Profile() {
   const { user, logout, updateUser } = useAuth();
@@ -30,14 +31,22 @@ function Profile() {
       const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setProfile(res.data);
+      const cachedAvatar = localStorage.getItem('user_avatar') || user?.profileImage || '';
+      const resolvedAvatar = res.data.profileImage || cachedAvatar || '';
+
+      const updatedProfile = { ...res.data, profileImage: resolvedAvatar };
+      setProfile(updatedProfile);
       setForm({
         name: res.data.name || '',
         mobile: res.data.mobile || '',
         bio: res.data.bio || '',
         location: res.data.location || '',
-        profileImage: res.data.profileImage || ''
+        profileImage: resolvedAvatar
       });
+      if (resolvedAvatar) {
+        updateUser({ ...res.data, profileImage: resolvedAvatar });
+        localStorage.setItem('user_avatar', resolvedAvatar);
+      }
     } catch (err) {
       if (err.response?.status === 401) navigate('/login');
       setError('Could not load profile.');
@@ -54,12 +63,21 @@ function Profile() {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.patch('https://astrotalk-hlg2.onrender.com/api/user/profile', form, {
+      const activeImg = form.profileImage || '';
+      const payload = { ...form, profileImage: activeImg };
+
+      const res = await axios.patch('https://astrotalk-hlg2.onrender.com/api/user/profile', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setProfile(res.data.user);
-      // Update context + localStorage so the header icon updates immediately
-      updateUser(res.data.user);
+      const savedUser = res.data?.user || { ...profile, ...payload };
+      const finalImg = savedUser.profileImage || activeImg;
+      const mergedUser = { ...savedUser, profileImage: finalImg };
+
+      setProfile(mergedUser);
+      updateUser(mergedUser);
+      if (finalImg) {
+        saveAvatarToDB(finalImg);
+      }
       setSuccess('Profile updated successfully!');
       setEditing(false);
     } catch (err) {
@@ -69,21 +87,25 @@ function Profile() {
     }
   };
 
-
-
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm(prev => ({ ...prev, profileImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressAvatar(file, 200, 0.75);
+        if (compressedDataUrl) {
+          setForm(prev => ({ ...prev, profileImage: compressedDataUrl }));
+          saveAvatarToDB(compressedDataUrl);
+          updateUser({ profileImage: compressedDataUrl });
+        }
+      } catch (err) {
+        console.warn('Image processing error:', err);
+      }
     }
   };
 
   const displayName = profile?.name || user?.name || 'User';
-  const displayImage = (editing ? form.profileImage : profile?.profileImage) || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff&size=150`;
+  const currentAvatar = (editing ? form.profileImage : (profile?.profileImage || user?.profileImage || localStorage.getItem('user_avatar'))) || '';
+  const displayImage = currentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff&size=150`;
 
   return (
     <UserLayout title="My Profile" subtitle="Manage your account details and preferences.">

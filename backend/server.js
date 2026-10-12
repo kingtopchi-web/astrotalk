@@ -40,6 +40,10 @@ app.use('/api/support', supportRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/expert-services', expertServiceRoutes);
 app.use('/api/video', videoRoutes);
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
+const reviewRoutes = require('./routes/reviewRoutes');
+app.use('/api/reviews', reviewRoutes);
 const publicRoutes = require('./routes/publicRoutes');
 app.use('/api/public', publicRoutes);
 
@@ -100,6 +104,8 @@ const io = new Server(server, {
   }
 });
 
+app.set('io', io);
+
 io.on('connection', (socket) => {
   console.log(`User connected to socket: ${socket.id}`);
   
@@ -107,6 +113,14 @@ io.on('connection', (socket) => {
   socket.on('join_user', (userId) => {
     socket.join(`user_${userId}`);
     console.log(`Socket ${socket.id} joined user_${userId}`);
+  });
+
+  // Join a role-based room (for ADMIN/EXPERT alerts)
+  socket.on('join_role', (role) => {
+    if (role) {
+      socket.join(`role_${role}`);
+      console.log(`Socket ${socket.id} joined role_${role}`);
+    }
   });
 
   // Join a specific conversation room
@@ -119,6 +133,57 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     // data = { conversationId, senderId, senderModel, text, fileUrl }
     try {
+      // 1. Disallow any documents or images / attachments
+      if (data.fileUrl) {
+        socket.emit('chat_error', {
+          message: 'Files, images and documents are not allowed in chat. Only text messages can be sent.',
+          code: 'ATTACHMENTS_NOT_ALLOWED'
+        });
+        return;
+      }
+
+      const text = typeof data.text === 'string' ? data.text.trim() : '';
+      if (!text) return;
+
+      // 2. Disallow numbers/digits (na koi phone number ya digits)
+      if (/\d/.test(text)) {
+        socket.emit('chat_error', {
+          message: 'Numbers/digits are not allowed in messages. Please type text using alphabets only.',
+          code: 'DIGITS_NOT_ALLOWED'
+        });
+        return;
+      }
+
+      // 3. Disallow email addresses
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+      if (emailRegex.test(text) || /@/.test(text)) {
+        socket.emit('chat_error', {
+          message: 'Sharing email addresses or contact details is not allowed.',
+          code: 'EMAIL_NOT_ALLOWED'
+        });
+        return;
+      }
+
+      // 4. Disallow links, URLs and website addresses
+      const urlRegex = /(https?:\/\/|www\.|\.com|\.in|\.org|\.net|\.io|\.co)/i;
+      if (urlRegex.test(text)) {
+        socket.emit('chat_error', {
+          message: 'Sharing links, URLs or websites is not allowed.',
+          code: 'URL_NOT_ALLOWED'
+        });
+        return;
+      }
+
+      // 5. Must only contain alphabets (English/Hindi characters), spaces, and standard sentence punctuation (. , ! ? ' " -)
+      const allowedCharsRegex = /^[\p{L}\s.,!?'"\-()]+$/u;
+      if (!allowedCharsRegex.test(text)) {
+        socket.emit('chat_error', {
+          message: 'Only alphabets and basic punctuation are allowed. Numbers, symbols, and special characters cannot be sent.',
+          code: 'INVALID_CHARACTERS'
+        });
+        return;
+      }
+
       const Message = require('./models/Message');
       const Conversation = require('./models/Conversation');
       
@@ -150,6 +215,46 @@ io.on('connection', (socket) => {
         }
       }
 
+      const Consultation = require('./models/Consultation');
+      
+      // Check if there is an active/ongoing chat consultation between the participants
+      const userParticipant = conversation.participants.find(p => p.participantModel === 'User');
+      const expertParticipant = conversation.participants.find(p => p.participantModel === 'Expert');
+
+      let activeChatConsultation = null;
+      if (userParticipant && expertParticipant) {
+        activeChatConsultation = await Consultation.findOne({
+          user: userParticipant.participantId,
+          expert: expertParticipant.participantId,
+          type: 'chat',
+          status: { $in: ['scheduled', 'ongoing'] }
+        }).sort({ startTime: -1 });
+
+        // REQUIREMENT: If no active chat session is ongoing, neither user nor expert can reply/message
+        if (!activeChatConsultation) {
+          socket.emit('chat_error', { 
+            message: 'No active chat session. Please start a new consultation to chat.',
+            code: 'NO_ACTIVE_SESSION'
+          });
+          return;
+        }
+
+        // If the sender is the EXPERT and chat has not officially started yet, mark it started!
+        if (data.senderModel === 'Expert' && !activeChatConsultation.chatStarted) {
+          activeChatConsultation.chatStarted = true;
+          activeChatConsultation.chatStartedAt = new Date();
+          activeChatConsultation.status = 'ongoing';
+          await activeChatConsultation.save();
+
+          // Broadcast to conversation that expert has replied and session timer has officially begun!
+          io.to(`conversation_${data.conversationId}`).emit('chat_session_started', {
+            consultationId: activeChatConsultation._id,
+            chatStartedAt: activeChatConsultation.chatStartedAt,
+            startTime: activeChatConsultation.chatStartedAt
+          });
+        }
+      }
+
       const message = new Message({
         conversationId: data.conversationId,
         sender: data.senderId,
@@ -168,6 +273,25 @@ io.on('connection', (socket) => {
 
       // Broadcast to everyone in the conversation room
       io.to(`conversation_${data.conversationId}`).emit('receive_message', message);
+
+      // Create dynamic notification for recipient
+      if (recipient) {
+        const { sendNotification } = require('./utils/notificationDispatcher');
+        const isFromExpert = data.senderModel === 'Expert';
+        const senderName = isFromExpert ? 'Your expert' : 'A user';
+        
+        await sendNotification({
+          recipient: recipient.participantId,
+          recipientRole: recipient.participantModel === 'Expert' ? 'EXPERT' : 'USER',
+          recipientModel: recipient.participantModel || 'User',
+          title: isFromExpert ? 'New Chat Message' : 'New Message from Client',
+          message: `${senderName} has sent you a message: "${data.text ? (data.text.slice(0, 50) + (data.text.length > 50 ? '...' : '')) : 'File attached'}"`,
+          actionText: 'Open chat',
+          link: recipient.participantModel === 'Expert' ? '/expert/messages' : '/messages',
+          type: 'chat_message',
+          badge: 'New'
+        }, io);
+      }
     } catch (err) {
       console.error('Socket message error', err);
     }

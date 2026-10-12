@@ -22,6 +22,7 @@ import TransactionsList from './pages/TransactionsList';
 import Refunds from './pages/Refunds';
 import Revenue from './pages/Revenue';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 
 function App() {
   return (
@@ -51,15 +52,12 @@ function App() {
           {/* COMMUNICATION */}
           <Route path="/messages" element={<SupportTickets />} />
           <Route path="/video-sessions" element={<AdminPlaceholder title="Video Sessions" description="Video session management coming soon." />} />
-          <Route path="/notifications" element={<AdminPlaceholder title="Notifications" description="Notification management coming soon." />} />
+          <Route path="/notifications" element={<Notifications />} />
 
           {/* FINANCE */}
           <Route path="/transactions" element={<TransactionsList />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/revenue" element={<Revenue />} />
-
-          {/* CONTENT */}
-          <Route path="/reviews" element={<AdminPlaceholder title="Reviews & Ratings" description="Review moderation coming soon." />} />
 
           {/* SYSTEM */}
           <Route path="/settings" element={<Settings />} />

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { createSocket } from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
+import ReviewForm from '../components/ReviewForm';
+import { soundService } from '../utils/soundService';
 
 function LiveSession() {
   const { id: consultationId } = useParams();
@@ -18,6 +20,10 @@ function LiveSession() {
   const [showEndModal, setShowEndModal] = useState(false);
   const [showGiftTray, setShowGiftTray] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [userWalletBalance, setUserWalletBalance] = useState(0);
+  const [isBalanceExhausted, setIsBalanceExhausted] = useState(false);
+  const isEndingRef = useRef(false);
   
   const [consultation, setConsultation] = useState(null);
   const [remoteUser, setRemoteUser] = useState(null);
@@ -32,8 +38,22 @@ function LiveSession() {
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   
-  const ratePerMinute = consultation ? consultation.cost / consultation.durationInMinutes : 0;
   const isExpert = user?.role === 'EXPERT';
+  const searchType = (new URLSearchParams(window.location.search).get('type') || '').toLowerCase();
+  const consType = (consultation?.type || '').toLowerCase();
+  // Any consultation that isn't explicitly video is an audio call (e.g. 'call', 'audio', etc.)
+  const isAudioOnly = searchType === 'audio' || searchType === 'call' || (searchType !== 'video' && consType !== 'video');
+  const expertRatePerMin = consultation?.expert?.rates 
+    ? (consultation.expert.rates[consultation.type?.toLowerCase()] || consultation.expert.pricePerMinute || 30)
+    : (consultation?.cost && consultation?.durationInMinutes ? (consultation.cost / consultation.durationInMinutes) : 30);
+  
+  const costPerSecond = Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
+  const maxAllowedSeconds = userWalletBalance > 0 && costPerSecond > 0 
+    ? Math.floor(userWalletBalance / costPerSecond) 
+    : 3600;
+  const currentBilled = Number((seconds * costPerSecond).toFixed(2));
+  const remainingLiveBalance = Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
+  const remainingSeconds = Math.max(0, maxAllowedSeconds - seconds);
 
   useEffect(() => {
     if (!user) return; // Wait for auth to load
@@ -65,7 +85,24 @@ function LiveSession() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      let status = statusRes.data.status || 'SCHEDULED';
+      let status = statusRes.data?.status || 'SCHEDULED';
+      
+      // If consultation or video session is completed or cancelled, do not ringing or accept
+      if (res.data?.status === 'completed' || res.data?.status === 'cancelled' || status === 'COMPLETED' || status === 'USER_LEFT') {
+        setSessionStatus('COMPLETED');
+        setIsIncoming(false);
+        setCallAccepted(false);
+        setIsConnected(false);
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach(t => t.stop());
+          localStreamRef.current = null;
+        }
+        if (peerConnectionRef.current) {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+        }
+        return;
+      }
       
       if (status === 'LIVE' && statusRes.data.startedAt) {
         const started = new Date(statusRes.data.startedAt);
@@ -83,6 +120,20 @@ function LiveSession() {
         }
       }
       
+      // Fetch user wallet balance for pay-as-you-go live metering
+      if (!isExpert) {
+        try {
+          const wRes = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (wRes.data && typeof wRes.data.balance === 'number') {
+            setUserWalletBalance(wRes.data.balance);
+          }
+        } catch (wErr) {
+          console.error('Failed to load wallet balance:', wErr);
+        }
+      }
+
       setSessionStatus('LIVE');
     } catch (error) {
       console.error('Failed to load consultation:', error);
@@ -93,7 +144,18 @@ function LiveSession() {
 
   const handleAcceptCall = async () => {
     try {
+      soundService.stopRing();
       const token = localStorage.getItem('token');
+      // Verify consultation has not ended before accepting
+      const checkRes = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (checkRes.data?.status === 'completed' || checkRes.data?.status === 'cancelled') {
+        setSessionStatus('COMPLETED');
+        setIsIncoming(false);
+        setCallAccepted(false);
+        return;
+      }
       if (isExpert) {
          await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
          await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
@@ -136,18 +198,29 @@ function LiveSession() {
       }
     });
 
-    socket.on('VIDEO_SESSION_ENDED', () => {
+    const handleRemoteEnd = () => {
+      soundService.stopRing();
       setSessionStatus('COMPLETED');
-    });
-
-    socket.on('VIDEO_USER_LEFT', () => {
-      if (isExpert && sessionStatus === 'USER_WAITING') {
-         // Optionally handle
+      setIsIncoming(false);
+      setCallAccepted(false);
+      setIsConnected(false);
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(t => t.stop());
+        localStreamRef.current = null;
       }
-    });
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+    };
+
+    socket.on('VIDEO_SESSION_ENDED', handleRemoteEnd);
+    socket.on('session_ended', handleRemoteEnd);
+    socket.on('VIDEO_USER_LEFT', handleRemoteEnd);
 
     return () => {
       // Cleanup Socket
+      soundService.stopRing();
       socket.emit('leave_call_room', consultationId);
       socket.disconnect();
       socketRef.current = null;
@@ -163,6 +236,26 @@ function LiveSession() {
     };
   }, [consultationId]); // Run once on mount
 
+  // Ringing sound management (Ringtone for incoming, dial tone for outgoing)
+  useEffect(() => {
+    if (sessionStatus !== 'LIVE' || isConnected) {
+      soundService.stopRing();
+      return;
+    }
+
+    if (isIncoming && !callAccepted) {
+      soundService.playIncomingRing();
+    } else if (!isIncoming && !isConnected) {
+      soundService.playOutgoingRing();
+    } else {
+      soundService.stopRing();
+    }
+
+    return () => {
+      soundService.stopRing();
+    };
+  }, [sessionStatus, isConnected, isIncoming, callAccepted]);
+
   // Connection Timeout Logic (Show error if WebRTC doesn't connect in 30s)
   useEffect(() => {
     let timeoutId;
@@ -170,6 +263,7 @@ function LiveSession() {
       timeoutId = setTimeout(() => {
         if (!isConnected) {
           console.warn("[WEBRTC] Connection timed out after 30 seconds");
+          soundService.stopRing();
           setErrorMsg('Connection timed out. The other user may have disconnected, closed their browser, or has network issues. Please try booking again.');
           setSessionStatus('ERROR');
         }
@@ -193,9 +287,8 @@ function LiveSession() {
       console.log("[WEBRTC] initWebRTC called");
       try {
         let stream;
-        const callType = new URLSearchParams(window.location.search).get('type');
         try {
-          if (callType === 'audio') {
+          if (isAudioOnly) {
             console.log("[WEBRTC] Audio call requested. Requesting microphone only...");
             stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
             setCamOn(false);
@@ -432,8 +525,16 @@ function LiveSession() {
     const timer = setInterval(() => {
       setSeconds(prev => {
         const next = prev + 1;
-        if (next % 60 === 0 && ratePerMinute > 0) {
-          setBilledAmount(b => b + ratePerMinute);
+        // Pay-As-You-Go Balance Check: If user runs out of balance, disconnect call
+        if (!isExpert && userWalletBalance > 0 && maxAllowedSeconds > 0 && next >= maxAllowedSeconds) {
+          if (!isEndingRef.current) {
+            isEndingRef.current = true;
+            setIsBalanceExhausted(true);
+            // Auto terminate call on insufficient balance
+            setTimeout(() => {
+              endCall(true, next);
+            }, 500);
+          }
         }
         return next;
       });
@@ -451,7 +552,7 @@ function LiveSession() {
       clearInterval(timer);
       clearInterval(heartbeat);
     };
-  }, [sessionStatus, ratePerMinute]);
+  }, [sessionStatus, isExpert, userWalletBalance, maxAllowedSeconds]);
 
   const toggleMic = () => {
     if (localStreamRef.current) {
@@ -473,31 +574,68 @@ function LiveSession() {
     setCamOn(!camOn);
   };
 
-  const endCall = async () => {
+  const endCall = async (isAutoDisconnect = false, finalSeconds = null) => {
+    soundService.stopRing();
+    const autoDisconnect = typeof isAutoDisconnect === 'boolean' ? isAutoDisconnect : false;
+    if (isEndingRef.current && !autoDisconnect) return;
+    isEndingRef.current = true;
+
     try {
       const token = localStorage.getItem('token');
+      const usedSeconds = finalSeconds !== null ? finalSeconds : seconds;
       // Calculate actual duration in minutes based on seconds
-      const actualDuration = Number((seconds / 60).toFixed(2)) || 0.01;
+      const actualDuration = Number((usedSeconds / 60).toFixed(2)) || 0.01;
 
       if (isExpert) {
         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/end`, {}, {
           headers: { Authorization: `Bearer ${token}` }
-        });
+        }).catch(()=>{});
       } else {
         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/leave`, {}, {
           headers: { Authorization: `Bearer ${token}` }
-        });
+        }).catch(()=>{});
       }
 
-      // Also call the new end endpoint to process pro-rata payment
+      // Call end endpoint to deduct actual duration from wallet
       await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}/end`, { actualDuration }, {
         headers: { Authorization: `Bearer ${token}` }
+      }).catch((e)=>{
+        console.warn('Booking end response:', e?.response?.data || e.message);
       });
 
+      // Release media stream
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+        localStreamRef.current = null;
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+
+      setIsIncoming(false);
+      setCallAccepted(false);
+      setIsConnected(false);
+      setSessionStatus('COMPLETED');
+
+      // If disconnected due to low balance, keep modal open
+      if (autoDisconnect) {
+        setIsBalanceExhausted(true);
+        return;
+      }
+
+      // If user is client, show review prompt after consultation completion
+      if (!isExpert) {
+        setShowEndModal(false);
+        setShowReviewModal(true);
+        return;
+      }
     } catch (err) {
       console.error('Failed to end session', err);
     }
-    navigate(-1);
+    if (!autoDisconnect) {
+      navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true });
+    }
   };
 
   const formatTime = (totalSeconds) => {
@@ -516,7 +654,7 @@ function LiveSession() {
         <span className="material-symbols-outlined text-red-500 text-6xl mb-4">error</span>
         <h2 className="text-xl font-bold mb-2">Unable to Join</h2>
         <p className="text-on-surface/50 mb-6 text-center max-w-md">{errorMsg}</p>
-        <button onClick={() => navigate(-1)} className="px-6 py-2 bg-slate-700 rounded-xl font-bold hover:bg-slate-600">Go Back</button>
+        <button onClick={() => navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true })} className="px-6 py-2 bg-slate-700 rounded-xl font-bold hover:bg-slate-600">Go Back</button>
       </div>
     );
   }
@@ -527,7 +665,7 @@ function LiveSession() {
         <span className="material-symbols-outlined text-green-500 text-6xl mb-4">task_alt</span>
         <h2 className="text-xl font-bold mb-2">Consultation Ended</h2>
         <p className="text-on-surface/50 mb-6 text-center max-w-md">This consultation has been completed successfully.</p>
-        <button onClick={() => navigate(-1)} className="px-6 py-2 bg-primary rounded-xl font-bold hover:bg-primary/100">Go Back</button>
+        <button onClick={() => navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true })} className="px-6 py-2 bg-primary rounded-xl font-bold hover:bg-primary/100">Go Back</button>
       </div>
     );
   }
@@ -540,117 +678,209 @@ function LiveSession() {
       <header className="fixed top-0 inset-x-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
         <div className="h-16 px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <h1 className="text-lg font-bold truncate">Live Session</h1>
+             <h1 className="text-lg font-bold truncate">
+               {isAudioOnly ? 'Audio Consultation' : 'Live Session'}
+             </h1>
              {sessionStatus === 'LIVE' && (
                  <span className="bg-red-500 text-background text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">Live</span>
              )}
           </div>
           {!isExpert && sessionStatus === 'LIVE' && (
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-primary/100/20 px-3 py-1 rounded-full">
-                <span className="text-sm text-blue-400 font-bold">${billedAmount.toFixed(2)}</span>
+              <div className="flex items-center bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold text-emerald-400 gap-1.5">
+                <span className="material-symbols-outlined text-[15px]">account_balance_wallet</span>
+                <span>₹{remainingLiveBalance.toFixed(2)}</span>
+              </div>
+              <div className={`flex items-center px-3 py-1 rounded-full text-xs font-bold gap-1 ${remainingSeconds < 60 ? 'bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse' : 'bg-primary/20 border border-primary/30 text-primary'}`}>
+                <span className="material-symbols-outlined text-[15px]">hourglass_top</span>
+                <span>{formatTime(remainingSeconds)} left</span>
               </div>
             </div>
           )}
         </div>
       </header>
 
-      <main className="flex flex-col relative w-full pt-16 pb-6 bg-slate-900 min-h-screen">
-        <div className="flex flex-col w-full px-4 flex-1">
-          
-          <div className="relative w-full rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 my-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-slate-700/30 px-3 py-1 rounded-full">
-                <span className="text-sm font-bold tracking-tight text-slate-300">
-                  {sessionStatus === 'LIVE' ? formatTime(seconds) : 'Pre-Session'}
-                </span>
-              </div>
-            </div>
-          </div>
+      {isAudioOnly ? (
+        /* SIMPLE CLEAN AUDIO CALL SCREEN */
+        <main className="flex flex-col relative w-full pt-20 pb-8 bg-slate-900 min-h-screen">
+          {/* Hidden video elements so WebRTC audio streams remain actively playing */}
+          <video ref={remoteVideoRef} autoPlay playsInline className="hidden" />
+          <video ref={localVideoRef} autoPlay playsInline muted className="hidden" />
 
-          <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-black aspect-[3/4] md:aspect-video flex items-center justify-center border border-slate-700/50">
-            <video 
-              ref={remoteVideoRef} 
-              autoPlay 
-              playsInline 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+          <div className="flex flex-col items-center justify-between w-full max-w-md mx-auto px-4 flex-1 py-6">
             
-            {/* Overlays */}
-            <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10 pointer-events-none">
-              <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full pointer-events-auto border border-white/10">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span className="text-xs font-medium text-background">Encrypted</span>
+            {/* Center Simple Audio Call Avatar & Details */}
+            <div className="flex flex-col items-center my-auto w-full text-center">
+              <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-4xl md:text-5xl font-bold text-white shadow-xl mb-4">
+                {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
-            </div>
 
-            <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1 pointer-events-none">
-              <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-                <span className="text-sm font-bold text-background">{remoteUser?.name || 'Remote User'}</span>
-                {remoteUser?.role === 'EXPERT' && <span className="material-symbols-outlined text-[14px] text-blue-400">verified</span>}
+              <h2 className="text-xl md:text-2xl font-bold text-white flex items-center justify-center gap-1.5">
+                {remoteUser?.name || 'Remote User'}
+                {remoteUser?.role === 'EXPERT' && (
+                  <span className="material-symbols-outlined text-blue-400 text-lg" title="Verified Expert">verified</span>
+                )}
+              </h2>
+
+              <p className="text-slate-400 text-sm mt-1">
+                {remoteUser?.role === 'EXPERT' ? 'Expert Consultant' : 'Client Consultation'}
+              </p>
+
+              <div className="mt-4 px-4 py-1.5 bg-slate-800/80 rounded-full border border-slate-700 text-xs font-mono font-bold text-emerald-400 inline-flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>{sessionStatus === 'LIVE' ? formatTime(seconds) : 'Connecting...'}</span>
               </div>
-            </div>
 
-            {/* Local Video Picture-in-Picture */}
-            <div className="absolute top-4 right-4 w-24 h-36 md:w-32 md:h-48 rounded-xl overflow-hidden shadow-2xl z-20 bg-slate-800 border-2 border-slate-700/50">
-              <video 
-                ref={localVideoRef} 
-                autoPlay 
-                playsInline 
-                muted 
-                className={`w-full h-full object-cover ${!camOn ? 'hidden' : ''}`}
-              />
-              {!camOn && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-                  <span className="material-symbols-outlined text-3xl text-on-surface/60">videocam_off</span>
+              {toastMsg && (
+                <div className="mt-4 bg-black/80 text-white backdrop-blur-md px-5 py-2 rounded-full shadow-2xl flex items-center gap-2 border border-white/10 animate-bounce">
+                  <span className="text-2xl">{toastMsg.icon}</span>
+                  <span className="text-xs font-bold">Sent!</span>
                 </div>
               )}
-              <div className="absolute bottom-1 right-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] font-bold text-background">You</div>
             </div>
-            
-            {toastMsg && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-black/80 text-background backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-bounce border border-white/10">
-                <span className="text-3xl">{toastMsg.icon}</span>
-                <span className="text-sm font-bold">Sent!</span>
+
+            {/* Simple Call Controls */}
+            <div className="w-full bg-slate-800/90 border border-slate-700/70 rounded-2xl shadow-xl p-4 flex items-center justify-center gap-6">
+              {/* Mic Toggle */}
+              <div className="flex flex-col items-center gap-1">
+                <button 
+                  className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                  onClick={toggleMic}
+                  title={micOn ? 'Mute' : 'Unmute'}
+                >
+                  <span className="material-symbols-outlined text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
+                </button>
+                <span className="text-[11px] font-medium text-slate-400">{micOn ? 'Mute' : 'Unmuted'}</span>
               </div>
-            )}
-          </div>
 
-          {/* Call Controls */}
-          <div className="w-full bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-4 mt-6 flex items-center justify-center gap-4 md:gap-6">
-            <button 
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-background'}`}
-              onClick={toggleMic}
-            >
-              <span className="material-symbols-outlined text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
-            </button>
-            <button 
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!camOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-background'}`}
-              onClick={toggleCam}
-            >
-              <span className="material-symbols-outlined text-2xl">{camOn ? 'videocam' : 'videocam_off'}</span>
-            </button>
-            {!isExpert && sessionStatus === 'LIVE' && (
+              {/* Gift button for client */}
+              {!isExpert && sessionStatus === 'LIVE' && (
+                <div className="flex flex-col items-center gap-1">
+                  <button 
+                    className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-95 shadow-md"
+                    onClick={() => setShowGiftTray(!showGiftTray)}
+                    title="Send Gift"
+                  >
+                    <span className="material-symbols-outlined text-2xl">featured_seasonal_and_gifts</span>
+                  </button>
+                  <span className="text-[11px] font-medium text-slate-400">Gift</span>
+                </div>
+              )}
+
+              {/* End Call Button */}
+              <div className="flex flex-col items-center gap-1">
+                <button 
+                  className="w-16 h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg hover:bg-red-500 transition-all active:scale-95"
+                  onClick={() => setShowEndModal(true)}
+                  title="End Call"
+                >
+                  <span className="material-symbols-outlined text-3xl">call_end</span>
+                </button>
+                <span className="text-[11px] font-medium text-red-400">End</span>
+              </div>
+            </div>
+
+          </div>
+        </main>
+      ) : (
+        /* STANDARD VIDEO CALL SCREEN */
+        <main className="flex flex-col relative w-full pt-16 pb-6 bg-slate-900 min-h-screen">
+          <div className="flex flex-col w-full px-4 flex-1">
+            
+            <div className="relative w-full rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 my-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 bg-slate-700/30 px-3 py-1 rounded-full">
+                  <span className="text-sm font-bold tracking-tight text-slate-300">
+                    {sessionStatus === 'LIVE' ? formatTime(seconds) : 'Pre-Session'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-black aspect-[3/4] md:aspect-video flex items-center justify-center border border-slate-700/50">
+              <video 
+                ref={remoteVideoRef} 
+                autoPlay 
+                playsInline 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              
+              {/* Overlays */}
+              <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10 pointer-events-none">
+                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full pointer-events-auto border border-white/10">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-xs font-medium text-background">Encrypted</span>
+                </div>
+              </div>
+
+              <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1 pointer-events-none">
+                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                  <span className="text-sm font-bold text-background">{remoteUser?.name || 'Remote User'}</span>
+                  {remoteUser?.role === 'EXPERT' && <span className="material-symbols-outlined text-[14px] text-blue-400">verified</span>}
+                </div>
+              </div>
+
+              {/* Local Video Picture-in-Picture */}
+              <div className="absolute top-4 right-4 w-24 h-36 md:w-32 md:h-48 rounded-xl overflow-hidden shadow-2xl z-20 bg-slate-800 border-2 border-slate-700/50">
+                <video 
+                  ref={localVideoRef} 
+                  autoPlay 
+                  playsInline 
+                  muted 
+                  className={`w-full h-full object-cover ${!camOn ? 'hidden' : ''}`}
+                />
+                {!camOn && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+                    <span className="material-symbols-outlined text-3xl text-on-surface/60">videocam_off</span>
+                  </div>
+                )}
+                <div className="absolute bottom-1 right-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] font-bold text-background">You</div>
+              </div>
+              
+              {toastMsg && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-black/80 text-background backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-bounce border border-white/10">
+                  <span className="text-3xl">{toastMsg.icon}</span>
+                  <span className="text-sm font-bold">Sent!</span>
+                </div>
+              )}
+            </div>
+
+            {/* Call Controls */}
+            <div className="w-full bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-4 mt-6 flex items-center justify-center gap-4 md:gap-6">
               <button 
-                className="w-14 h-14 rounded-full flex items-center justify-center bg-primary/100/20 text-blue-400 border border-blue-500/50 hover:bg-primary/100/30 transition-all active:scale-95 shadow-lg"
-                onClick={() => setShowGiftTray(!showGiftTray)}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-background'}`}
+                onClick={toggleMic}
               >
-                <span className="material-symbols-outlined text-2xl">featured_seasonal_and_gifts</span>
+                <span className="material-symbols-outlined text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
               </button>
-            )}
-            <button 
-              className="w-16 h-16 rounded-full flex items-center justify-center bg-red-600 text-background shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 transition-all active:scale-95"
-              onClick={() => setShowEndModal(true)}
-            >
-              <span className="material-symbols-outlined text-3xl">call_end</span>
-            </button>
-          </div>
+              <button 
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!camOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-background'}`}
+                onClick={toggleCam}
+              >
+                <span className="material-symbols-outlined text-2xl">{camOn ? 'videocam' : 'videocam_off'}</span>
+              </button>
+              {!isExpert && sessionStatus === 'LIVE' && (
+                <button 
+                  className="w-14 h-14 rounded-full flex items-center justify-center bg-primary/100/20 text-blue-400 border border-blue-500/50 hover:bg-primary/100/30 transition-all active:scale-95 shadow-lg"
+                  onClick={() => setShowGiftTray(!showGiftTray)}
+                >
+                  <span className="material-symbols-outlined text-2xl">featured_seasonal_and_gifts</span>
+                </button>
+              )}
+              <button 
+                className="w-16 h-16 rounded-full flex items-center justify-center bg-red-600 text-background shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 transition-all active:scale-95"
+                onClick={() => setShowEndModal(true)}
+              >
+                <span className="material-symbols-outlined text-3xl">call_end</span>
+              </button>
+            </div>
 
-        </div>
-      </main>
+          </div>
+        </main>
+      )}
 
       {/* End Call Modal */}
       {showEndModal && (
@@ -669,7 +899,7 @@ function LiveSession() {
               <button onClick={() => setShowEndModal(false)} className="flex-1 py-3 rounded-xl text-sm font-bold text-background bg-slate-700 hover:bg-slate-600 transition-colors">
                 Resume
               </button>
-              <button onClick={endCall} className="flex-1 py-3 rounded-xl text-sm font-bold text-background bg-red-600 hover:bg-red-500 transition-colors shadow-lg">
+              <button onClick={() => endCall(false)} className="flex-1 py-3 rounded-xl text-sm font-bold text-background bg-red-600 hover:bg-red-500 transition-colors shadow-lg">
                 End Call
               </button>
             </div>
@@ -704,33 +934,25 @@ function LiveSession() {
       )}
 
       {/* Full Screen Call Overlays for Ringing and Incoming Call */}
-      {!isConnected && (
-        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-between py-10 transition-colors duration-500 ${isIncoming && !callAccepted ? 'bg-[#06261b]' : 'bg-[#0b162c]'}`}>
+      {!isConnected && sessionStatus !== 'COMPLETED' && sessionStatus !== 'ERROR' && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-between py-12 bg-slate-950">
           
-          <div className="flex-1 flex flex-col items-center justify-center w-full px-4">
-             <div className="relative flex items-center justify-center w-40 h-40 md:w-56 md:h-56 mb-8">
-               {/* Animated Rings */}
-               <div className="absolute inset-0 rounded-full border border-white/10 animate-[ping_2.5s_ease-out_infinite]"></div>
-               <div className="absolute inset-4 rounded-full border border-white/20 animate-[ping_2.5s_ease-out_infinite_0.4s]"></div>
-               <div className="absolute inset-8 rounded-full border border-white/20 animate-[ping_2.5s_ease-out_infinite_0.8s]"></div>
-               
-               {/* Avatar */}
-               <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-4xl md:text-5xl font-bold text-background z-10 shadow-2xl relative
-                 ${isIncoming && !callAccepted ? 'bg-[#2dd4bf] shadow-[#2dd4bf]/20' : 'bg-[#f97316] shadow-[#f97316]/20'}`}>
-                 {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
-               </div>
+          <div className="flex-1 flex flex-col items-center justify-center w-full px-4 text-center">
+             <div className="w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center text-4xl md:text-5xl font-bold text-white shadow-xl bg-slate-800 border-2 border-slate-700 mb-6">
+               {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
              </div>
              
-             <h3 className="text-2xl md:text-3xl font-bold text-background mt-4">{remoteUser?.name || 'Remote User'}</h3>
+             <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">{remoteUser?.name || 'Remote User'}</h3>
              
              {isIncoming && !callAccepted ? (
-               <p className="text-emerald-400 text-sm md:text-base font-medium mt-3 flex items-center gap-2">
-                 <span className="material-symbols-outlined text-[18px]">call</span>
-                 Incoming Video Call...
+               <p className="text-emerald-400 text-sm md:text-base font-medium mt-3 flex items-center justify-center gap-2">
+                 <span className="material-symbols-outlined text-[20px]">{isAudioOnly ? 'call' : 'videocam'}</span>
+                 {isAudioOnly ? 'Incoming Audio Call...' : 'Incoming Video Call...'}
                </p>
              ) : (
-               <p className="text-blue-300 text-sm md:text-base font-medium mt-3 flex items-center gap-1">
-                 {isExpert && callAccepted ? 'Connecting' : 'Ringing'} <span className="animate-pulse flex gap-0.5 ml-1"><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span><span className="w-1.5 h-1.5 bg-blue-300 rounded-full"></span></span>
+               <p className="text-slate-400 text-sm md:text-base font-medium mt-3 flex items-center justify-center gap-1.5">
+                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                 {isExpert && callAccepted ? 'Connecting...' : (isAudioOnly ? 'Calling...' : 'Ringing...')}
                </p>
              )}
           </div>
@@ -762,6 +984,66 @@ function LiveSession() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Insufficient Balance Auto-Disconnect Modal */}
+      {isBalanceExhausted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-slate-800 border border-red-500/30 rounded-3xl p-6 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <span className="material-symbols-outlined text-3xl">account_balance_wallet</span>
+            </div>
+            
+            <h3 className="text-xl font-bold text-white mb-2">Insufficient Balance / अपर्याप्त बैलेंस</h3>
+            
+            <p className="text-slate-300 text-sm mb-4 leading-relaxed">
+              आपके वॉलेट में बैलेंस समाप्त हो गया है, इसलिए कॉल डिस्कनेक्ट कर दी गई है।
+              <br />
+              <span className="text-xs text-slate-400 mt-1 block">
+                Total Call Duration: {formatTime(seconds)} | Deducted: ₹{(seconds * costPerSecond).toFixed(2)}
+              </span>
+            </p>
+
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-3.5 mb-6 text-left">
+              <p className="text-xs text-red-400 font-medium">
+                💡 आगे बात जारी रखने के लिए कृपया अपने वॉलेट में बैलेंस ऐड (Recharge) करें।
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate('/wallet')}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[20px]">add_circle</span>
+                Add Balance to Wallet / बैलेंस जोड़ें
+              </button>
+              
+              <button
+                onClick={() => navigate('/bookings')}
+                className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors text-sm"
+              >
+                Go to Bookings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-Session Review Form Prompt */}
+      {showReviewModal && (
+        <ReviewForm
+          consultationId={consultationId}
+          expertName={consultation?.expert?.name || 'your expert'}
+          consultationType={consultation?.type || 'Consultation'}
+          onSuccess={() => {
+            // Success confirmation shows in ReviewForm for 1.5s, then onClose fires
+          }}
+          onClose={() => {
+            setShowReviewModal(false);
+            navigate('/bookings', { replace: true });
+          }}
+        />
       )}
 
     </div>

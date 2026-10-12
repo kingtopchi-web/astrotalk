@@ -1,6 +1,7 @@
 const SupportTicket = require('../models/SupportTicket');
 const SupportMessage = require('../models/SupportMessage');
 const HelpArticle = require('../models/HelpArticle');
+const { sendNotification } = require('../utils/notificationDispatcher');
 
 // Get all help articles
 exports.getHelpArticles = async (req, res) => {
@@ -48,6 +49,18 @@ exports.createTicket = async (req, res) => {
     });
 
     await initialMessage.save();
+
+    const io = req.app.get('io');
+    sendNotification({
+      recipientRole: 'ADMIN',
+      recipientModel: 'Admin',
+      title: 'New Complaint or Report',
+      message: `${userType} submitted ticket "${subject}" [${category}].`,
+      type: 'complaint_report',
+      link: '/admin/support',
+      actionText: 'Review ticket',
+      badge: 'Support'
+    }, io).catch(e => console.error('Support ticket notification error:', e));
 
     res.status(201).json({ message: 'Ticket created successfully', ticket });
   } catch (error) {

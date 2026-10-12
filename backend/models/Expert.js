@@ -15,7 +15,7 @@ const expertSchema = new mongoose.Schema({
   specialization: { type: String },
   experience: { type: String },
   bio: { type: String },
-  languages: { type: [String], default: ['English'] },
+  languages: { type: [String], default: ['English', 'Hindi'] },
 
   documents: { type: [String] }, // Array of document URLs
 

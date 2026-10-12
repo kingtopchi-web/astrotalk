@@ -17,6 +17,7 @@ function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
+  const [savedExperts, setSavedExperts] = useState([]);
   const [savedExpertsCount, setSavedExpertsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -33,8 +34,10 @@ function UserDashboard() {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
-        setAppointments(aptRes.data); 
-        setSavedExpertsCount(savedRes.data.length);
+        setAppointments(aptRes.data || []); 
+        const savedList = Array.isArray(savedRes.data) ? savedRes.data : [];
+        setSavedExperts(savedList);
+        setSavedExpertsCount(savedList.length);
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,6 +47,22 @@ function UserDashboard() {
 
     fetchDashboardData();
   }, []);
+
+  const handleRemoveSaved = async (expertId, e) => {
+    e.stopPropagation();
+    const token = localStorage.getItem('token');
+    setSavedExperts(prev => prev.filter(exp => (exp._id || exp) !== expertId));
+    setSavedExpertsCount(prev => Math.max(0, prev - 1));
+    try {
+      await axios.post(
+        `https://astrotalk-hlg2.onrender.com/api/user/saved-experts/${expertId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (err) {
+      console.error('Failed to remove saved expert:', err);
+    }
+  };
 
   const displayName = user?.name ? user.name.split(' ')[0] : 'User';
   
@@ -119,16 +138,19 @@ function UserDashboard() {
           <div className="bg-surface p-6 rounded-2xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
-                <Heart size={24} />
+                <Heart size={24} className="fill-rose-500" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-on-surface/60 mb-1">Saved Experts</p>
                 <h3 className="text-3xl font-bold text-on-surface">{savedExpertsCount}</h3>
               </div>
             </div>
-            <Link to="/experts" className="text-primary text-sm font-semibold mt-6 inline-flex items-center gap-1 hover:text-primary">
+            <a 
+              href="#saved-experts-section" 
+              className="text-primary text-sm font-semibold mt-6 inline-flex items-center gap-1 hover:text-primary cursor-pointer"
+            >
               View details <ChevronRight size={16} />
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -243,6 +265,113 @@ function UserDashboard() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Saved Experts Dynamic Section */}
+        <div id="saved-experts-section" className="bg-surface rounded-2xl shadow-sm border border-border-color p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
+                <Heart size={20} className="fill-rose-500 text-rose-500" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-on-surface">Saved Experts ({savedExperts.length})</h2>
+                <p className="text-xs text-on-surface/60">Your bookmarked professionals for quick consultations</p>
+              </div>
+            </div>
+            <Link to="/experts" className="text-sm font-semibold text-primary flex items-center gap-1 hover:underline">
+              Browse More <ChevronRight size={16} />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="animate-pulse h-36 bg-surface-light rounded-2xl"></div>
+              ))}
+            </div>
+          ) : savedExperts.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-border-color rounded-2xl bg-surface-light/30">
+              <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-400 mx-auto flex items-center justify-center mb-3">
+                <Heart size={24} />
+              </div>
+              <h3 className="font-bold text-on-surface text-sm mb-1">No Saved Experts Yet</h3>
+              <p className="text-xs text-on-surface/60 max-w-sm mx-auto mb-4">
+                Click the heart icon on any expert card to bookmark them here for instant consultations.
+              </p>
+              <Link to="/experts" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-background font-semibold text-xs hover:bg-primary-light transition-colors">
+                <Search size={14} /> Find Experts
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {savedExperts.map((exp) => {
+                const expName = exp.name || 'Expert';
+                const expImg = exp.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expName)}&background=F97316&color=fff`;
+                const categoryName = exp.categoryId?.name || exp.specialty || 'Consultant';
+                const subCategoryName = exp.subCategoryId?.name;
+                const price = Number(exp.rates?.chat || exp.pricePerMinute || 0).toFixed(2);
+
+                return (
+                  <div
+                    key={exp._id}
+                    onClick={() => navigate(`/expert/${exp._id}`)}
+                    className="bg-surface rounded-2xl border border-border-color p-4 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
+                  >
+                    {/* Unsave Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveSaved(exp._id, e)}
+                      aria-label="Remove expert"
+                      title="Remove from saved"
+                      className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-500 flex items-center justify-center transition-all z-10 border border-rose-200"
+                    >
+                      <Heart size={14} className="fill-rose-500" />
+                    </button>
+
+                    <div>
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="relative shrink-0">
+                          <img
+                            src={expImg}
+                            alt={expName}
+                            className="w-14 h-14 rounded-2xl object-cover"
+                          />
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${exp.onlineStatus === 'online' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                        </div>
+                        <div className="min-w-0 pr-6">
+                          <h4 className="font-bold text-sm text-on-surface truncate">{expName}</h4>
+                          <p className="text-xs text-on-surface/60 truncate">{categoryName}</p>
+                          {subCategoryName && (
+                            <span className="inline-block text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full mt-1">
+                              {subCategoryName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-border-color pt-3 mt-2">
+                      <div>
+                        <span className="text-sm font-bold text-on-surface">₹{price}</span>
+                        <span className="text-xs text-on-surface/50">/min</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/expert/${exp._id}`);
+                        }}
+                        className="text-xs bg-primary hover:bg-primary-light text-background font-bold px-3 py-1.5 rounded-xl shadow-sm transition-colors"
+                      >
+                        Consult
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>

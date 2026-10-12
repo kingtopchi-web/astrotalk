@@ -17,6 +17,9 @@ const categorySchema = new mongoose.Schema({
     type: String,
     default: 'category'
   },
+  image: {
+    type: String
+  },
   description: {
     type: String
   },

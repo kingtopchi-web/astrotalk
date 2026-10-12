@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { createSocket } from '../utils/socket';
+import { soundService } from '../utils/soundService';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -20,6 +21,7 @@ import {
   Briefcase,
   X
 } from 'lucide-react';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
   const [expert, setExpert] = useState(null);
@@ -61,9 +63,23 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
 
     socket.on('VIDEO_USER_WAITING', (data) => {
       setWaitingNotification(data);
+      soundService.playIncomingRing();
     });
 
-    return () => socket.disconnect();
+    socket.on('VIDEO_USER_LEFT', () => {
+      setWaitingNotification(null);
+      soundService.stopRing();
+    });
+
+    socket.on('VIDEO_SESSION_ENDED', () => {
+      setWaitingNotification(null);
+      soundService.stopRing();
+    });
+
+    return () => {
+      soundService.stopRing();
+      socket.disconnect();
+    };
   }, [expert?._id]);
 
   const handleLogout = () => {
@@ -90,8 +106,8 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-surface-light border-r border-border-color text-on-surface h-screen fixed z-20">
         <div className="p-4 border-b border-border-color">
-          <Link to="/" className="flex items-center gap-2 px-2 py-1">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-background font-bold">E</div>
+          <Link to="/" className="flex items-center gap-2.5 px-2 py-1">
+            <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
             <span className="text-xl font-bold text-on-surface tracking-tight">ExpertHub</span>
           </Link>
         </div>
@@ -146,46 +162,77 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
       {/* Main Content */}
       <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
         {waitingNotification && (
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-primary text-background px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
-             <div className="w-10 h-10 bg-surface/20 rounded-full flex items-center justify-center">
-                <Video size={20} />
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+             <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-2xl">
+                  {waitingNotification.type === 'video' ? 'videocam' : 'call'}
+                </span>
              </div>
              <div>
-                <h4 className="font-bold">Client is Waiting!</h4>
-                <p className="text-sm text-blue-100">A client is waiting for consultation in the video room.</p>
+                <h4 className="font-bold text-white">
+                  {waitingNotification.type === 'video' ? 'Incoming Video Call' : 'Incoming Audio Call'}
+                </h4>
+                <p className="text-sm text-slate-300">
+                  {waitingNotification.userName || 'Client'} is calling for a consultation.
+                </p>
              </div>
              <button 
                onClick={() => {
+                 soundService.stopRing();
                  setWaitingNotification(null);
-                 navigate(`/live/${waitingNotification.consultationId}`);
+                 const callType = waitingNotification.type === 'video' ? 'video' : 'audio';
+                 navigate(`/live/${waitingNotification.consultationId}?type=${callType}&incoming=true`);
                }}
-               className="ml-4 px-4 py-2 bg-surface text-primary font-bold rounded-xl hover:bg-primary/10 transition-colors"
+               className="ml-4 px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 transition-colors shadow-md flex items-center gap-1.5 shrink-0"
              >
-               Join Now
+               <span className="material-symbols-outlined text-base">call</span>
+               Accept Call
              </button>
-             <button onClick={() => setWaitingNotification(null)} className="ml-2 text-blue-200 hover:text-background">
+             <button onClick={() => {
+               soundService.stopRing();
+               setWaitingNotification(null);
+             }} className="ml-2 text-slate-400 hover:text-white shrink-0">
                <X size={20} />
              </button>
           </div>
         )}
         {/* Header - Desktop & Mobile */}
         <header className="bg-surface border-b border-border-color p-4 flex justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center gap-2 md:hidden">
-            <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 mr-2">
-              <Menu size={24} />
+          <div className="flex items-center gap-2.5 md:hidden">
+            <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1">
+              <Menu size={22} />
             </button>
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-background font-bold">E</div>
+            <Link
+              to="/"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
+              title="Back to Home"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Home</span>
+            </Link>
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.png" alt="ExpertHub" className="w-7 h-7 object-contain rounded-md shrink-0" />
+              <span className="font-heading font-extrabold text-base text-on-surface">ExpertHub</span>
+            </Link>
           </div>
           
-          <div className="hidden md:flex items-center bg-surface-light px-3 py-2 rounded-lg w-96 border border-border-color focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-            <Search size={18} className="text-on-surface/50" />
-            <input type="text" placeholder="Search..." className="bg-transparent border-none outline-none ml-2 text-sm w-full text-on-surface placeholder:text-on-surface/50" />
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-light border border-border text-on-surface hover:text-primary text-xs font-semibold transition-colors shadow-sm"
+              title="View Public Site / Home"
+            >
+              <span className="material-symbols-outlined text-[18px]">home</span>
+              <span>Back to Home</span>
+            </Link>
+            <div className="flex items-center bg-surface-light px-3 py-2 rounded-lg w-80 border border-border-color focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              <Search size={18} className="text-on-surface/50" />
+              <input type="text" placeholder="Search..." className="bg-transparent border-none outline-none ml-2 text-sm w-full text-on-surface placeholder:text-on-surface/50" />
+            </div>
           </div>
 
           <div className="flex items-center gap-4 ml-auto">
-            <Link to="/expert/notifications" className="text-on-surface/60 hover:text-primary transition-colors relative">
-              <Bell size={20} />
-            </Link>
+            <NotificationDropdown role="EXPERT" viewAllPath="/expert/notifications" />
             <div className="hidden md:flex items-center gap-3 border-l border-border-color pl-4 cursor-pointer">
               <div className="text-right">
                 <p className="text-sm font-bold text-on-surface">{displayName}</p>
@@ -205,8 +252,8 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
           <div className="md:hidden fixed inset-0 z-30 flex">
             <div className="fixed inset-0 bg-on-background/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
             <aside className="relative flex flex-col w-64 bg-surface-light text-on-surface h-screen shadow-2xl">
-              <div className="p-4 border-b border-border-color flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-background font-bold">E</div>
+              <div className="p-4 border-b border-border-color flex items-center gap-2.5">
+                <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
                 <span className="text-xl font-bold text-on-surface tracking-tight">ExpertHub</span>
               </div>
               <div className="p-4 flex-1 overflow-y-auto">

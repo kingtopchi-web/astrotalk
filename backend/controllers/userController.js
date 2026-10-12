@@ -18,16 +18,19 @@ exports.getMyProfile = async (req, res) => {
 exports.toggleSaveExpert = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
     const expertId = req.params.id;
     
-    if (user.savedExperts.includes(expertId)) {
+    if (!user.savedExperts) user.savedExperts = [];
+    const isSaved = user.savedExperts.some(id => id.toString() === expertId.toString());
+    if (isSaved) {
       user.savedExperts = user.savedExperts.filter(id => id.toString() !== expertId.toString());
     } else {
       user.savedExperts.push(expertId);
     }
     
     await user.save();
-    res.json({ savedExperts: user.savedExperts });
+    res.json({ isSaved: !isSaved, savedExperts: user.savedExperts });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -36,8 +39,15 @@ exports.toggleSaveExpert = async (req, res) => {
 // GET /api/user/saved-experts
 exports.getSavedExperts = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('savedExperts', 'name profileImage specialty categoryId');
-    res.json(user.savedExperts || []);
+    const user = await User.findById(req.user._id).populate({
+      path: 'savedExperts',
+      select: 'name profileImage specialty categoryId subCategoryId pricePerMinute hourlyRate rates rating onlineStatus isVerified bio experience',
+      populate: [
+        { path: 'categoryId', select: 'name' },
+        { path: 'subCategoryId', select: 'name' }
+      ]
+    });
+    res.json(user?.savedExperts || []);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -154,3 +164,27 @@ exports.getPublicSubCategories = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// GET /api/public/stats
+exports.getPublicStats = async (req, res) => {
+  try {
+    const usersCount = await User.countDocuments();
+    const verifiedExpertsCount = await Expert.countDocuments({
+      $or: [
+        { isVerified: true },
+        { verificationStatus: 'APPROVED' }
+      ]
+    });
+    const totalExpertsCount = await Expert.countDocuments();
+    const finalExperts = verifiedExpertsCount > 0 ? verifiedExpertsCount : totalExpertsCount;
+
+    res.json({
+      success: true,
+      usersCount,
+      verifiedExpertsCount: finalExperts
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+

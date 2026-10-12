@@ -64,11 +64,21 @@ const ExpertLogin = () => {
         <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 bg-white relative overflow-y-auto">
           <div className="w-full max-w-md relative z-10 py-8 mx-auto my-auto">
           
-          <div className="flex justify-center mb-10">
-            <Link to="/" className="flex items-center gap-2 group">
-               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
-                 <span className="material-symbols-outlined font-light text-[20px]">hub</span>
-               </div>
+          <div className="flex items-center justify-between mb-8">
+            <Link 
+              to="/" 
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-muted border border-border text-xs font-bold text-on-surface hover:text-primary transition-all shadow-sm"
+              title="Back to Home"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Home</span>
+            </Link>
+            <Link to="/" className="flex items-center gap-2.5 group">
+               <img 
+                 src="/logo.png" 
+                 alt="ExpertHub Logo" 
+                 className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
+               />
                <span className="font-heading font-extrabold text-2xl tracking-tight text-on-background">
                  ExpertHub
                </span>

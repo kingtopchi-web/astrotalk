@@ -61,15 +61,52 @@ exports.getMessages = async (req, res) => {
 // Send a message via REST API (fallback if socket not used for some reason)
 exports.sendMessage = async (req, res) => {
   try {
-    const { conversationId } = req.params;
-    const { messageType, text, fileUrl } = req.body;
-    const senderId = req.user._id;
-    let senderModel = 'User';
-    
-    if (req.user.role === 'EXPERT') {
-      senderModel = 'Expert';
-    } else if (req.user.role === 'ADMIN') {
-      senderModel = 'Admin';
+    // 1. Disallow documents, images or file attachments
+    if (fileUrl) {
+      return res.status(400).json({ 
+        message: 'Files, images and documents are not allowed in chat. Only text messages can be sent.',
+        code: 'ATTACHMENTS_NOT_ALLOWED' 
+      });
+    }
+
+    const messageContent = typeof text === 'string' ? text.trim() : '';
+    if (!messageContent) {
+      return res.status(400).json({ message: 'Message text cannot be empty' });
+    }
+
+    // 2. Disallow numbers/digits
+    if (/\d/.test(messageContent)) {
+      return res.status(400).json({ 
+        message: 'Numbers/digits are not allowed in messages. Please type text using alphabets only.',
+        code: 'DIGITS_NOT_ALLOWED' 
+      });
+    }
+
+    // 3. Disallow email addresses
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    if (emailRegex.test(messageContent) || /@/.test(messageContent)) {
+      return res.status(400).json({ 
+        message: 'Sharing email addresses or contact details is not allowed.',
+        code: 'EMAIL_NOT_ALLOWED' 
+      });
+    }
+
+    // 4. Disallow links, URLs and website addresses
+    const urlRegex = /(https?:\/\/|www\.|\.com|\.in|\.org|\.net|\.io|\.co)/i;
+    if (urlRegex.test(messageContent)) {
+      return res.status(400).json({ 
+        message: 'Sharing links, URLs or websites is not allowed.',
+        code: 'URL_NOT_ALLOWED' 
+      });
+    }
+
+    // 5. Must only contain alphabets (English/Hindi characters), spaces, and standard sentence punctuation (. , ! ? ' " -)
+    const allowedCharsRegex = /^[\p{L}\s.,!?'"\-()]+$/u;
+    if (!allowedCharsRegex.test(messageContent)) {
+      return res.status(400).json({ 
+        message: 'Only alphabets and basic punctuation are allowed. Numbers, symbols, and special characters cannot be sent.',
+        code: 'INVALID_CHARACTERS' 
+      });
     }
 
     const conversation = await Conversation.findOne({
@@ -79,6 +116,43 @@ exports.sendMessage = async (req, res) => {
 
     if (!conversation) {
       return res.status(403).json({ message: 'Not authorized for this conversation' });
+    }
+
+    const Consultation = require('../models/Consultation');
+    const userParticipant = conversation.participants.find(p => p.participantModel === 'User');
+    const expertParticipant = conversation.participants.find(p => p.participantModel === 'Expert');
+
+    let activeChatConsultation = null;
+    if (userParticipant && expertParticipant) {
+      activeChatConsultation = await Consultation.findOne({
+        user: userParticipant.participantId,
+        expert: expertParticipant.participantId,
+        type: 'chat',
+        status: { $in: ['scheduled', 'ongoing'] }
+      }).sort({ startTime: -1 });
+
+      if (!activeChatConsultation) {
+        return res.status(403).json({ 
+          message: 'No active chat session. Please start a new consultation to chat.',
+          code: 'NO_ACTIVE_SESSION' 
+        });
+      }
+
+      if (senderModel === 'Expert' && !activeChatConsultation.chatStarted) {
+        activeChatConsultation.chatStarted = true;
+        activeChatConsultation.chatStartedAt = new Date();
+        activeChatConsultation.status = 'ongoing';
+        await activeChatConsultation.save();
+
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`conversation_${conversationId}`).emit('chat_session_started', {
+            consultationId: activeChatConsultation._id,
+            chatStartedAt: activeChatConsultation.chatStartedAt,
+            startTime: activeChatConsultation.chatStartedAt
+          });
+        }
+      }
     }
 
     const message = new Message({

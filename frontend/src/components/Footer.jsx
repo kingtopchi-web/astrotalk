@@ -12,11 +12,13 @@ function Footer() {
           
           {/* Brand & Contact Info - takes up 2 columns on large screens */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-            <Link to="/" className="flex items-center gap-2 group mb-2">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
-                <span className="material-symbols-outlined font-light text-[24px]">hub</span>
-              </div>
-              <span className="font-heading font-extrabold text-2xl text-white">
+            <Link to="/" className="flex items-center gap-3 group mb-2">
+              <img 
+                src="/logo.png" 
+                alt="ExpertHub Logo" 
+                className="w-10 h-10 object-contain rounded-lg shrink-0" 
+              />
+              <span className="font-heading font-extrabold text-2xl text-white tracking-tight">
                 ExpertHub
               </span>
             </Link>

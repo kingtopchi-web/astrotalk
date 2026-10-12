@@ -115,12 +115,17 @@ function ExpertProfile() {
                         {expert.experience} Years Exp.
                       </div>
                     )}
-                    {expert.languages && expert.languages.length > 0 && (
-                      <div className="inline-flex items-center gap-1.5 bg-surface text-on-surface-variant px-3 py-1.5 rounded-full text-sm font-semibold border border-border">
-                        <span className="material-symbols-outlined text-[16px]">translate</span>
-                        {expert.languages.join(', ')}
-                      </div>
-                    )}
+                    {(() => {
+                      const langs = expert.languages && expert.languages.length > 0
+                        ? Array.from(new Set([...expert.languages, 'Hindi']))
+                        : ['English', 'Hindi'];
+                      return (
+                        <div className="inline-flex items-center gap-1.5 bg-surface text-on-surface-variant px-3 py-1.5 rounded-full text-sm font-semibold border border-border">
+                          <span className="material-symbols-outlined text-[16px]">translate</span>
+                          {langs.join(', ')}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
