@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Columns, Filter, Download, Search as SearchIcon, Edit2, Trash2, X, Plus } from 'lucide-react';
 
@@ -9,12 +10,14 @@ const ACCOUNT_STATUS_COLORS = {
 };
 
 const UsersList = () => {
+  const [searchParams] = useSearchParams();
+  const searchParam = searchParams.get('search');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
+  const [search, setSearch] = useState(searchParam || '');
+  const [showSearch, setShowSearch] = useState(Boolean(searchParam));
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -53,6 +56,14 @@ const UsersList = () => {
     fetchUsers();
   };
   
+  useEffect(() => {
+    if (searchParam !== null && searchParam !== undefined) {
+      setSearch(searchParam);
+      setShowSearch(true);
+      setPage(1);
+    }
+  }, [searchParam]);
+
   // Realtime search trigger if enter is pressed or form is submitted
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {

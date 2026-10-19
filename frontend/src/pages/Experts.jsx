@@ -3,8 +3,11 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
+import { useAuth } from '../context/AuthContext';
+import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 
 function ExpertDiscovery() {
+  const { user } = useAuth();
   const [experts, setExperts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -13,7 +16,8 @@ function ExpertDiscovery() {
   const queryParams = new URLSearchParams(useLocation().search);
   const modeParam = queryParams.get('mode');
   const catParam = queryParams.get('categoryId');
-  const [search, setSearch] = useState('');
+  const searchParam = queryParams.get('search');
+  const [search, setSearch] = useState(searchParam || '');
   const [consultationMode, setConsultationMode] = useState(modeParam || '');
   const [selectedCategory, setSelectedCategory] = useState(catParam || '');
   const [selectedSubCategory, setSelectedSubCategory] = useState('');
@@ -35,6 +39,19 @@ function ExpertDiscovery() {
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
   const [walletBalance, setWalletBalance] = useState(0);
   const [loadingWallet, setLoadingWallet] = useState(false);
+  const [freeChatStatus, setFreeChatStatus] = useState(null);
+  const [freeDurationMinutes, setFreeDurationMinutes] = useState(5);
+
+  useEffect(() => {
+    fetchFreeChatConfig().then(cfg => {
+      if (cfg) {
+        setFreeChatStatus(cfg);
+        if (cfg.freeChatDurationMinutes) {
+          setFreeDurationMinutes(cfg.freeChatDurationMinutes);
+        }
+      }
+    }).catch(() => {});
+  }, [user]);
   
   // Modern Toast and Shortfall Prompt state
   const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' | 'info' }
@@ -123,6 +140,10 @@ function ExpertDiscovery() {
     }
   };
 
+  const hasUsedFreeChat = Boolean(user?.hasUsedFreeChat || freeChatStatus?.hasUsedFreeChat);
+  const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
+  const isFreeEligible = Boolean(user && !hasUsedFreeChat && isFreeChatEnabled);
+
   const openCallModal = async (expert, type) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -140,8 +161,11 @@ function ExpertDiscovery() {
       ? (expert.rates?.audio || expert.pricePerMinute || 30)
       : (expert.rates?.chat || expert.pricePerMinute || 20);
 
-    // Require at least 1 minute rate to start
-    if (curBal < rate) {
+    // If chat and user has not used their free chat benefit yet, allow starting without balance!
+    const isFreeChatEligible = type === 'chat' && isFreeEligible;
+
+    // Require at least 1 minute rate to start (only for paid sessions)
+    if (!isFreeChatEligible && curBal < rate) {
       setShortfallData({
         currentBalance: curBal,
         neededAmount: rate,
@@ -168,29 +192,37 @@ function ExpertDiscovery() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      // 1. Create Pay-As-You-Go booking (NO upfront wallet deduction!)
+      const isFreeChat = callType === 'chat' && isFreeEligible;
+
+      // 1. Create booking (Free if eligible, or Pay-As-You-Go with NO upfront deduction)
       const bookingRes = await axios.post(
-        'https://astrotalk-hlg2.onrender.com/api/bookings',
+        getApiUrl('/bookings'),
         {
           expertId: selectedExpert._id,
           date: new Date().toISOString(),
           type: callType === 'audio' ? 'Audio' : callType === 'chat' ? 'Chat' : 'Video',
           duration: 60,
-          isInstant: true
+          isInstant: true,
+          isFree: isFreeChat
         },
         { headers }
       );
 
+      if (isFreeChat && user) {
+        user.hasUsedFreeChat = true;
+        localStorage.setItem('user', JSON.stringify({ ...user, hasUsedFreeChat: true }));
+      }
+
       const consultationId = bookingRes.data._id;
 
-      showToast('Connecting session... Billed per-second from wallet.', 'success');
+      showToast(isFreeChat ? '🎁 Free Chat Connected! Enjoy your consultation.' : 'Connecting session... Billed per-second from wallet.', 'success');
       setShowCallModal(false);
       setShowShortfallModal(false);
 
       // Instant redirect
       if (callType === 'chat') {
         axios.post(
-          'https://astrotalk-hlg2.onrender.com/api/messages/conversations',
+          getApiUrl('/messages/conversations'),
           { expertId: selectedExpert._id },
           { headers }
         ).catch(() => {});
@@ -263,7 +295,14 @@ function ExpertDiscovery() {
     }
   };
 
-  useEffect(() => { fetchExperts(); }, [page, selectedCategory, selectedSubCategory]);
+  useEffect(() => {
+    if (searchParam !== null && searchParam !== undefined) {
+      setSearch(searchParam);
+      setPage(1);
+    }
+  }, [searchParam]);
+
+  useEffect(() => { fetchExperts(); }, [page, selectedCategory, selectedSubCategory, searchParam]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -508,18 +547,35 @@ function ExpertDiscovery() {
               </button>
             </div>
             <div className="p-6">
-              {/* Pay as you go Rate Info */}
-              <div className="bg-primary/10 rounded-xl p-4 mb-4 border border-primary/20 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
-                  <p className="text-2xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-sm font-medium text-on-surface/70"> / min</span></p>
+              {/* Pay as you go Rate Info or Free Chat Banner */}
+              {callType === 'chat' && isFreeEligible ? (
+                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-4 mb-4 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-1">
+                      🎁 1-Time Free Consultation
+                    </span>
+                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-sm font-medium text-on-surface/70">/ Free Chat</span></p>
+                    <p className="text-xs text-on-surface/70 mt-0.5">Admin limit: {freeDurationMinutes} min{freeDurationMinutes === 1 ? '' : 's'} • Zero wallet deduction</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                      100% Free
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
-                    Per-Second Billing
-                  </span>
+              ) : (
+                <div className="bg-primary/10 rounded-xl p-4 mb-4 border border-primary/20 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
+                    <p className="text-2xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-sm font-medium text-on-surface/70"> / min</span></p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                      Per-Second Billing
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Wallet Status Info */}
               <div className="bg-surface-light border border-border-color rounded-xl p-4 mb-4 flex items-center justify-between">
@@ -533,8 +589,8 @@ function ExpertDiscovery() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-on-surface/60">Estimated talk time</p>
-                  <p className="text-sm font-bold text-emerald-600">~{Math.max(1, Math.floor(walletBalance / (getPerMinuteRate() * 1.2)))} mins</p>
+                  <p className="text-xs text-on-surface/60">{callType === 'chat' && isFreeEligible ? 'Session cost' : 'Estimated talk time'}</p>
+                  <p className="text-sm font-bold text-emerald-600">{callType === 'chat' && isFreeEligible ? '₹0 (Free Session)' : `~${Math.max(1, Math.floor(walletBalance / (getPerMinuteRate() * 1.2)))} mins`}</p>
                 </div>
               </div>
 
@@ -542,18 +598,27 @@ function ExpertDiscovery() {
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 mb-6 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
                 <span className="text-base mt-0.5">💡</span>
                 <div>
-                  <p className="font-bold">पहले कोई एडवांस पैसा नहीं कटेगा!</p>
-                  <p className="opacity-90 mt-0.5">कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।</p>
+                  <p className="font-bold">{callType === 'chat' && isFreeEligible ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
+                  <p className="opacity-90 mt-0.5">
+                    {callType === 'chat' && isFreeEligible 
+                      ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के चैट कर सकते हैं। समय पूरा होते ही चैट समाप्त हो जाएगी।`
+                      : 'कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।'}
+                  </p>
                 </div>
               </div>
               
               <button 
                 onClick={executeSessionBookingAndPayment}
                 disabled={processingPayment}
-                className="w-full bg-primary text-background font-bold py-3.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-base"
+                className="w-full bg-primary text-background font-bold py-3.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-base cursor-pointer"
               >
                 {processingPayment ? (
                   'Connecting...'
+                ) : callType === 'chat' && isFreeEligible ? (
+                  <>
+                    <MessageSquare size={18} />
+                    <span>Start Free Chat ({freeDurationMinutes}m) / मुफ़्त चैट शुरू करें (₹0)</span>
+                  </>
                 ) : (
                   <>
                     <Phone size={18} />

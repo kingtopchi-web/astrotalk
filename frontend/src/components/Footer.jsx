@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { usePlatformSettings } from '../context/PlatformSettingsContext';
 
 function Footer() {
+  const { platformName, supportEmail, contactPhone, address } = usePlatformSettings();
+
   return (
     <footer className="bg-black text-slate-300 relative pt-16">
       {/* Top subtle gradient line */}
@@ -15,11 +18,11 @@ function Footer() {
             <Link to="/" className="flex items-center gap-3 group mb-2">
               <img 
                 src="/logo.png" 
-                alt="ExpertHub Logo" 
+                alt={`${platformName || 'ExpertHub'} Logo`} 
                 className="w-10 h-10 object-contain rounded-lg shrink-0" 
               />
               <span className="font-heading font-extrabold text-2xl text-white tracking-tight">
-                ExpertHub
+                {platformName || 'ExpertHub'}
               </span>
             </Link>
             
@@ -30,15 +33,19 @@ function Footer() {
             <div className="flex flex-col gap-4 mt-2">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-error text-[20px] mt-0.5">location_on</span>
-                <span className="text-sm text-slate-300">ExpertHub HQ, Tech Park, Lucknow 560001</span>
+                <span className="text-sm text-slate-300">{address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-error text-[20px]">call</span>
-                <span className="text-sm text-slate-300">+91 5223657491</span>
+                <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="text-sm text-slate-300 hover:text-white transition-colors">
+                  {contactPhone || '+91 98765 43210'}
+                </a>
               </div>
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-error text-[20px]">mail</span>
-                <span className="text-sm text-slate-300">support@experthub.com</span>
+                <a href={`mailto:${supportEmail || 'support@stitchplatform.com'}`} className="text-sm text-slate-300 hover:text-white transition-colors break-all">
+                  {supportEmail || 'support@stitchplatform.com'}
+                </a>
               </div>
             </div>
             
@@ -110,7 +117,7 @@ function Footer() {
       <div className="bg-black py-4 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
           <div className="text-slate-400">
-            © 2026 <span className="text-error font-medium">ExpertHub.com</span> all rights reserved
+            © 2026 <span className="text-error font-medium">{platformName || 'ExpertHub'}.com</span> all rights reserved
           </div>
           <div className="text-slate-400">
             Designed & developed by <a href="https://nextgoodtechnologies.in/" target="_blank" rel="noreferrer" className="text-error font-medium hover:underline transition-all">NextGood Technologies Pvt Ltd.</a>

@@ -682,3 +682,51 @@ exports.getConsultationStats = async (req, res) => {
     res.status(500).json({ message: 'Error fetching consultation stats', error: error.message });
   }
 };
+
+// GET /api/admin/global-search?q=...
+exports.globalSearch = async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (!q) {
+      return res.json({ users: [], experts: [], consultations: [] });
+    }
+    const regex = new RegExp(q, 'i');
+
+    const [users, experts, consultations] = await Promise.all([
+      User.find({
+        $or: [{ name: regex }, { email: regex }, { mobile: regex }]
+      }).select('name email role status profileImage createdAt').limit(6),
+
+      Expert.find({
+        $or: [{ name: regex }, { email: regex }, { specialty: regex }, { specialization: regex }]
+      }).select('name email specialty categoryId status verificationStatus profileImage rating rates').populate('categoryId', 'name').limit(6),
+
+      Consultation.find({})
+        .populate({
+          path: 'user',
+          select: 'name email profileImage',
+          match: { $or: [{ name: regex }, { email: regex }] }
+        })
+        .populate({
+          path: 'expert',
+          select: 'name email profileImage specialty',
+          match: { $or: [{ name: regex }, { email: regex }] }
+        })
+        .sort({ createdAt: -1 })
+        .limit(10)
+    ]);
+
+    const matchingConsultations = consultations
+      .filter(c => c.user || c.expert)
+      .slice(0, 5);
+
+    res.json({
+      users,
+      experts,
+      consultations: matchingConsultations
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Global search error', error: error.message });
+  }
+};
+

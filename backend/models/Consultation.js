@@ -61,6 +61,14 @@ const consultationSchema = new mongoose.Schema({
   chatStartedAt: {
     type: Date,
     default: null
+  },
+  isFree: {
+    type: Boolean,
+    default: false
+  },
+  freeChatDurationMinutes: {
+    type: Number,
+    default: null
   }
 }, { timestamps: true });
 

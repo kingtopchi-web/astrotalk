@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Expert = require('../models/Expert');
 const Category = require('../models/Category');
 const SubCategory = require('../models/SubCategory');
+const Setting = require('../models/Setting');
 
 // GET /api/user/profile
 exports.getMyProfile = async (req, res) => {
@@ -178,13 +179,77 @@ exports.getPublicStats = async (req, res) => {
     const totalExpertsCount = await Expert.countDocuments();
     const finalExperts = verifiedExpertsCount > 0 ? verifiedExpertsCount : totalExpertsCount;
 
+    // Fetch platform settings
+    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    const enableFreeChat = settings ? settings.enableFreeChat !== false : true;
+    const freeChatDurationMinutes = settings?.freeChatDurationMinutes || 5;
+
     res.json({
       success: true,
       usersCount,
-      verifiedExpertsCount: finalExperts
+      verifiedExpertsCount: finalExperts,
+      enableFreeChat,
+      freeChatDurationMinutes,
+      platformName: settings?.platformName || 'ExpertHub',
+      supportEmail: settings?.supportEmail || 'support@stitchplatform.com',
+      contactPhone: settings?.contactPhone || '+91 98765 43210',
+      address: settings?.address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India'
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// GET /api/public/settings
+exports.getPublicSettings = async (req, res) => {
+  try {
+    let settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    if (!settings) {
+      settings = await Setting.create({ singletonKey: 'GLOBAL_SETTINGS' });
+    }
+    res.json({
+      success: true,
+      platformName: settings?.platformName || 'ExpertHub',
+      supportEmail: settings?.supportEmail || 'support@stitchplatform.com',
+      contactPhone: settings?.contactPhone || '+91 98765 43210',
+      address: settings?.address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India',
+      enableFreeChat: settings ? settings.enableFreeChat !== false : true,
+      freeChatDurationMinutes: settings?.freeChatDurationMinutes || 5
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// GET /api/public/search?q=...
+exports.globalSearch = async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (!q) {
+      return res.json({ experts: [], categories: [] });
+    }
+    const regex = new RegExp(q, 'i');
+
+    const [experts, categories] = await Promise.all([
+      Expert.find({
+        verificationStatus: 'APPROVED',
+        status: 'ACTIVE',
+        $or: [{ name: regex }, { specialty: regex }, { specialization: regex }]
+      })
+      .select('name profileImage specialty rates rating experience pricePerMinute categoryId')
+      .populate('categoryId', 'name')
+      .limit(6),
+
+      Category.find({
+        status: 'ACTIVE',
+        name: regex
+      }).select('name icon description').limit(4)
+    ]);
+
+    res.json({ experts, categories });
+  } catch (error) {
+    res.status(500).json({ message: 'Search error', error: error.message });
+  }
+};
+
 

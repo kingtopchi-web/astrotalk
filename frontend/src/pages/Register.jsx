@@ -34,21 +34,33 @@ function Register() {
       <Header />
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left side - Branding/Image */}
-        <div className="hidden lg:flex w-1/2 bg-[#f0f4fa] flex-col justify-center p-12 relative">
-        <div className="relative z-10 text-on-background mb-10 max-w-lg mx-auto">
-          <h1 className="font-heading font-extrabold text-5xl mb-6 leading-tight text-primary-dark">
-            Better Advice<br/>Better Decisions
-          </h1>
-          <p className="font-body text-lg text-slate-600 max-w-sm">
-            Access to verified experts, whenever you need them.
-          </p>
+        <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#f0f4fa] via-[#eaf0fa] to-[#f4f7fc] flex-col justify-center px-12 xl:px-16 py-8 relative overflow-hidden">
+          {/* Subtle ambient lighting */}
+          <div className="absolute -top-20 -left-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 w-full max-w-lg mx-auto flex flex-col">
+            <div className="mb-4">
+              <h1 className="font-heading font-extrabold text-4xl xl:text-5xl mb-3 leading-tight text-primary-dark">
+                Better Advice<br/>Better Decisions
+              </h1>
+              <p className="font-body text-base xl:text-lg text-slate-600 max-w-md leading-relaxed">
+                Access to verified experts, whenever you need them.
+              </p>
+            </div>
+            
+            {/* High resolution transparent illustration */}
+            <div className="relative w-full flex items-center justify-center pt-2">
+              {/* Floor shadow effect to ground the illustration */}
+              <div className="absolute bottom-1 w-[85%] h-7 bg-slate-400/25 rounded-[100%] blur-md pointer-events-none" />
+              <img 
+                src="/login-illustration.png" 
+                alt="Consultant Illustration" 
+                className="w-full h-auto max-h-[500px] xl:max-h-[530px] object-contain drop-shadow-[0_15px_25px_rgba(15,23,42,0.08)] hover:scale-[1.02] transition-transform duration-300 relative z-10" 
+              />
+            </div>
+          </div>
         </div>
-        
-        {/* Placeholder for illustration */}
-        <div className="relative w-full max-w-md mx-auto aspect-square flex items-center justify-center p-4">
-          <img src="/login-illustration.png" alt="Illustration" className="w-[95%] h-auto object-contain" />
-        </div>
-      </div>
 
         {/* Right side - Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 bg-white relative overflow-y-auto">

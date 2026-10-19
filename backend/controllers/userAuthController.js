@@ -35,6 +35,7 @@ const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
         profileImage: user.profileImage,
+        hasUsedFreeChat: user.hasUsedFreeChat || false,
         token: generateToken(user._id),
       });
     } else {
@@ -49,13 +50,29 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/user/login
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, reactivate } = req.body;
 
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-      if (user.status !== 'ACTIVE') {
-        return res.status(403).json({ message: `Account is ${user.status.toLowerCase()}` });
+      // Check if user account was deactivated/suspended
+      if (user.status === 'SUSPENDED') {
+        if (reactivate) {
+          user.status = 'ACTIVE';
+          await user.save();
+        } else {
+          return res.status(403).json({ 
+            message: 'Your account is currently deactivated. Would you like to reactivate it?',
+            isDeactivated: true,
+            status: 'SUSPENDED'
+          });
+        }
+      } else if (user.status !== 'ACTIVE') {
+        return res.status(403).json({ 
+          message: `Account is ${user.status.toLowerCase()}`,
+          isDeactivated: false,
+          status: user.status
+        });
       }
 
       res.json({
@@ -64,7 +81,46 @@ const loginUser = async (req, res) => {
         email: user.email,
         role: user.role,
         profileImage: user.profileImage,
+        hasUsedFreeChat: user.hasUsedFreeChat || false,
         token: generateToken(user._id),
+      });
+    } else {
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Reactivate user account
+// @route   POST /api/auth/user/reactivate
+const reactivateUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (user && (await user.matchPassword(password))) {
+      if (user.status === 'BLOCKED') {
+        return res.status(403).json({ 
+          message: 'Your account has been blocked by administration. Please contact support.',
+          isDeactivated: false,
+          status: 'BLOCKED'
+        });
+      }
+
+      user.status = 'ACTIVE';
+      await user.save();
+
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profileImage,
+        hasUsedFreeChat: user.hasUsedFreeChat || false,
+        token: generateToken(user._id),
+        message: 'Account reactivated successfully!'
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -124,5 +180,6 @@ const forgotPassword = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  reactivateUser,
   forgotPassword,
 };

@@ -1,29 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePlatformSettings } from '../context/PlatformSettingsContext';
 import NotificationDropdown from './NotificationDropdown';
+import LogoutModal from './LogoutModal';
 
 function Header() {
   const { auth, logout } = useAuth();
+  const { platformName, supportEmail, contactPhone } = usePlatformSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('app_theme') === 'dark';
+  });
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const dropdownRef = useRef(null);
 
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    // Route-based theme: Dark on home, Light everywhere else
-    if (location.pathname === '/') {
+    const savedTheme = localStorage.getItem('app_theme') || 'light';
+    if (savedTheme === 'dark') {
       document.documentElement.classList.remove('light-theme');
       setIsDarkMode(true);
     } else {
       document.documentElement.classList.add('light-theme');
       setIsDarkMode(false);
     }
-  }, [location.pathname]);
+  }, []);
 
   useEffect(() => {
     // Fetch categories for the navbar dropdown
@@ -47,13 +52,22 @@ function Header() {
     if (isDarkMode) {
       document.documentElement.classList.add('light-theme');
       setIsDarkMode(false);
+      localStorage.setItem('app_theme', 'light');
     } else {
       document.documentElement.classList.remove('light-theme');
       setIsDarkMode(true);
+      localStorage.setItem('app_theme', 'dark');
     }
   };
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
     logout();
     navigate('/');
   };
@@ -83,6 +97,7 @@ function Header() {
       categoriesMenu,
       { name: 'Free Services', path: '/free-services' },
       { name: 'Blog / Resources', path: '/blog' },
+      { name: 'Contact', path: '/contact' },
     ];
 
     if (!auth.token) {
@@ -148,11 +163,11 @@ function Header() {
           <Link to="/" className="flex items-center gap-2.5 group">
              <img 
                src="/logo.png" 
-               alt="ExpertHub Logo" 
+               alt={`${platformName || 'ExpertHub'} Logo`} 
                className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
              />
              <span className="font-heading font-extrabold text-xl text-on-background tracking-tight">
-               ExpertHub
+               {platformName || 'ExpertHub'}
              </span>
           </Link>
         </div>
@@ -436,6 +451,12 @@ function Header() {
           )}
         </div>
       )}
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+      />
     </header>
   );
 }

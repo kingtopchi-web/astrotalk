@@ -184,14 +184,21 @@ exports.getEarnings = async (req, res) => {
       status: 'completed'
     }).populate('user', 'name').sort({ endTime: -1, startTime: -1 });
 
-    const history = completedConsultations.map(c => ({
-      _id: c._id,
-      createdAt: c.endTime || c.startTime || new Date(),
-      type: 'EARNING',
-      description: `Consultation with ${c.user ? c.user.name : 'Client'}`,
-      amount: c.expertEarning || (c.cost * 0.8) || 0,
-      status: 'COMPLETED'
-    }));
+    const history = completedConsultations.map(c => {
+      const isFree = Boolean(c.isFree);
+      const earningAmount = isFree ? 0 : Number(c.expertEarning !== undefined ? c.expertEarning : (c.cost * 0.8) || 0);
+      return {
+        _id: c._id,
+        createdAt: c.endTime || c.startTime || new Date(),
+        type: isFree ? 'FREE_PROMO' : 'EARNING',
+        isFree,
+        description: isFree 
+          ? `🎁 Free Consultation with ${c.user ? c.user.name : 'Client'} (Promo)` 
+          : `Consultation with ${c.user ? c.user.name : 'Client'}`,
+        amount: earningAmount,
+        status: 'COMPLETED'
+      };
+    });
 
     const totalEarnings = history.reduce((sum, item) => sum + item.amount, 0);
 

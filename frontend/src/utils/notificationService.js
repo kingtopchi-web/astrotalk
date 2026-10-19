@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_BASE = 'https://astrotalk-hlg2.onrender.com/api';
+import { getApiUrl } from './apiConfig';
 
 // Initial role-based sample notifications matching the user's exact specification
 export const getInitialNotificationsByRole = (role) => {
@@ -213,7 +212,7 @@ export const fetchNotifications = async (role = 'USER') => {
 
   if (token) {
     try {
-      const res = await axios.get(`${API_BASE}/notifications`, {
+      const res = await axios.get(getApiUrl('/notifications'), {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 4000
       });
@@ -262,7 +261,7 @@ export const markNotificationAsRead = async (id, role = 'USER') => {
 
   if (token) {
     try {
-      await axios.patch(`${API_BASE}/notifications/${id}/read`, {}, {
+      await axios.patch(getApiUrl(`/notifications/${id}/read`), {}, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 4000
       });
@@ -296,7 +295,7 @@ export const markAllNotificationsAsRead = async (role = 'USER') => {
 
   if (token) {
     try {
-      await axios.patch(`${API_BASE}/notifications/read-all`, {}, {
+      await axios.patch(getApiUrl('/notifications/read-all'), {}, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 4000
       });
@@ -343,7 +342,7 @@ export const deleteNotificationItem = async (id, role = 'USER') => {
 
   if (token) {
     try {
-      await axios.delete(`${API_BASE}/notifications/${id}`, {
+      await axios.delete(getApiUrl(`/notifications/${id}`), {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 4000
       });
@@ -353,5 +352,53 @@ export const deleteNotificationItem = async (id, role = 'USER') => {
   return {
     notifications: localList,
     unreadCount: localList.filter(n => !n.isRead).length
+  };
+};
+
+export const clearAllNotifications = async (role = 'USER') => {
+  const token = localStorage.getItem('token');
+  const storageKey = getStorageKey(role);
+  const deletedKey = getDeletedKey(role);
+
+  // Track all IDs as deleted permanently so local refresh doesn't resurrect them
+  let localList = [];
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (raw) localList = JSON.parse(raw);
+  } catch (e) {}
+
+  let deletedIds = [];
+  try {
+    const rawDel = localStorage.getItem(deletedKey);
+    if (rawDel) deletedIds = JSON.parse(rawDel);
+  } catch (e) {}
+
+  localList.forEach(n => {
+    if (n._id && !deletedIds.includes(n._id)) {
+      deletedIds.push(n._id);
+    }
+  });
+
+  localStorage.setItem(deletedKey, JSON.stringify(deletedIds));
+  localStorage.setItem(storageKey, JSON.stringify([]));
+
+  window.dispatchEvent(new CustomEvent('notifications-updated', {
+    detail: { unreadCount: 0 }
+  }));
+
+  if (token) {
+    try {
+      await axios.delete(getApiUrl('/notifications/clear-all'), {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 4000
+      });
+    } catch (err) {
+      console.warn('Backend clear all failed, local state cleared:', err.message);
+    }
+  }
+
+  return {
+    notifications: [],
+    unreadCount: 0
   };
 };

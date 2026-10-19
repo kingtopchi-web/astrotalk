@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Expert = require('../models/Expert');
+const Setting = require('../models/Setting');
 const { sendNotification } = require('../utils/notificationDispatcher');
 
 const generateToken = (id) => {
@@ -19,6 +20,10 @@ const registerExpert = async (req, res) => {
       return res.status(400).json({ message: 'Expert already exists' });
     }
 
+    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    const isAutoApprove = Boolean(settings && settings.autoApproveExperts);
+    const initialStatus = isAutoApprove ? 'APPROVED' : 'PENDING';
+
     const expert = await Expert.create({
       name,
       email,
@@ -27,7 +32,7 @@ const registerExpert = async (req, res) => {
       pricePerMinute: pricePerMinute || 0, // Should be populated later or required based on flow
       mobile,
       role: 'EXPERT',
-      verificationStatus: 'PENDING',
+      verificationStatus: initialStatus,
     });
 
     if (expert) {
@@ -35,12 +40,14 @@ const registerExpert = async (req, res) => {
       sendNotification({
         recipientRole: 'ADMIN',
         recipientModel: 'Admin',
-        title: 'New Expert Registration',
-        message: `${expert.name} has submitted an application for approval (${expert.specialty || 'General'}).`,
+        title: isAutoApprove ? 'New Expert Auto-Approved' : 'New Expert Registration',
+        message: isAutoApprove 
+          ? `${expert.name} has registered and was auto-approved (${expert.specialty || 'General'}).` 
+          : `${expert.name} has submitted an application for approval (${expert.specialty || 'General'}).`,
         type: 'expert_registration',
         link: '/admin/experts',
         actionText: 'Review application',
-        badge: 'New'
+        badge: isAutoApprove ? 'Approved' : 'New'
       }, io).catch(e => console.error('Expert reg notification error:', e));
 
       res.status(201).json({
@@ -60,16 +67,32 @@ const registerExpert = async (req, res) => {
 };
 
 // @desc    Auth expert & get token
+// @desc    Auth expert & get token
 // @route   POST /api/auth/expert/login
 const loginExpert = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, reactivate } = req.body;
 
     const expert = await Expert.findOne({ email });
 
     if (expert && (await expert.matchPassword(password))) {
-      if (expert.status !== 'ACTIVE') {
-        return res.status(403).json({ message: `Account is ${expert.status.toLowerCase()}` });
+      if (expert.status === 'SUSPENDED') {
+        if (reactivate) {
+          expert.status = 'ACTIVE';
+          await expert.save();
+        } else {
+          return res.status(403).json({ 
+            message: 'Your account is currently deactivated. Would you like to reactivate it?',
+            isDeactivated: true,
+            status: 'SUSPENDED'
+          });
+        }
+      } else if (expert.status !== 'ACTIVE') {
+        return res.status(403).json({ 
+          message: `Account is ${expert.status.toLowerCase()}`,
+          isDeactivated: false,
+          status: expert.status
+        });
       }
 
       // We still allow login if PENDING, but frontend should redirect to onboarding or show pending screen
@@ -90,7 +113,45 @@ const loginExpert = async (req, res) => {
   }
 };
 
+// @desc    Reactivate expert account
+// @route   POST /api/auth/expert/reactivate
+const reactivateExpert = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const expert = await Expert.findOne({ email });
+
+    if (expert && (await expert.matchPassword(password))) {
+      if (expert.status === 'BLOCKED') {
+        return res.status(403).json({ 
+          message: 'Your account has been blocked by administration. Please contact support.',
+          isDeactivated: false,
+          status: 'BLOCKED'
+        });
+      }
+
+      expert.status = 'ACTIVE';
+      await expert.save();
+
+      res.json({
+        _id: expert._id,
+        name: expert.name,
+        email: expert.email,
+        role: expert.role,
+        verificationStatus: expert.verificationStatus,
+        token: generateToken(expert._id),
+        message: 'Account reactivated successfully!'
+      });
+    } else {
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   registerExpert,
   loginExpert,
+  reactivateExpert,
 };

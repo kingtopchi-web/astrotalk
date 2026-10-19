@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   ClipboardList, Search, CheckCircle, XCircle, Eye, ChevronLeft,
@@ -168,10 +169,12 @@ const DetailModal = ({ expert, onClose, onAction }) => {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function ExpertApplications() {
+  const [searchParams] = useSearchParams();
+  const searchParam = searchParams.get('search');
   const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParam || '');
   const [statusFilter, setStatusFilter] = useState('PENDING');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -207,6 +210,13 @@ export default function ExpertApplications() {
       setError('Failed to load applications.');
     } finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (searchParam !== null && searchParam !== undefined) {
+      setSearch(searchParam);
+      setPage(1);
+    }
+  }, [searchParam]);
 
   useEffect(() => { fetchData(); }, [page, statusFilter]);
   useEffect(() => { setPage(1); }, [search, statusFilter]);

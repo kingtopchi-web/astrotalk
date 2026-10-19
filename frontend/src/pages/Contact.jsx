@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { usePlatformSettings } from '../context/PlatformSettingsContext';
 
 export default function Contact() {
+  const { supportEmail, contactPhone, address, platformName } = usePlatformSettings();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState(null);
 
@@ -25,7 +27,7 @@ export default function Contact() {
               Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Touch</span>
             </h1>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+              Have questions about {platformName || 'ExpertHub'}? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
           </div>
 
@@ -51,7 +53,9 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400 mb-1">Email us</p>
-                      <p className="font-medium text-lg">support@nextgoodtechnologies.in</p>
+                      <a href={`mailto:${supportEmail || 'support@stitchplatform.com'}`} className="font-medium text-lg hover:underline break-all">
+                        {supportEmail || 'support@stitchplatform.com'}
+                      </a>
                     </div>
                   </div>
                   
@@ -61,7 +65,9 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400 mb-1">Call us</p>
-                      <p className="font-medium text-lg">+91 123 456 7890</p>
+                      <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="font-medium text-lg hover:underline">
+                        {contactPhone || '+91 98765 43210'}
+                      </a>
                     </div>
                   </div>
                   
@@ -71,7 +77,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400 mb-1">Visit us</p>
-                      <p className="font-medium text-lg">New Delhi, India</p>
+                      <p className="font-medium text-lg">{address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India'}</p>
                     </div>
                   </div>
                 </div>

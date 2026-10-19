@@ -130,11 +130,30 @@ function Revenue() {
                   stats.recentConsultations.map((cons) => (
                     <tr key={cons._id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 text-sm text-slate-500">{new Date(cons.createdAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-900 capitalize">{cons.type}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-900 capitalize">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{cons.type}</span>
+                          {cons.isFree && (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                              🎁 FREE
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-sm text-slate-500">{cons.durationInMinutes || 0} min</td>
-                      <td className="px-6 py-4 text-sm font-bold text-slate-900">₹{Number(cons.cost || 0).toFixed(2)}</td>
-                      <td className="px-6 py-4 text-sm text-purple-600 font-semibold">₹{Number(cons.expertEarning || 0).toFixed(2)}</td>
-                      <td className="px-6 py-4 text-sm text-blue-600 font-bold text-right">+ ₹{Number(cons.platformFee || 0).toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-900">
+                        {cons.isFree ? (
+                          <span className="text-emerald-600 font-bold">₹0.00</span>
+                        ) : (
+                          `₹${Number(cons.cost || 0).toFixed(2)}`
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-purple-600 font-semibold">
+                        {cons.isFree ? '₹0.00' : `₹${Number(cons.expertEarning || 0).toFixed(2)}`}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-blue-600 font-bold text-right">
+                        {cons.isFree ? '₹0.00' : `+ ₹${Number(cons.platformFee || 0).toFixed(2)}`}
+                      </td>
                     </tr>
                   ))
                 ) : (

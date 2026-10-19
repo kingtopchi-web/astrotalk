@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Columns, Filter, Download, Search as SearchIcon, Edit2, Trash2, CheckCircle, XCircle, X, Plus } from 'lucide-react';
 
@@ -15,13 +16,15 @@ const ACCOUNT_STATUS_COLORS = {
 };
 
 const ExpertsList = () => {
+  const [searchParams] = useSearchParams();
+  const searchParam = searchParams.get('search');
   const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
+  const [search, setSearch] = useState(searchParam || '');
+  const [showSearch, setShowSearch] = useState(Boolean(searchParam));
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -66,6 +69,14 @@ const ExpertsList = () => {
     setPage(1);
     fetchExperts();
   };
+
+  useEffect(() => {
+    if (searchParam !== null && searchParam !== undefined) {
+      setSearch(searchParam);
+      setShowSearch(true);
+      setPage(1);
+    }
+  }, [searchParam]);
 
   // Realtime search trigger if enter is pressed or form is submitted
   useEffect(() => {

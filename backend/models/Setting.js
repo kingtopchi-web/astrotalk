@@ -23,6 +23,10 @@ const settingSchema = new mongoose.Schema({
   autoApproveExperts: { type: Boolean, default: false },
   enableInstantBooking: { type: Boolean, default: true },
   
+  // Free Chat Settings (Dynamic Admin Control)
+  enableFreeChat: { type: Boolean, default: true },
+  freeChatDurationMinutes: { type: Number, default: 5 }, // Admin sets dynamic duration in minutes
+  
   // Security
   sessionTimeoutMinutes: { type: Number, default: 60 },
   requireEmailVerification: { type: Boolean, default: true },

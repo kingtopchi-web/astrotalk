@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { createSocket } from '../../utils/socket';
 import { useOutletContext } from 'react-router-dom';
+import { getApiUrl } from '../../utils/apiConfig';
 import { Send, Paperclip, Search, Check, CheckCheck, MessageSquare, MoreVertical, Phone, Video } from 'lucide-react';
 
 function ExpertMessages() {
@@ -27,7 +28,7 @@ function ExpertMessages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
+      const res = await axios.get(getApiUrl('/messages/conversations'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConversations(res.data);
@@ -42,7 +43,7 @@ function ExpertMessages() {
     if (!targetId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${targetId}/messages`, {
+      const res = await axios.get(getApiUrl(`/messages/conversations/${targetId}/messages`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(res.data);
@@ -58,7 +59,7 @@ function ExpertMessages() {
     if (!userId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/active-chat/${userId}`, {
+      const res = await axios.get(getApiUrl(`/bookings/active-chat/${userId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const consult = res.data;
@@ -181,6 +182,11 @@ function ExpertMessages() {
     }
   }, [activeConversation, socket]);
 
+  const isFreeConsultation = Boolean(activeConsultation?.isFree);
+  const freeDurationMins = activeConsultation?.freeChatDurationMinutes || activeConsultation?.durationInMinutes || 5;
+  const freeTotalAllowedSeconds = freeDurationMins * 60;
+  const freeRemainingSeconds = Math.max(0, freeTotalAllowedSeconds - seconds);
+
   // 1. Initial 2-minute countdown (120 seconds) for expert to reply
   useEffect(() => {
     if (!activeConsultation || chatStarted) return;
@@ -207,11 +213,26 @@ function ExpertMessages() {
     if (!activeConsultation || !chatStarted) return;
 
     const timer = setInterval(() => {
-      setSeconds(prev => prev + 1);
+      setSeconds(prev => {
+        const next = prev + 1;
+        if (isFreeConsultation && next >= freeTotalAllowedSeconds) {
+          if (!isEndingRef.current) {
+            isEndingRef.current = true;
+            setTimeout(() => {
+              handleEndConsultation(
+                false,
+                next,
+                `Free chat time limit of ${freeDurationMins} minutes has expired. Session ended.`
+              );
+            }, 300);
+          }
+        }
+        return next;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activeConsultation, chatStarted]);
+  }, [activeConsultation, chatStarted, isFreeConsultation, freeTotalAllowedSeconds, freeDurationMins]);
 
   const handleEndConsultation = async (autoDisconnected = false, finalSecs = null, reason = '') => {
     if (!activeConsultation) return;
@@ -220,7 +241,7 @@ function ExpertMessages() {
       const usedSeconds = finalSecs !== null ? finalSecs : (chatStarted ? seconds : 0);
       const actualDuration = chatStarted ? (Number((usedSeconds / 60).toFixed(2)) || 0.01) : 0;
 
-      await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${activeConsultation._id}/end`, {
+      await axios.post(getApiUrl(`/bookings/${activeConsultation._id}/end`), {
         actualDuration,
         reason: reason || (autoDisconnected ? 'Expert did not reply within 2 minutes' : 'Session ended')
       }, {
@@ -378,6 +399,22 @@ function ExpertMessages() {
                     <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200 animate-pulse">
                       <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
                       <span>Reply within {Math.floor(waitingCountdown / 60)}m {waitingCountdown % 60}s to start session!</span>
+                    </div>
+                  ) : isFreeConsultation ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                        <span>🎁 Free Session</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg border shadow-xs ${
+                        freeRemainingSeconds < 60 
+                          ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' 
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>
+                          {Math.floor(freeRemainingSeconds / 60).toString().padStart(2, '0')}:{(freeRemainingSeconds % 60).toString().padStart(2, '0')} remaining
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs">

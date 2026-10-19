@@ -22,7 +22,8 @@ import {
   fetchNotifications, 
   markNotificationAsRead, 
   markAllNotificationsAsRead, 
-  deleteNotificationItem 
+  deleteNotificationItem,
+  clearAllNotifications
 } from '../utils/notificationService';
 import { createSocket } from '../utils/socket';
 import { soundService } from '../utils/soundService';
@@ -110,6 +111,15 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
     const res = await markAllNotificationsAsRead(role);
     setNotifications(res.notifications);
     setUnreadCount(res.unreadCount);
+  };
+
+  const handleClearAll = async (e) => {
+    if (e) e.stopPropagation();
+    if (notifications.length === 0) return;
+    if (!window.confirm('Are you sure you want to clear all notifications?')) return;
+    const res = await clearAllNotifications(role);
+    setNotifications(res.notifications || []);
+    setUnreadCount(res.unreadCount || 0);
   };
 
   const handleDelete = async (id, e) => {
@@ -200,16 +210,28 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
               )}
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllRead}
-                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors"
-                title="Mark all as read"
-              >
-                <CheckCheck size={14} /> Mark all read
-              </button>
-            )}
+            <div className="flex items-center gap-2.5">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors"
+                  title="Mark all as read"
+                >
+                  <CheckCheck size={14} /> Read all
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="text-xs font-semibold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1 transition-colors"
+                  title="Clear all notifications"
+                >
+                  <Trash2 size={13} /> Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter Pills */}

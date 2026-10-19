@@ -31,12 +31,16 @@ const {
   getAllTransactions,
   getRevenue,
   getSettings,
-  updateSettings
+  updateSettings,
+  globalSearch
 } = require('../controllers/adminController');
 
 // All routes require authentication and ADMIN role
 router.use(protect);
 router.use(authorizeRoles('ADMIN'));
+
+// Global Search
+router.get('/global-search', globalSearch);
 
 // Profile
 router.get('/profile', getAdminProfile);

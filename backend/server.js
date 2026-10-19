@@ -239,6 +239,26 @@ io.on('connection', (socket) => {
           return;
         }
 
+        // AUTO-TERMINATE IF FREE CHAT DURATION HAS ELAPSED
+        if (activeChatConsultation.isFree && activeChatConsultation.chatStarted && activeChatConsultation.chatStartedAt) {
+          const allowedMinutes = activeChatConsultation.freeChatDurationMinutes || 5;
+          const elapsedMs = Date.now() - new Date(activeChatConsultation.chatStartedAt).getTime();
+          if (elapsedMs >= allowedMinutes * 60 * 1000) {
+            activeChatConsultation.status = 'completed';
+            await activeChatConsultation.save();
+
+            io.to(`conversation_${data.conversationId}`).emit('session_ended', {
+              consultationId: activeChatConsultation._id,
+              reason: `Free chat time limit of ${allowedMinutes} minutes has expired. Session ended.`
+            });
+            socket.emit('chat_error', { 
+              message: `Free chat time limit of ${allowedMinutes} minutes has expired. Session ended.`,
+              code: 'SESSION_EXPIRED'
+            });
+            return;
+          }
+        }
+
         // If the sender is the EXPERT and chat has not officially started yet, mark it started!
         if (data.senderModel === 'Expert' && !activeChatConsultation.chatStarted) {
           activeChatConsultation.chatStarted = true;

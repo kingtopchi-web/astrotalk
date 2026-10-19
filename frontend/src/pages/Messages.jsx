@@ -4,6 +4,7 @@ import axios from 'axios';
 import { createSocket } from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
 import UserLayout from '../components/UserLayout';
+import { getApiUrl } from '../utils/apiConfig';
 import { Send, Paperclip, Search, Check, CheckCheck, MessageSquare, MoreVertical, Phone, Video } from 'lucide-react';
 
 function Messages() {
@@ -34,7 +35,7 @@ function Messages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/messages/conversations', {
+      const res = await axios.get(getApiUrl('/messages/conversations'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConversations(res.data);
@@ -49,7 +50,7 @@ function Messages() {
     if (!targetId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/messages/conversations/${targetId}/messages`, {
+      const res = await axios.get(getApiUrl(`/messages/conversations/${targetId}/messages`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(res.data);
@@ -65,7 +66,7 @@ function Messages() {
     if (!otherUserId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/active-chat/${otherUserId}`, {
+      const res = await axios.get(getApiUrl(`/bookings/active-chat/${otherUserId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const consult = res.data;
@@ -222,16 +223,21 @@ function Messages() {
   }, [activeConversation, socket]);
 
   const isExpert = user?.role === 'EXPERT';
+  const isFreeConsultation = Boolean(activeConsultation?.isFree);
+  const freeDurationMins = activeConsultation?.freeChatDurationMinutes || activeConsultation?.durationInMinutes || 5;
+  const freeTotalAllowedSeconds = freeDurationMins * 60;
+  const freeRemainingSeconds = Math.max(0, freeTotalAllowedSeconds - seconds);
+
   const expertRatePerMin = activeConsultation?.cost && activeConsultation?.durationInMinutes
     ? (activeConsultation.cost / activeConsultation.durationInMinutes)
     : 30;
-  const costPerSecond = Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
-  const maxAllowedSeconds = userWalletBalance > 0 && costPerSecond > 0 
-    ? Math.floor(userWalletBalance / costPerSecond) 
-    : 3600;
-  const currentBilled = chatStarted ? Number((seconds * costPerSecond).toFixed(2)) : 0;
-  const remainingLiveBalance = Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
-  const remainingSeconds = Math.max(0, maxAllowedSeconds - seconds);
+  const costPerSecond = isFreeConsultation ? 0 : Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
+  const maxAllowedSeconds = isFreeConsultation
+    ? freeTotalAllowedSeconds
+    : (userWalletBalance > 0 && costPerSecond > 0 ? Math.floor(userWalletBalance / costPerSecond) : 3600);
+  const currentBilled = isFreeConsultation ? 0 : (chatStarted ? Number((seconds * costPerSecond).toFixed(2)) : 0);
+  const remainingLiveBalance = isFreeConsultation ? userWalletBalance : Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
+  const remainingSeconds = isFreeConsultation ? freeRemainingSeconds : Math.max(0, maxAllowedSeconds - seconds);
 
   // 1. Initial 2-minute countdown (120 seconds) while waiting for expert reply
   useEffect(() => {
@@ -262,8 +268,25 @@ function Messages() {
     const timer = setInterval(() => {
       setSeconds(prev => {
         const next = prev + 1;
-        // Check if user runs out of balance: Disconnect chat immediately
-        if (!isExpert && userWalletBalance > 0 && maxAllowedSeconds > 0 && next >= maxAllowedSeconds) {
+
+        // Free Chat: Strict time-out when configured free duration ends
+        if (isFreeConsultation && next >= freeTotalAllowedSeconds) {
+          if (!isEndingRef.current) {
+            isEndingRef.current = true;
+            setTimeout(() => {
+              handleEndConsultation(
+                false, 
+                false, 
+                next, 
+                `Free chat time limit of ${freeDurationMins} minutes has expired. Session ended.`
+              );
+            }, 300);
+          }
+          return next;
+        }
+
+        // Paid Chat: Check if user runs out of balance
+        if (!isFreeConsultation && !isExpert && userWalletBalance > 0 && maxAllowedSeconds > 0 && next >= maxAllowedSeconds) {
           if (!isEndingRef.current) {
             isEndingRef.current = true;
             setIsBalanceExhausted(true);
@@ -278,7 +301,7 @@ function Messages() {
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [activeConsultation, chatStarted, isExpert, userWalletBalance, maxAllowedSeconds]);
+  }, [activeConsultation, chatStarted, isExpert, userWalletBalance, maxAllowedSeconds, isFreeConsultation, freeTotalAllowedSeconds, freeDurationMins]);
 
   const handleEndConsultation = async (autoDisconnected = false, isInsufficientBalance = false, finalSecs = null, reason = '') => {
     if (!activeConsultation) return;
@@ -287,7 +310,7 @@ function Messages() {
       const usedSeconds = finalSecs !== null ? finalSecs : (chatStarted ? seconds : 0);
       // Use exact fractional minutes for per-second billing accuracy
       const actualDuration = chatStarted ? (Number((usedSeconds / 60).toFixed(2)) || 0.01) : 0;
-      await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${activeConsultation._id}/end`, { 
+      await axios.post(getApiUrl(`/bookings/${activeConsultation._id}/end`), { 
         actualDuration,
         reason: reason || (autoDisconnected ? 'Expert did not reply within 2 minutes' : 'Session ended')
       }, {
@@ -458,6 +481,22 @@ function Messages() {
                         <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
                         <span>Waiting for Expert Reply ({Math.floor(waitingCountdown / 60)}m {waitingCountdown % 60}s)</span>
                       </div>
+                    ) : isFreeConsultation ? (
+                      <>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                          <span>🎁 Free Chat</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg border shadow-xs ${
+                          remainingSeconds < 60 
+                            ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' 
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>
+                            {Math.floor(remainingSeconds / 60).toString().padStart(2, '0')}:{(remainingSeconds % 60).toString().padStart(2, '0')} remaining
+                          </span>
+                        </div>
+                      </>
                     ) : (
                       <>
                         <div className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-xs">

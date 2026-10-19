@@ -138,6 +138,28 @@ exports.sendMessage = async (req, res) => {
         });
       }
 
+      // AUTO-TERMINATE IF FREE CHAT DURATION HAS ELAPSED
+      if (activeChatConsultation.isFree && activeChatConsultation.chatStarted && activeChatConsultation.chatStartedAt) {
+        const allowedMinutes = activeChatConsultation.freeChatDurationMinutes || 5;
+        const elapsedMs = Date.now() - new Date(activeChatConsultation.chatStartedAt).getTime();
+        if (elapsedMs >= allowedMinutes * 60 * 1000) {
+          activeChatConsultation.status = 'completed';
+          await activeChatConsultation.save();
+
+          const io = req.app.get('io');
+          if (io) {
+            io.to(`conversation_${conversationId}`).emit('session_ended', {
+              consultationId: activeChatConsultation._id,
+              reason: `Free chat time limit of ${allowedMinutes} minutes has expired. Session ended.`
+            });
+          }
+          return res.status(403).json({ 
+            message: `Free chat session time limit of ${allowedMinutes} minutes has expired. Session ended.`,
+            code: 'SESSION_EXPIRED' 
+          });
+        }
+      }
+
       if (senderModel === 'Expert' && !activeChatConsultation.chatStarted) {
         activeChatConsultation.chatStarted = true;
         activeChatConsultation.chatStartedAt = new Date();

@@ -9,62 +9,266 @@ const WalletTransaction = require('../models/WalletTransaction');
 const User = require('../models/User');
 const Setting = require('../models/Setting');
 
-// @route   POST /api/bookings
-// @desc    Create a new booking (consultation)
-// @access  Private (USER only)
-router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
+// @route   GET /api/bookings/free-chat-status
+// @desc    Get free chat settings and user eligibility
+// @access  Public (detects auth token if provided)
+router.get('/free-chat-status', async (req, res) => {
   try {
-    const { expertId, serviceId, date, time, type, duration, notes } = req.body;
+    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    const enableFreeChat = settings ? settings.enableFreeChat !== false : true;
+    const freeChatDurationMinutes = settings?.freeChatDurationMinutes || 5;
+
+    let hasUsedFreeChat = false;
+    let userId = null;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (user) {
+          hasUsedFreeChat = Boolean(user.hasUsedFreeChat);
+          userId = user._id;
+        }
+      } catch (e) {}
+    }
+
+    res.json({
+      enableFreeChat,
+      freeChatDurationMinutes,
+      hasUsedFreeChat,
+      userId
+    });
+  } catch (error) {
+    console.error('Free chat status error:', error);
+    res.status(500).json({ message: 'Error checking free chat status' });
+  }
+});
+
+// @route   POST /api/bookings/start-free-chat
+// @desc    Start one-time free chat consultation with dynamic duration
+// @access  Private (USER only)
+router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res) => {
+  try {
+    const { expertId } = req.body;
+    if (!expertId) {
+      return res.status(400).json({ message: 'Expert ID is required to start free chat' });
+    }
 
     const expert = await Expert.findById(expertId);
     if (!expert) {
       return res.status(404).json({ message: 'Expert not found' });
     }
 
-    let ratePerMinute = expert.rates ? expert.rates[type.toLowerCase()] : (expert.pricePerMinute || 20);
-    const consultationDuration = duration || 45;
-    
-    let basePrice = ratePerMinute * consultationDuration;
-    
-    // If booked via a specific service, use the service price as total price
-    if (serviceId) {
-      const service = await ExpertService.findById(serviceId);
-      if (service && service.expertId.toString() === expertId.toString()) {
-        basePrice = service.price;
-        // Optionally update service bookings count here or after payment
+    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    if (settings && settings.enableFreeChat === false) {
+      return res.status(400).json({ message: 'Free chat is currently disabled by administrator.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.hasUsedFreeChat) {
+      return res.status(400).json({ 
+        message: 'You have already used your 1-time free consultation.',
+        hasUsedFreeChat: true 
+      });
+    }
+
+    const durationMinutes = settings?.freeChatDurationMinutes || 5;
+
+    // Immediately mark user as having used free chat so it cannot be reused
+    user.hasUsedFreeChat = true;
+    await user.save();
+
+    // Create Free Consultation with isFree: true, zero cost, zero expert earning
+    const consultation = new Consultation({
+      user: req.user._id,
+      expert: expertId,
+      startTime: new Date(),
+      durationInMinutes: durationMinutes,
+      status: 'ongoing',
+      paymentStatus: 'paid',
+      type: 'chat',
+      cost: 0,
+      expertEarning: 0,
+      platformFee: 0,
+      isFree: true,
+      freeChatDurationMinutes: durationMinutes,
+      chatStarted: false
+    });
+    consultation.meetingLink = `/live/${consultation._id}`;
+    await consultation.save();
+
+    // Ensure conversation exists
+    const Conversation = require('../models/Conversation');
+    let conversation = await Conversation.findOne({
+      participants: { 
+        $all: [
+          { $elemMatch: { participantId: req.user._id, participantModel: 'User' } },
+          { $elemMatch: { participantId: expert._id, participantModel: 'Expert' } }
+        ]
       }
+    });
+
+    if (!conversation) {
+      conversation = new Conversation({
+        participants: [
+          { participantId: req.user._id, participantModel: 'User' },
+          { participantId: expert._id, participantModel: 'Expert' }
+        ]
+      });
+      await conversation.save();
+    }
+
+    const io = req.app.get('io');
+    const { sendNotification } = require('../utils/notificationDispatcher');
+
+    if (io) {
+      io.to(`user_${req.user._id}`).emit('new_chat_consultation', {
+        consultationId: consultation._id,
+        type: 'chat',
+        partnerId: expert._id,
+        partnerModel: 'Expert',
+        consultation,
+        conversationId: conversation._id
+      });
+      io.to(`user_${expert._id}`).emit('new_chat_consultation', {
+        consultationId: consultation._id,
+        type: 'chat',
+        partnerId: req.user._id,
+        partnerModel: 'User',
+        consultation,
+        conversationId: conversation._id
+      });
+    }
+
+    sendNotification({
+      recipient: req.user._id,
+      recipientRole: 'USER',
+      recipientModel: 'User',
+      title: 'Free Chat Started 🎁',
+      message: `Your ${durationMinutes}-minute free consultation with ${expert.name} is now live!`,
+      actionText: 'Open Chat',
+      link: '/messages',
+      type: 'booking_confirmed',
+      badge: 'Free'
+    }, io).catch(() => {});
+
+    sendNotification({
+      recipient: expert._id,
+      recipientRole: 'EXPERT',
+      recipientModel: 'Expert',
+      title: 'New Free Consultation Session',
+      message: `${user.name || 'A client'} started a ${durationMinutes}-minute free consultation. Please reply promptly!`,
+      actionText: 'Open Chat & Reply',
+      link: '/expert/messages',
+      type: 'consultation_request',
+      badge: 'Free'
+    }, io).catch(() => {});
+
+    return res.status(201).json({
+      message: 'Free chat session started',
+      consultation,
+      conversationId: conversation._id,
+      durationMinutes
+    });
+  } catch (error) {
+    console.error('Start free chat error:', error);
+    return res.status(500).json({ message: 'Failed to start free chat', error: error.message });
+  }
+});
+
+// @route   POST /api/bookings
+// @desc    Create a new booking (consultation)
+// @access  Private (USER only)
+router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
+  try {
+    const { expertId, serviceId, date, time, type, duration, notes, isFree } = req.body;
+
+    const expert = await Expert.findById(expertId);
+    if (!expert) {
+      return res.status(404).json({ message: 'Expert not found' });
     }
 
     const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
-    const commissionRate = (settings && settings.platformCommissionRate) ? (settings.platformCommissionRate / 100) : 0.20;
-    
-    const platformFee = Number((basePrice * commissionRate).toFixed(2));
-    const amount = Number((basePrice + platformFee).toFixed(2));
+    let consultationDuration = duration || 45;
+    let basePrice = 0;
+    let platformFee = 0;
+    let amount = 0;
 
-    // Parse date and time properly
-    const startTime = new Date(date);
-    // Optional: could parse 'time' string ("10:00 AM") and set it to startTime.
-    
     // Convert 'Video'/'Audio'/'Chat' to match schema ('video', 'call', 'chat')
     let schemaType = 'call';
     const lowerType = (type || '').toLowerCase();
     if (lowerType === 'video') schemaType = 'video';
     else if (lowerType === 'chat') schemaType = 'chat';
-    else schemaType = 'call'; // 'audio', 'call', or any voice booking defaults to 'call'
+    else schemaType = 'call';
 
-    // Check if user has at least 1 minute minimum balance in wallet to connect
-    const user = await User.findById(req.user._id);
-    const minRequired = ratePerMinute;
-    if (!user || (user.walletBalance || 0) < minRequired) {
+    const isFreeBooking = Boolean(isFree);
+
+    if (isFreeBooking) {
+      if (settings && settings.enableFreeChat === false) {
+        return res.status(400).json({ message: 'Free chat consultation is currently disabled by administrator.' });
+      }
+
+      const userDoc = await User.findById(req.user._id);
+      if (userDoc && userDoc.hasUsedFreeChat) {
+        return res.status(400).json({ 
+          message: 'You have already used your 1-time free chat consultation.',
+          hasUsedFreeChat: true
+        });
+      }
+
+      consultationDuration = settings?.freeChatDurationMinutes || 5;
+      basePrice = 0;
+      platformFee = 0;
+      amount = 0;
+
+      // Mark user as having used free chat
+      await User.findByIdAndUpdate(req.user._id, { hasUsedFreeChat: true });
+    } else {
+      let ratePerMinute = expert.rates ? expert.rates[type.toLowerCase()] : (expert.pricePerMinute || 20);
+      basePrice = ratePerMinute * consultationDuration;
+      
+      // If booked via a specific service, use the service price as total price
+      if (serviceId) {
+        const service = await ExpertService.findById(serviceId);
+        if (service && service.expertId.toString() === expertId.toString()) {
+          basePrice = service.price;
+        }
+      }
+
+      const commissionRate = (settings && settings.platformCommissionRate) ? (settings.platformCommissionRate / 100) : 0.20;
+      platformFee = Number((basePrice * commissionRate).toFixed(2));
+      amount = Number((basePrice + platformFee).toFixed(2));
+
+      // Check if user has at least 1 minute minimum balance in wallet to connect (PAID bookings only)
+      const user = await User.findById(req.user._id);
+      const minRequired = ratePerMinute;
+      if (!user || (user.walletBalance || 0) < minRequired) {
+        return res.status(400).json({ 
+          message: `Insufficient balance. Minimum ₹${minRequired} (1 minute) required in your wallet to start.`,
+          requiredBalance: minRequired,
+          currentBalance: user ? (user.walletBalance || 0) : 0
+        });
+      }
+    }
+
+    // Parse date and time properly
+    const startTime = date ? new Date(date) : new Date();
+
+    const allowInstant = settings ? settings.enableInstantBooking !== false : true;
+    if (req.body.isInstant && !allowInstant && !isFreeBooking) {
       return res.status(400).json({ 
-        message: `Insufficient balance. Minimum ₹${minRequired} (1 minute) required in your wallet to start.`,
-        requiredBalance: minRequired,
-        currentBalance: user ? (user.walletBalance || 0) : 0
+        message: 'Instant booking is currently disabled by administrator. Please schedule an appointment slot.' 
       });
     }
 
-    const isInstant = req.body.isInstant !== undefined ? req.body.isInstant : !serviceId;
-    const initialStatus = isInstant ? 'ongoing' : 'pending';
+    const isInstant = (req.body.isInstant !== undefined ? req.body.isInstant : !serviceId) && allowInstant;
+    const initialStatus = (isInstant || isFreeBooking) ? 'ongoing' : 'pending';
 
     const consultation = new Consultation({
       user: req.user._id,
@@ -73,11 +277,13 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       startTime: startTime,
       durationInMinutes: consultationDuration,
       status: initialStatus, 
-      paymentStatus: 'pending',
+      paymentStatus: isFreeBooking ? 'paid' : 'pending',
       type: schemaType,
       cost: amount,
       expertEarning: basePrice,
-      platformFee: platformFee
+      platformFee: platformFee,
+      isFree: isFreeBooking,
+      freeChatDurationMinutes: isFreeBooking ? consultationDuration : null
     });
     
     // Set meeting link dynamically pointing to our WebRTC live session route
@@ -262,6 +468,74 @@ router.post('/:id/end', protect, async (req, res) => {
 
     const expert = consultation.expert;
     const user = consultation.user;
+
+    // FREE CHAT CONSULTATION SPECIAL HANDLING:
+    // No wallet debit to user (₹0 charged)
+    // No wallet credit to expert (₹0 earning)
+    if (consultation.isFree) {
+      await Consultation.findByIdAndUpdate(consultation._id, {
+        cost: 0,
+        expertEarning: 0,
+        platformFee: 0,
+        durationInMinutes: actualDuration,
+        paymentStatus: 'paid'
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`call_room_${consultation._id}`).emit('VIDEO_SESSION_ENDED', { consultationId: consultation._id });
+        io.to(`call_room_${consultation._id}`).emit('session_ended', {
+          consultationId: consultation._id,
+          reason: req.body.reason || 'Free chat session ended'
+        });
+
+        if (user?._id) {
+          io.to(`user_${user._id}`).emit('VIDEO_SESSION_ENDED', { consultationId: consultation._id });
+          io.to(`user_${user._id}`).emit('session_ended', {
+            consultationId: consultation._id,
+            reason: req.body.reason || 'Free chat session ended'
+          });
+        }
+        if (expert?._id) {
+          io.to(`user_${expert._id}`).emit('VIDEO_SESSION_ENDED', { consultationId: consultation._id });
+          io.to(`user_${expert._id}`).emit('session_ended', {
+            consultationId: consultation._id,
+            reason: req.body.reason || 'Free chat session ended'
+          });
+        }
+      }
+
+      const { sendNotification } = require('../utils/notificationDispatcher');
+
+      sendNotification({
+        recipient: user._id,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: 'Free Consultation Ended',
+        message: `Your free chat consultation with ${expert?.name || 'the expert'} has ended. You can book a paid session anytime!`,
+        actionText: 'View experts',
+        link: '/experts',
+        type: 'rate_consultation',
+        badge: 'Free'
+      }, io).catch(() => {});
+
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Free Session Completed',
+        message: `Your free consultation session with ${user?.name || 'Client'} has completed.`,
+        actionText: 'View consultations',
+        link: '/expert/consultations',
+        type: 'consultation_completed',
+        badge: 'Free'
+      }, io).catch(() => {});
+
+      return res.json({ 
+        message: 'Free consultation ended successfully. Zero charge to user, zero earning to expert.', 
+        consultation: { ...consultation.toObject(), status: 'completed', cost: 0, expertEarning: 0 } 
+      });
+    }
 
     // Calculate actual cost safely
     const consultType = (consultation.type || 'video').toLowerCase();

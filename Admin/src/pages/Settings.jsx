@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Settings as SettingsIcon, Shield, Bell, CreditCard, Sliders,
-  Save, CheckCircle, RefreshCw, Mail, Phone, Globe, AlertCircle,
-  Percent, Clock, Lock, Key
+  Settings as SettingsIcon, Sliders,
+  Save, CheckCircle, RefreshCw, Mail, Phone,
+  Percent, Clock, AlertCircle
 } from 'lucide-react';
 
 export default function Settings() {
@@ -25,6 +25,8 @@ export default function Settings() {
     cancellationWindowHours: '2',
     autoApproveExperts: false,
     enableInstantBooking: true,
+    enableFreeChat: true,
+    freeChatDurationMinutes: '5',
     
     // Security
     sessionTimeoutMinutes: '60',
@@ -43,15 +45,35 @@ export default function Settings() {
     fetchSettings();
   }, []);
 
+  const isLocalhost = Boolean(
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+     window.location.hostname === '127.0.0.1')
+  );
+
+  const getAdminApiUrls = () => {
+    return isLocalhost
+      ? ['http://localhost:5000/api/admin/settings', 'https://astrotalk-hlg2.onrender.com/api/admin/settings']
+      : ['https://astrotalk-hlg2.onrender.com/api/admin/settings', 'http://localhost:5000/api/admin/settings'];
+  };
+
   const fetchSettings = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/admin/settings', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFormData(prev => ({ ...prev, ...data }));
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const urls = getAdminApiUrls();
+
+      for (const url of urls) {
+        try {
+          const response = await fetch(url, { headers });
+          if (response.ok) {
+            const data = await response.json();
+            setFormData(prev => ({ ...prev, ...data }));
+            return;
+          }
+        } catch (err) {
+          // try next
+        }
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -72,15 +94,29 @@ export default function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/admin/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-      if (response.ok) {
+      const urls = getAdminApiUrls();
+      let saved = false;
+
+      // Save to primary and also sync if both available
+      for (const url of urls) {
+        try {
+          const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(formData)
+          });
+          if (response.ok) {
+            saved = true;
+          }
+        } catch (err) {
+          // ignore error on secondary
+        }
+      }
+
+      if (saved) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 4000);
       }
@@ -94,8 +130,6 @@ export default function Settings() {
   const tabs = [
     { id: 'general', label: 'General', icon: Sliders },
     { id: 'consultation', label: 'Consultations & Rates', icon: Percent },
-    { id: 'security', label: 'Security & Access', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
   return (
@@ -149,11 +183,11 @@ export default function Settings() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${Number(
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
                   isActive
                     ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                ).toFixed(2)}`}
+                }`}
               >
                 <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
                 <span>{tab.label}</span>
@@ -218,22 +252,6 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Default Currency
-                  </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="INR">INR (₹) - Indian Rupee</option>
-                    <option value="USD">USD ($) - US Dollar</option>
-                    <option value="EUR">EUR (€) - Euro</option>
-                    <option value="GBP">GBP (£) - British Pound</option>
-                  </select>
-                </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -298,28 +316,10 @@ export default function Settings() {
                   <p className="text-xs text-slate-400">Shortest allowed bookable session slot.</p>
                 </div>
 
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Cancellation Window (Hours)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      name="cancellationWindowHours"
-                      value={formData.cancellationWindowHours}
-                      onChange={handleChange}
-                      min="1"
-                      className="w-32 px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-slate-500">Hours before call</span>
-                  </div>
-                  <p className="text-xs text-slate-400">Free cancellation allowed up to this window.</p>
-                </div>
-
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-800">Auto-Approve Expert Applications</p>
-                    <p className="text-xs text-slate-400">If enabled, new expert registrations bypass admin review.</p>
+                    <p className="text-xs text-slate-400">If enabled, new expert registrations are instantly approved.</p>
                   </div>
                   <input
                     type="checkbox"
@@ -329,127 +329,72 @@ export default function Settings() {
                     className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* 3. SECURITY TAB */}
-          {activeTab === 'security' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Security & Authentication</h2>
-                <p className="text-sm text-slate-500">Manage admin authentication, login controls, and session policies.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl">
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">Require User Email Verification</p>
-                    <p className="text-xs text-slate-500">Force new users to verify their email before booking consultations.</p>
+                    <p className="text-sm font-semibold text-slate-800">Enable Instant Booking</p>
+                    <p className="text-xs text-slate-400">Allow users to initiate immediate calls and consultations without advance scheduling.</p>
                   </div>
                   <input
                     type="checkbox"
-                    name="requireEmailVerification"
-                    checked={formData.requireEmailVerification}
+                    name="enableInstantBooking"
+                    checked={formData.enableInstantBooking}
                     onChange={handleChange}
                     className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
+              </div>
 
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl">
+              {/* Free Chat Dynamic Controls */}
+              <div className="p-5 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/70 to-orange-50/40 space-y-4">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">Admin Two-Factor Authentication (2FA)</p>
-                    <p className="text-xs text-slate-500">Require OTP on admin sign-in for additional protection.</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🎁</span>
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                        1-Time Free Chat Consultation Rules
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        Dynamic Admin Rule
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Allow a user to chat for free with an expert once per account ID. Time limit is strictly enforced: session terminates automatically on expiry. Zero charges deducted from user wallet, and zero payout to expert.
+                    </p>
                   </div>
-                  <input
-                    type="checkbox"
-                    name="twoFactorAdmin"
-                    checked={formData.twoFactorAdmin}
-                    onChange={handleChange}
-                    className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                  />
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      name="enableFreeChat"
+                      checked={formData.enableFreeChat}
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                  </label>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="pt-2 border-t border-amber-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Session Inactivity Timeout (Minutes)
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Free Chat Duration Time Limit (Minutes)
                     </label>
+                    <p className="text-xs text-slate-500">
+                      Duration allowed for free consultation. When timer hits 00:00, session immediately terminates.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
                     <input
                       type="number"
-                      name="sessionTimeoutMinutes"
-                      value={formData.sessionTimeoutMinutes}
+                      name="freeChatDurationMinutes"
+                      value={formData.freeChatDurationMinutes}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="1"
+                      max="60"
+                      className="w-24 px-3.5 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-center"
                     />
+                    <span className="text-xs font-bold text-slate-600">Minutes</span>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Max Failed Login Attempts
-                    </label>
-                    <input
-                      type="number"
-                      name="maxLoginAttempts"
-                      value={formData.maxLoginAttempts}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4. NOTIFICATIONS TAB */}
-          {activeTab === 'notifications' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Notification Alerts & Dispatches</h2>
-                <p className="text-sm text-slate-500">Configure which automated triggers send emails and alerts.</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">New Booking Confirmation Email</p>
-                    <p className="text-xs text-slate-500">Send instant confirmation emails to both user and expert.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    name="emailNewBookings"
-                    checked={formData.emailNewBookings}
-                    onChange={handleChange}
-                    className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">Expert Application Alerts to Admin</p>
-                    <p className="text-xs text-slate-500">Notify admin team whenever a professional submits an expert application.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    name="emailExpertApplications"
-                    checked={formData.emailExpertApplications}
-                    onChange={handleChange}
-                    className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">Session Reminders (15 mins before)</p>
-                    <p className="text-xs text-slate-500">Send reminder notification before scheduled consultation begins.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    name="smsSessionReminders"
-                    checked={formData.smsSessionReminders}
-                    onChange={handleChange}
-                    className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                  />
                 </div>
               </div>
             </div>

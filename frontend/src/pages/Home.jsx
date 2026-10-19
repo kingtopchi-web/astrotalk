@@ -5,7 +5,8 @@ import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
-import { Search, Star, ShieldCheck, ChevronRight, Video, Phone, MessageCircle, Heart } from 'lucide-react';
+import { Search, Star, ShieldCheck, ChevronRight, Video, Phone, MessageCircle, Heart, Clock, X } from 'lucide-react';
+import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 
 function Home() {
   const { user } = useAuth();
@@ -16,7 +17,91 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [currentHeroImgIndex, setCurrentHeroImgIndex] = useState(0);
   const [platformStats, setPlatformStats] = useState({ usersCount: 0, verifiedExpertsCount: 0 });
+  const [freeChatModalOpen, setFreeChatModalOpen] = useState(false);
+  const [freeChatStatus, setFreeChatStatus] = useState(null);
+  const [startingFreeChat, setStartingFreeChat] = useState(false);
+  const [freeChatNotice, setFreeChatNotice] = useState(null);
   const navigate = useNavigate();
+
+  // Load free chat settings on mount
+  useEffect(() => {
+    const loadInitialFreeChat = async () => {
+      try {
+        const config = await fetchFreeChatConfig();
+        if (config) setFreeChatStatus(config);
+      } catch (e) {}
+    };
+    loadInitialFreeChat();
+  }, [user]);
+
+  const handleStartFreeChatClick = async () => {
+    if (!user) {
+      navigate('/login?redirect=/');
+      return;
+    }
+    if (user.role !== 'USER') {
+      alert('Only client/user accounts can access free consultations.');
+      return;
+    }
+
+    try {
+      const config = await fetchFreeChatConfig();
+      if (config) {
+        setFreeChatStatus(config);
+      }
+
+      if (config && config.enableFreeChat === false) {
+        setFreeChatNotice({
+          type: 'disabled',
+          title: 'Free Chat Unavailable',
+          message: 'Free chat consultation is currently disabled by administrator.'
+        });
+        setFreeChatModalOpen(true);
+        return;
+      }
+
+      if (config?.hasUsedFreeChat || user.hasUsedFreeChat) {
+        setFreeChatNotice({
+          type: 'already_used',
+          title: 'Free Chat Already Used',
+          message: 'You have already used your 1-time free consultation with an expert. Explore our verified experts to continue consultations.'
+        });
+        setFreeChatModalOpen(true);
+        return;
+      }
+
+      setFreeChatNotice(null);
+      setFreeChatModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      setFreeChatModalOpen(true);
+    }
+  };
+
+  const handleSelectExpertForFreeChat = async (expertId) => {
+    try {
+      setStartingFreeChat(true);
+      const token = localStorage.getItem('token');
+      const res = await axios.post(getApiUrl('/bookings/start-free-chat'), {
+        expertId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (user) {
+        user.hasUsedFreeChat = true;
+        localStorage.setItem('user', JSON.stringify({ ...user, hasUsedFreeChat: true }));
+      }
+
+      setFreeChatModalOpen(false);
+      navigate('/messages');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to start free chat session');
+    } finally {
+      setStartingFreeChat(false);
+    }
+  };
 
   const formatStat = (num) => {
     if (!num) return '0+';
@@ -51,12 +136,19 @@ function Home() {
   useEffect(() => {
     const fetchPlatformStats = async () => {
       try {
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/public/stats');
+        const res = await axios.get(getApiUrl('/public/stats'));
         if (res.data && res.data.success) {
           setPlatformStats({
             usersCount: res.data.usersCount || 0,
             verifiedExpertsCount: res.data.verifiedExpertsCount || 0
           });
+          if (res.data.freeChatDurationMinutes) {
+            setFreeChatStatus(prev => ({
+              ...(prev || {}),
+              freeChatDurationMinutes: res.data.freeChatDurationMinutes,
+              enableFreeChat: res.data.enableFreeChat !== false
+            }));
+          }
         }
       } catch (err) {
         console.error('Failed to fetch platform stats', err);
@@ -196,7 +288,10 @@ function Home() {
                 </div>
 
                 <div className="pt-6">
-                  <button className="px-8 py-3.5 bg-primary text-background rounded-full font-heading font-bold text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group">
+                  <button 
+                    onClick={handleStartFreeChatClick}
+                    className="px-8 py-3.5 bg-primary text-background rounded-full font-heading font-bold text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-lg hover:shadow-primary/20 active:scale-95"
+                  >
                     Start Free Chat <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
                 </div>
@@ -741,6 +836,134 @@ function Home() {
       <div className="md:hidden">
         <BottomNav />
       </div>
+
+      {/* Free Chat Modal */}
+      {freeChatModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-surface dark:bg-[#18181b] border border-border w-full max-w-lg rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+            <button
+              onClick={() => setFreeChatModalOpen(false)}
+              className="absolute top-5 right-5 text-on-surface/50 hover:text-on-surface p-1.5 rounded-full hover:bg-surface-variant transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            {freeChatNotice ? (
+              <div className="text-center py-6 space-y-4">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-3xl">
+                  {freeChatNotice.type === 'already_used' ? '🎁' : 'ℹ️'}
+                </div>
+                <div>
+                  <h3 className="text-xl font-heading font-bold text-on-surface">
+                    {freeChatNotice.title}
+                  </h3>
+                  <p className="text-sm text-on-surface-variant mt-2 leading-relaxed px-4">
+                    {freeChatNotice.message}
+                  </p>
+                </div>
+                <div className="pt-4 flex justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      setFreeChatModalOpen(false);
+                      navigate('/experts');
+                    }}
+                    className="px-6 py-2.5 bg-primary text-background rounded-xl font-bold text-sm hover:bg-primary-light transition-all shadow-md cursor-pointer"
+                  >
+                    Browse Verified Experts
+                  </button>
+                  <button
+                    onClick={() => setFreeChatModalOpen(false)}
+                    className="px-5 py-2.5 bg-surface-variant text-on-surface rounded-xl font-semibold text-sm hover:bg-border transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-2xl">
+                    🎁
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-heading font-bold text-on-surface">
+                      Start 1-Time Free Chat
+                    </h3>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                      <Clock size={13} />
+                      Time limit: {freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'Minute' : 'Minutes'} • ₹0 Charged
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                  <p>
+                    <strong>Special Welcome Benefit:</strong> You can chat with an expert for <strong>{freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'minute' : 'minutes'}</strong> completely free. The session will automatically terminate once time expires.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
+                    Select an expert to begin:
+                  </p>
+                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                    {experts.slice(0, 6).map((expert) => (
+                      <div
+                        key={expert._id}
+                        className="flex items-center justify-between p-3 rounded-2xl border border-border bg-surface-variant/30 hover:bg-surface-variant transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=F7C83C&color=fff`}
+                            alt={expert.name}
+                            className="w-11 h-11 rounded-xl object-cover"
+                          />
+                          <div>
+                            <h4 className="text-sm font-bold text-on-surface leading-tight">
+                              {expert.name}
+                            </h4>
+                            <p className="text-xs text-on-surface-variant">
+                              {expert.specialty || expert.categoryId?.name || 'Verified Expert'}
+                            </p>
+                            <div className="flex items-center gap-1 text-[11px] text-amber-500 font-bold mt-0.5">
+                              <Star size={11} className="fill-amber-500" />
+                              <span>{expert.rating ? expert.rating.toFixed(1) : '5.0'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          disabled={startingFreeChat}
+                          onClick={() => handleSelectExpertForFreeChat(expert._id)}
+                          className="px-4 py-2 bg-primary text-background rounded-xl font-bold text-xs hover:bg-primary-light transition-all shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>
+                            {startingFreeChat 
+                              ? 'Connecting...' 
+                              : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`}
+                          </span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 text-center">
+                  <button
+                    onClick={() => {
+                      setFreeChatModalOpen(false);
+                      navigate('/experts');
+                    }}
+                    className="text-xs text-primary font-bold hover:underline cursor-pointer"
+                  >
+                    View all experts &gt;
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

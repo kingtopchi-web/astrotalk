@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { PlatformSettingsProvider } from './context/PlatformSettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Public/User Pages
@@ -47,15 +48,15 @@ import './index.css';
 import { useLocation } from 'react-router-dom';
 
 function ThemeManager() {
-  const location = useLocation();
-  
   useEffect(() => {
-    if (location.pathname === '/') {
+    // Keep theme consistent across all pages and route navigation
+    const savedTheme = localStorage.getItem('app_theme') || 'light';
+    if (savedTheme === 'dark') {
       document.documentElement.classList.remove('light-theme');
     } else {
       document.documentElement.classList.add('light-theme');
     }
-  }, [location.pathname]);
+  }, []);
   
   return null;
 }
@@ -63,8 +64,9 @@ function ThemeManager() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <ThemeManager />
+      <PlatformSettingsProvider>
+        <Router>
+          <ThemeManager />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -122,6 +124,7 @@ function App() {
 
         </Routes>
       </Router>
+      </PlatformSettingsProvider>
     </AuthProvider>
   );
 }

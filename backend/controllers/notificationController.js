@@ -338,6 +338,39 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
+// @desc    Clear all notifications for logged in user (soft delete)
+// @route   DELETE /api/notifications/clear-all
+// @access  Private
+exports.clearAllNotifications = async (req, res) => {
+  try {
+    const role = req.user.role || 'USER';
+    const userId = req.user._id;
+
+    await Notification.updateMany(
+      {
+        $or: [
+          { recipient: userId },
+          { recipientRole: role, recipient: null }
+        ],
+        isDeleted: { $ne: true }
+      },
+      {
+        $set: { isDeleted: true, isRead: true }
+      }
+    );
+
+    res.json({
+      success: true,
+      message: 'All notifications cleared successfully',
+      unreadCount: 0,
+      notifications: []
+    });
+  } catch (error) {
+    console.error('Error clearing all notifications:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 // @desc    Create a new notification (system/admin or internal hook)
 // @route   POST /api/notifications
 // @access  Private

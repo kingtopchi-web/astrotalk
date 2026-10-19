@@ -9,6 +9,8 @@ import {
   XCircle, Clock
 } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
+import AdminSearchBar from '../components/AdminSearchBar';
+import LogoutModal from '../components/LogoutModal';
 
 const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
 
@@ -106,9 +108,9 @@ const NavItem = ({ item, collapsed, onClick }) => {
       title={collapsed ? item.name : undefined}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-sm font-medium group relative
         ${Number(isActive
-          ? 'bg-blue-50 text-blue-700 font-semibold'
-          : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-        ).toFixed(2)} ${collapsed ? 'justify-center' : ''}`}
+        ? 'bg-blue-50 text-blue-700 font-semibold'
+        : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+      ).toFixed(2)} ${collapsed ? 'justify-center' : ''}`}
     >
       <span className={`shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
         <Icon size={16} />
@@ -250,10 +252,10 @@ const SidebarContent = ({
     <div className={`flex flex-col h-full ${collapsed ? 'w-[60px]' : 'w-64'} transition-all duration-300`}>
       {/* Logo */}
       <div className={`flex items-center gap-3 border-b border-slate-200 shrink-0 ${collapsed ? 'justify-center py-4 px-2' : 'px-5 py-4'}`}>
-        <img 
-          src="/logo.png" 
-          alt="ExpertHub Real Guidance" 
-          className="w-8 h-8 object-contain rounded-lg shadow-sm shrink-0" 
+        <img
+          src="/logo.png"
+          alt="ExpertHub Real Guidance"
+          className="w-8 h-8 object-contain rounded-lg shadow-sm shrink-0"
         />
         {!collapsed && (
           <div>
@@ -341,7 +343,14 @@ function AdminLayout() {
   const adminImage = adminUser?.profileImage ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(adminUser?.name || 'Admin')}&background=ea580c&color=fff`;
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     navigate('/login');
@@ -472,15 +481,8 @@ function AdminLayout() {
             <Menu size={18} />
           </button>
 
-          {/* Search */}
-          <div className="hidden md:flex flex-1 max-w-sm items-center bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg gap-2">
-            <Search size={15} className="text-slate-400 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search admin panel..."
-              className="bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400 w-full"
-            />
-          </div>
+          {/* Dynamic Global Admin Search */}
+          <AdminSearchBar className="hidden md:flex" />
 
           <div className="ml-auto flex items-center gap-3">
             {/* Notifications bell */}
@@ -533,6 +535,12 @@ function AdminLayout() {
           <Outlet />
         </div>
       </main>
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

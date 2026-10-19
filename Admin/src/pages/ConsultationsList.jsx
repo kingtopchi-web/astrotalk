@@ -97,6 +97,13 @@ const DetailModal = ({ consultation, onClose, onStatusUpdate }) => {
             </div>
           </div>
 
+          {consultation.isFree && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+              <span className="text-base">🎁</span>
+              <span>1-Time Free Promotional Consultation (User charged ₹0, Expert payout ₹0)</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center bg-blue-50 rounded-xl p-3">
               <p className="text-[10px] text-slate-400 uppercase font-semibold mb-0.5">Type</p>
@@ -110,7 +117,9 @@ const DetailModal = ({ consultation, onClose, onStatusUpdate }) => {
             </div>
             <div className="text-center bg-green-50 rounded-xl p-3">
               <p className="text-[10px] text-slate-400 uppercase font-semibold mb-0.5">Cost</p>
-              <p className="text-sm font-bold text-green-700">₹{Number(consultation.cost).toFixed(2)}</p>
+              <p className="text-sm font-bold text-green-700">
+                {consultation.isFree ? '₹0.00 (Free)' : `₹${Number(consultation.cost || 0).toFixed(2)}`}
+              </p>
             </div>
           </div>
 
@@ -359,14 +368,27 @@ export default function ConsultationsList({ filterStatus }) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
-                          {TYPE_ICONS[c.type]} {c.type}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
+                            {TYPE_ICONS[c.type]} {c.type}
+                          </span>
+                          {c.isFree && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                              🎁 FREE
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
                         {c.startTime ? new Date(c.startTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A'}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-slate-800">₹{Number(c.cost).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-slate-800">
+                        {c.isFree ? (
+                          <span className="text-emerald-600 font-bold">₹0.00 <span className="text-xs font-normal text-slate-400">(Free)</span></span>
+                        ) : (
+                          `₹${Number(c.cost || 0).toFixed(2)}`
+                        )}
+                      </td>
                       <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                       <td className="px-4 py-3 text-center">
                         <button

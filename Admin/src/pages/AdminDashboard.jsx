@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar,
   LineChart, Line
@@ -25,7 +25,7 @@ function AdminDashboard() {
 
   // Generate dynamic sparklines from recent 7 days data if available
   const getSparklineData = (key) => {
-    if (!stats || !stats.last7Days) return [{v: 0}, {v: 0}];
+    if (!stats || !stats.last7Days) return [{ v: 0 }, { v: 0 }];
     return stats.last7Days.map(day => ({ v: day[key] || 0 }));
   };
 
@@ -34,12 +34,12 @@ function AdminDashboard() {
       try {
         const token = localStorage.getItem('adminToken');
         const headers = { Authorization: `Bearer ${token}` };
-        
+
         const [statsRes, expertsRes] = await Promise.all([
           axios.get('https://astrotalk-hlg2.onrender.com/api/admin/dashboard/stats', { headers }),
           axios.get('https://astrotalk-hlg2.onrender.com/api/admin/experts?limit=5', { headers })
         ]);
-        
+
         setStats(statsRes.data);
         setRecentExperts(expertsRes.data.data || []);
       } catch (err) {
@@ -58,28 +58,28 @@ function AdminDashboard() {
           <ChevronRight size={16} className="mx-1" />
           <span className="text-slate-900 font-bold">Home</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
+            <input
+              type="text"
+              placeholder="Search..."
               className="pl-9 pr-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
             />
           </div>
-          
+
           <button className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50">
             <Calendar size={16} />
             <span className="hidden sm:inline">{currentDate}</span>
           </button>
-          
+
           <button className="p-2 bg-white border border-slate-200 rounded-lg relative hover:bg-slate-50">
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/settings')}
             title="Settings"
             className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
@@ -159,16 +159,16 @@ function AdminDashboard() {
         {/* Card 4 - Dark */}
         <div className="bg-[#f4f7fb] p-6 rounded-xl border border-slate-200 flex flex-col justify-between">
           <div className="flex flex-col items-start gap-3">
-             <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center">
-               <Wand2 size={16} className="text-slate-700" />
-             </div>
-             <h3 className="font-bold text-slate-800">Platform Categories</h3>
-             <p className="text-sm text-slate-500 leading-relaxed mb-1">
-               {stats ? stats.totalCategories : '...'} Categories, {stats ? stats.totalSubCategories : '...'} Sub-categories available.
-             </p>
-             <button onClick={() => navigate('/categories')} className="mt-2 bg-[#0f172a] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors">
-               Manage Categories &rsaquo;
-             </button>
+            <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center">
+              <Wand2 size={16} className="text-slate-700" />
+            </div>
+            <h3 className="font-bold text-slate-800">Platform Categories</h3>
+            <p className="text-sm text-slate-500 leading-relaxed mb-1">
+              {stats ? stats.totalCategories : '...'} Categories, {stats ? stats.totalSubCategories : '...'} Sub-categories available.
+            </p>
+            <button onClick={() => navigate('/categories')} className="mt-2 bg-[#0f172a] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+              Manage Categories &rsaquo;
+            </button>
           </div>
         </div>
       </div>
@@ -194,17 +194,17 @@ function AdminDashboard() {
               <AreaChart data={stats?.last7Days || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorExperts" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
                 <Tooltip />
                 <Area type="monotone" name="Users" dataKey="users" stackId="1" stroke="#2563eb" fill="url(#colorUsers)" strokeWidth={2} />
                 <Area type="monotone" name="Experts" dataKey="experts" stackId="2" stroke="#f59e0b" fill="url(#colorExperts)" strokeWidth={2} />
@@ -231,9 +231,9 @@ function AdminDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.last6Months || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} barSize={32}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
-                <Tooltip cursor={{fill: '#f1f5f9'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <Tooltip cursor={{ fill: '#f1f5f9' }} />
                 <Bar dataKey="users" name="Users" stackId="a" fill="#0ea5e9" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="experts" name="Experts" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -267,17 +267,17 @@ function AdminDashboard() {
                     <td className="px-4 py-3 text-slate-600">{expert.categoryId?.name || 'N/A'}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${Number(
-                        expert.verificationStatus === 'APPROVED' ? 'bg-green-100 text-green-700 border border-green-200' : 
-                        expert.verificationStatus === 'PENDING' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                        'bg-red-100 text-red-700 border border-red-200'
+                        expert.verificationStatus === 'APPROVED' ? 'bg-green-100 text-green-700 border border-green-200' :
+                          expert.verificationStatus === 'PENDING' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                            'bg-red-100 text-red-700 border border-red-200'
                       ).toFixed(2)}`}>
                         {expert.verificationStatus}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${Number(
-                        expert.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 
-                        'bg-slate-100 text-slate-600 border border-slate-200'
+                        expert.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+                          'bg-slate-100 text-slate-600 border border-slate-200'
                       ).toFixed(2)}`}>
                         {expert.status}
                       </span>
@@ -297,35 +297,35 @@ function AdminDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 h-full">
           <h3 className="font-bold text-sm text-slate-800 mb-4">Platform Health</h3>
           <div className="space-y-4 text-sm">
-            
+
             <div className="flex flex-col gap-1">
-               <div className="flex justify-between text-slate-600">
-                 <span>Active Experts</span>
-                 <span className="font-medium text-slate-800">{stats?.activeExperts || 0}</span>
-               </div>
-               <div className="w-full bg-slate-100 rounded-full h-1.5">
-                  <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.activeExperts/stats.totalExperts)*100 : 0}%` }}></div>
-               </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Active Experts</span>
+                <span className="font-medium text-slate-800">{stats?.activeExperts || 0}</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5">
+                <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.activeExperts / stats.totalExperts) * 100 : 0}%` }}></div>
+              </div>
             </div>
 
             <div className="flex flex-col gap-1">
-               <div className="flex justify-between text-slate-600">
-                 <span>Approved Experts</span>
-                 <span className="font-medium text-slate-800">{stats?.approvedExperts || 0}</span>
-               </div>
-               <div className="w-full bg-slate-100 rounded-full h-1.5">
-                  <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.approvedExperts/stats.totalExperts)*100 : 0}%` }}></div>
-               </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Approved Experts</span>
+                <span className="font-medium text-slate-800">{stats?.approvedExperts || 0}</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5">
+                <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.approvedExperts / stats.totalExperts) * 100 : 0}%` }}></div>
+              </div>
             </div>
-            
+
             <div className="flex flex-col gap-1">
-               <div className="flex justify-between text-slate-600">
-                 <span>Pending Verifications</span>
-                 <span className="font-medium text-slate-800">{stats?.pendingExperts || 0}</span>
-               </div>
-               <div className="w-full bg-slate-100 rounded-full h-1.5">
-                  <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.pendingExperts/stats.totalExperts)*100 : 0}%` }}></div>
-               </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Pending Verifications</span>
+                <span className="font-medium text-slate-800">{stats?.pendingExperts || 0}</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5">
+                <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.pendingExperts / stats.totalExperts) * 100 : 0}%` }}></div>
+              </div>
             </div>
 
           </div>

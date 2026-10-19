@@ -6,7 +6,8 @@ import {
   fetchNotifications, 
   markNotificationAsRead, 
   markAllNotificationsAsRead, 
-  deleteNotificationItem 
+  deleteNotificationItem,
+  clearAllNotifications
 } from '../utils/notificationService';
 import { 
   Bell, 
@@ -67,6 +68,14 @@ function Notifications() {
     const res = await markAllNotificationsAsRead(role);
     setNotifications(res.notifications);
     setUnreadCount(res.unreadCount);
+  };
+
+  const handleClearAll = async () => {
+    if (notifications.length === 0) return;
+    if (!window.confirm('Are you sure you want to clear all notifications?')) return;
+    const res = await clearAllNotifications(role);
+    setNotifications(res.notifications || []);
+    setUnreadCount(res.unreadCount || 0);
   };
 
   const handleDelete = async (id, e) => {
@@ -163,16 +172,28 @@ function Notifications() {
             </button>
           </div>
 
-          {/* Mark all as read */}
-          {unreadCount > 0 && (
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
-              className="px-4 py-2 bg-surface-muted hover:bg-primary/20 text-on-surface hover:text-primary rounded-xl text-sm font-semibold border border-border transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-            >
-              <CheckCheck size={16} /> Mark all as read
-            </button>
-          )}
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="px-4 py-2 bg-surface-muted hover:bg-primary/20 text-on-surface hover:text-primary rounded-xl text-sm font-semibold border border-border transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+              >
+                <CheckCheck size={16} /> Mark all as read
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-sm font-semibold border border-rose-200 transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+                title="Clear all notifications"
+              >
+                <Trash2 size={16} /> Clear all
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Notifications List */}

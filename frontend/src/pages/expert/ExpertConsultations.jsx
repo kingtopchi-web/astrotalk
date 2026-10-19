@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Video, Phone, MessageCircle, Clock, Check, X } from 'lucide-react';
+import { Video, Phone, MessageCircle, Clock, Check, X, Sparkles } from 'lucide-react';
+import { getApiUrl } from '../../utils/apiConfig';
 
 function ExpertConsultations() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ function ExpertConsultations() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/expert/consultations${filter !== 'all' ? `?status=${filter}` : ''}`, {
+      const res = await axios.get(getApiUrl(`/expert/consultations${filter !== 'all' ? `?status=${filter}` : ''}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConsultations(res.data);
@@ -31,7 +32,7 @@ function ExpertConsultations() {
   const updateStatus = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`https://astrotalk-hlg2.onrender.com/api/expert/consultations/${id}/status`, 
+      await axios.patch(getApiUrl(`/expert/consultations/${id}/status`), 
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -114,9 +115,14 @@ function ExpertConsultations() {
                       className="w-12 h-12 rounded-full object-cover border border-slate-200"
                     />
                     <div>
-                      <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+                      <h4 className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                         {consultation.user?.name || 'Unknown User'}
                         {getStatusBadge(consultation.status)}
+                        {consultation.isFree && (
+                          <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Sparkles size={12} /> Free Promo
+                          </span>
+                        )}
                       </h4>
                       <p className="text-slate-500 text-sm mt-1 flex items-center flex-wrap gap-3">
                         <span className="flex items-center">
@@ -134,10 +140,19 @@ function ExpertConsultations() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="text-lg font-bold text-slate-900">
-                      ₹{Number(consultation.cost).toFixed(2)}
-                    </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {consultation.isFree ? (
+                      <div className="text-right">
+                        <span className="inline-block text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                          🎁 Free Session (₹0)
+                        </span>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Earning: ₹0.00</p>
+                      </div>
+                    ) : (
+                      <div className="text-lg font-bold text-slate-900">
+                        ₹{Number(consultation.cost || 0).toFixed(2)}
+                      </div>
+                    )}
                     
                     {/* Action Buttons */}
                     <div className="flex gap-2 mt-2">

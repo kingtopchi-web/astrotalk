@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DollarSign, Clock, Download, TrendingUp, CreditCard } from 'lucide-react';
+import { getApiUrl } from '../../utils/apiConfig';
 
 function ExpertEarnings() {
   const [earnings, setEarnings] = useState({
@@ -17,7 +18,7 @@ function ExpertEarnings() {
   const fetchEarnings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/expert/earnings', {
+      const res = await axios.get(getApiUrl('/expert/earnings'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEarnings(res.data);
@@ -31,7 +32,7 @@ function ExpertEarnings() {
   const handleRequestPayout = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://astrotalk-hlg2.onrender.com/api/expert/payouts/request', {}, {
+      await axios.post(getApiUrl('/expert/payouts/request'), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Payout request submitted successfully!');
@@ -121,26 +122,36 @@ function ExpertEarnings() {
                       {new Date(item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </td>
                     <td className="py-4 px-6 text-sm font-medium text-slate-900">
-                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${Number(
-                        item.type === 'EARNING' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                      ).toFixed(2)}`}>
-                        {item.type}
+                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                        item.type === 'FREE_PROMO' || item.isFree
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : item.type === 'EARNING'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {item.type === 'FREE_PROMO' || item.isFree ? 'FREE PROMO' : item.type}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-sm text-slate-600">
+                    <td className="py-4 px-6 text-sm text-slate-600 font-medium">
                       {item.description}
                     </td>
-                    <td className={`py-4 px-6 text-sm font-bold text-right ${Number(
-                      item.type === 'EARNING' ? 'text-green-600' : 'text-slate-900'
-                    ).toFixed(2)}`}>
-                      {item.type === 'EARNING' ? '+' : '-'}₹{Number(item.amount).toFixed(2)}
+                    <td className={`py-4 px-6 text-sm font-bold text-right ${
+                      item.type === 'FREE_PROMO' || item.isFree 
+                        ? 'text-emerald-600'
+                        : item.type === 'EARNING' 
+                        ? 'text-green-600' 
+                        : 'text-slate-900'
+                    }`}>
+                      {item.type === 'FREE_PROMO' || item.isFree 
+                        ? '₹0.00' 
+                        : `${item.type === 'EARNING' ? '+' : '-'}₹${Number(item.amount).toFixed(2)}`}
                     </td>
                     <td className="py-4 px-6 text-sm text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${Number(
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                         item.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                         item.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-red-100 text-red-700'
-                      ).toFixed(2)}`}>
+                      }`}>
                         {item.status}
                       </span>
                     </td>

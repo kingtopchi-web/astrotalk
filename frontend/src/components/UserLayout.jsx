@@ -1,35 +1,51 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  LayoutDashboard, 
-  Compass, 
-  MessageSquare, 
-  CreditCard, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  Bell, 
+import { usePlatformSettings } from '../context/PlatformSettingsContext';
+import {
+  LayoutDashboard,
+  Compass,
+  MessageSquare,
+  CreditCard,
+  Settings,
+  LogOut,
+  Menu,
+  Bell,
   Search,
   User,
   HelpCircle,
-  Home
+  Home,
+  X,
+  Phone,
+  Mail
 } from 'lucide-react';
+import UserSearchBar from './UserSearchBar';
+import NotificationDropdown from './NotificationDropdown';
+import LogoutModal from './LogoutModal';
 
 const UserLayout = ({ children, title = '', subtitle = '' }) => {
   const { user, logout } = useAuth();
+  const { platformName, supportEmail, contactPhone, address } = usePlatformSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
     logout();
     navigate('/login');
   };
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: 'Notifications', path: '/notifications', icon: <Bell size={20} /> },
     { name: 'Find Experts', path: '/experts', icon: <Compass size={20} /> },
     { name: 'My Appointments', path: '/bookings', icon: <MessageSquare size={20} /> },
     { name: 'Messages', path: '/messages', icon: <MessageSquare size={20} /> },
@@ -37,22 +53,23 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
     { name: 'Profile', path: '/profile', icon: <User size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },
     { name: 'Help & Support', path: '/support', icon: <HelpCircle size={20} /> },
+    { name: 'Contact Us', path: '/contact', icon: <HelpCircle size={20} /> },
   ];
 
   const displayName = user?.name || 'User';
 
   return (
     <div className="min-h-screen bg-background flex font-sans">
-      
+
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         <div className="p-6">
           <Link to="/" className="flex items-center gap-2.5">
             <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0 shadow-sm" />
-            <span className="text-xl font-bold text-on-surface tracking-tight">ExpertHub</span>
+            <span className="text-xl font-bold text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
           </Link>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto px-4 scrollbar-hide py-2">
           <nav className="space-y-1">
             {navItems.map((item) => {
@@ -84,8 +101,18 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
           </nav>
         </div>
 
+        <div className="px-4 py-3 border-t border-border-color bg-surface-light/40">
+          <p className="text-[10px] font-bold text-on-surface/50 uppercase tracking-wider mb-1">Support Desk</p>
+          <a href={`mailto:${supportEmail || 'support@stitchplatform.com'}`} className="text-xs text-primary font-medium hover:underline block truncate">
+            {supportEmail || 'support@stitchplatform.com'}
+          </a>
+          <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="text-xs text-on-surface/60 hover:underline block mt-0.5">
+            {contactPhone || '+91 98765 43210'}
+          </a>
+        </div>
+
         <div className="p-4 border-t border-border-color">
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl transition-colors text-sm font-medium text-on-surface/60 hover:bg-red-50 hover:text-red-600"
           >
@@ -97,26 +124,43 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
 
       {/* Main Content */}
       <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
-        
+
         {/* Mobile Header */}
-        <header className="md:hidden bg-surface border-b border-border-color p-4 flex justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center gap-2.5">
-            <Link
-              to="/"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
-              title="Back to Home"
-            >
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span>Home</span>
-            </Link>
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="ExpertHub" className="w-7 h-7 object-contain rounded-md shrink-0" />
-              <h1 className="text-lg font-bold text-on-surface">ExpertHub</h1>
-            </Link>
+        <header className="md:hidden bg-surface border-b border-border-color p-4 sticky top-0 z-20">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2.5">
+              <Link
+                to="/"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
+                title="Back to Home"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>Home</span>
+              </Link>
+              <Link to="/" className="flex items-center gap-2">
+                <img src="/logo.png" alt="ExpertHub" className="w-7 h-7 object-contain rounded-md shrink-0" />
+                <h1 className="text-lg font-bold text-on-surface">{platformName || 'ExpertHub'}</h1>
+              </Link>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <NotificationDropdown role="USER" viewAllPath="/notifications" />
+              <button
+                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                className="p-2 rounded-xl text-on-surface/70 hover:text-on-surface hover:bg-surface-light"
+                title="Search"
+              >
+                {isMobileSearchOpen ? <X size={20} /> : <Search size={20} />}
+              </button>
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-xl text-on-surface/80 hover:bg-surface-light">
+                <Menu size={22} />
+              </button>
+            </div>
           </div>
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-on-surface/80">
-            <Menu size={24} />
-          </button>
+          {isMobileSearchOpen && (
+            <div className="mt-3 pt-3 border-t border-border-color animate-in fade-in slide-in-from-top-1 duration-150">
+              <UserSearchBar className="w-full" />
+            </div>
+          )}
         </header>
 
         {/* Mobile Sidebar Overlay */}
@@ -127,7 +171,7 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
               <div className="p-4 border-b border-border-color">
                 <div className="flex items-center gap-2.5 px-2 py-1">
                   <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
-                  <span className="text-xl font-bold text-on-surface tracking-tight">ExpertHub</span>
+                  <span className="text-xl font-bold text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto px-4 py-2">
@@ -162,7 +206,7 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
                 </nav>
               </div>
               <div className="px-4 pb-6 mt-auto space-y-1">
-                <button 
+                <button
                   onClick={() => { handleLogout(); setIsSidebarOpen(false); }}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-red-50 hover:text-red-600 w-full text-left"
                 >
@@ -175,22 +219,17 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
         )}
 
         {/* Desktop Topbar */}
-        <header className="hidden md:flex bg-background p-6 justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center bg-surface px-4 py-2.5 rounded-2xl w-[400px] shadow-sm border-0 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-            <Search size={18} className="text-on-surface/50" />
-            <input type="text" placeholder="Search experts, categories, or anything..." className="bg-transparent border-none outline-none ml-3 text-sm w-full text-on-surface placeholder:text-on-surface/50" />
-          </div>
+        <header className="hidden md:flex bg-background p-6 justify-between items-center sticky top-0 z-30">
+          <UserSearchBar />
           <div className="flex items-center gap-4">
-            <button className="text-on-surface/60 hover:text-primary transition-colors relative">
-              <Bell size={20} />
-            </button>
+            <NotificationDropdown role="USER" viewAllPath="/notifications" />
             {/* User Profile Trigger & Dropdown */}
-            <div 
+            <div
               className="relative group py-2"
               onMouseEnter={() => setIsDropdownOpen(true)}
               onMouseLeave={() => setIsDropdownOpen(false)}
             >
-              <div 
+              <div
                 className="flex items-center gap-3 border-l border-border-color pl-4 cursor-pointer select-none"
                 onClick={() => setIsDropdownOpen((prev) => !prev)}
               >
@@ -216,12 +255,11 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
               </div>
 
               {/* Hover & Click Dropdown Menu */}
-              <div 
-                className={`absolute right-0 top-full pt-2 w-60 z-30 transition-all duration-200 transform ${
-                  isDropdownOpen 
-                    ? 'opacity-100 visible translate-y-0 pointer-events-auto' 
+              <div
+                className={`absolute right-0 top-full pt-2 w-60 z-30 transition-all duration-200 transform ${isDropdownOpen
+                    ? 'opacity-100 visible translate-y-0 pointer-events-auto'
                     : 'opacity-0 invisible -translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto'
-                }`}
+                  }`}
               >
                 <div className="bg-surface rounded-2xl shadow-xl border border-border-color py-2 overflow-hidden">
                   <div className="px-4 py-3 border-b border-border-color bg-surface-light/40">
@@ -233,50 +271,56 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
                   </div>
 
                   <div className="py-1">
-                    <Link 
-                      to="/profile" 
+                    <Link
+                      to="/profile"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <User size={16} className="text-on-surface/50" />
                       <span>My Profile</span>
                     </Link>
-                    <Link 
-                      to="/bookings" 
+                    <Link
+                      to="/bookings"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <MessageSquare size={16} className="text-on-surface/50" />
                       <span>My Appointments</span>
                     </Link>
-                    <Link 
-                      to="/wallet" 
+                    <Link
+                      to="/wallet"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <CreditCard size={16} className="text-on-surface/50" />
                       <span>Wallet & Balance</span>
                     </Link>
-                    <Link 
-                      to="/settings" 
+                    <Link
+                      to="/settings"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <Settings size={16} className="text-on-surface/50" />
                       <span>Account Settings</span>
                     </Link>
-                    <Link 
-                      to="/support" 
+                    <Link
+                      to="/contact"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-light hover:text-primary transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <HelpCircle size={16} className="text-on-surface/50" />
-                      <span>Help & Support</span>
+                      <span>Contact Us</span>
                     </Link>
                   </div>
 
+                  <div className="px-4 py-2 border-t border-border-color bg-surface-light/50 text-[11px]">
+                    <p className="font-semibold text-on-surface/70">Support Helpdesk:</p>
+                    <p className="truncate text-primary font-medium">{supportEmail || 'support@stitchplatform.com'}</p>
+                    <p className="text-on-surface/60">{contactPhone || '+91 98765 43210'}</p>
+                  </div>
+
                   <div className="border-t border-border-color pt-1">
-                    <button 
+                    <button
                       onClick={() => {
                         setIsDropdownOpen(false);
                         handleLogout();
@@ -306,6 +350,12 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
           </div>
         </div>
       </main>
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 };

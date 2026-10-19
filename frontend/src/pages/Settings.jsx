@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import UserLayout from '../components/UserLayout';
-import { Settings as SettingsIcon, Bell, Lock, User, Shield, Moon, Globe, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Lock } from 'lucide-react';
+import { getApiUrl } from '../utils/apiConfig';
 
 function Settings() {
   const [activeTab, setActiveTab] = useState('security');
@@ -17,9 +18,6 @@ function Settings() {
     email: { consultation: true, payment: true, wallet: true, messages: true, support: true, marketing: false },
     push: { consultation: true, messages: true, payment: true, wallet: false, support: true }
   });
-  const [privacy, setPrivacy] = useState({ profileVisibility: 'public', onlineStatus: true, readReceipts: true });
-  const [theme, setTheme] = useState('system');
-  const [language, setLanguage] = useState('en');
 
   useEffect(() => {
     fetchSettings();
@@ -29,16 +27,13 @@ function Settings() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/settings', {
+      const res = await axios.get(getApiUrl('/settings'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = res.data;
       setUserData(data);
       setProfileForm({ name: data.name || '', mobile: data.mobile || '', bio: data.bio || '', location: data.location || '', gender: data.gender || '' });
       if (data.notificationPreferences) setNotifications(data.notificationPreferences);
-      if (data.privacySettings) setPrivacy(data.privacySettings);
-      if (data.theme) setTheme(data.theme);
-      if (data.language) setLanguage(data.language);
     } catch (error) {
       console.error(error);
       showMessage('error', 'Failed to load settings');
@@ -57,7 +52,7 @@ function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('https://astrotalk-hlg2.onrender.com/api/settings/profile', profileForm, {
+      await axios.put(getApiUrl('/settings/profile'), profileForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showMessage('success', 'Profile updated successfully');
@@ -76,7 +71,7 @@ function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('https://astrotalk-hlg2.onrender.com/api/settings/password', {
+      await axios.put(getApiUrl('/settings/password'), {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       }, {
@@ -95,11 +90,8 @@ function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('https://astrotalk-hlg2.onrender.com/api/settings/preferences', {
-        notificationPreferences: notifications,
-        privacySettings: privacy,
-        theme,
-        language
+      await axios.put(getApiUrl('/settings/preferences'), {
+        notificationPreferences: notifications
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -115,7 +107,7 @@ function Settings() {
     if (!window.confirm('Are you sure you want to deactivate your account?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://astrotalk-hlg2.onrender.com/api/settings/deactivate', {}, {
+      await axios.post(getApiUrl('/settings/deactivate'), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       localStorage.removeItem('token');
@@ -138,9 +130,7 @@ function Settings() {
 
   const tabs = [
     { id: 'security', label: 'Security', icon: Lock },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy', icon: Shield },
-    { id: 'appearance', label: 'Appearance', icon: Moon }
+    { id: 'notifications', label: 'Notifications', icon: Bell }
   ];
 
   return (
@@ -254,72 +244,6 @@ function Settings() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Privacy & Appearance Tabs are similar structurally */}
-          {(activeTab === 'privacy' || activeTab === 'appearance') && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-slate-800">{activeTab === 'privacy' ? 'Privacy Settings' : 'Appearance'}</h3>
-                <button onClick={handlePreferencesSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-              <div className="p-6 space-y-6">
-                {activeTab === 'privacy' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Profile Visibility</label>
-                      <select value={privacy.profileVisibility} onChange={e => setPrivacy({...privacy, profileVisibility: e.target.value})} className="w-full md:w-1/2 px-4 py-3 rounded-xl border border-slate-200 bg-white">
-                        <option value="public">Public</option>
-                        <option value="private">Private</option>
-                        <option value="experts_only">Experts Only</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-t border-slate-100">
-                      <div>
-                        <span className="block text-slate-700 font-bold">Online Status</span>
-                        <span className="text-sm text-slate-500">Show when you are active on the platform</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={privacy.onlineStatus} onChange={e => setPrivacy({...privacy, onlineStatus: e.target.checked})} />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-t border-slate-100">
-                      <div>
-                        <span className="block text-slate-700 font-bold">Read Receipts</span>
-                        <span className="text-sm text-slate-500">Let experts know when you've read their messages</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={privacy.readReceipts} onChange={e => setPrivacy({...privacy, readReceipts: e.target.checked})} />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                  </>
-                )}
-                {activeTab === 'appearance' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Theme Preference</label>
-                      <select value={theme} onChange={e => setTheme(e.target.value)} className="w-full md:w-1/2 px-4 py-3 rounded-xl border border-slate-200 bg-white">
-                        <option value="light">Light Mode</option>
-                        <option value="dark">Dark Mode</option>
-                        <option value="system">System Default</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Language</label>
-                      <select value={language} onChange={e => setLanguage(e.target.value)} className="w-full md:w-1/2 px-4 py-3 rounded-xl border border-slate-200 bg-white">
-                        <option value="en">English (US)</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                      </select>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           )}
