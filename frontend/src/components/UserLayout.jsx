@@ -10,7 +10,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  Bell,
   Search,
   User,
   HelpCircle,
@@ -33,6 +32,11 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  React.useEffect(() => {
+    // User dashboard must never have black background theme
+    document.documentElement.classList.add('light-theme');
+  }, []);
+
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
@@ -45,7 +49,6 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { name: 'Notifications', path: '/notifications', icon: <Bell size={20} /> },
     { name: 'Find Experts', path: '/experts', icon: <Compass size={20} /> },
     { name: 'My Appointments', path: '/bookings', icon: <MessageSquare size={20} /> },
     { name: 'Messages', path: '/messages', icon: <MessageSquare size={20} /> },
@@ -53,13 +56,12 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
     { name: 'Profile', path: '/profile', icon: <User size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },
     { name: 'Help & Support', path: '/support', icon: <HelpCircle size={20} /> },
-    { name: 'Contact Us', path: '/contact', icon: <HelpCircle size={20} /> },
   ];
 
   const displayName = user?.name || 'User';
 
   return (
-    <div className="min-h-screen bg-background flex font-sans">
+    <div className="light-theme min-h-screen bg-background flex font-sans">
 
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">

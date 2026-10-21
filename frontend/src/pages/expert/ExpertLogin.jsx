@@ -111,15 +111,24 @@ const ExpertLogin = () => {
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
               <span>Home</span>
             </Link>
-            <Link to="/" className="flex items-center gap-2.5 group">
-               <img 
-                 src="/logo.png" 
-                 alt="ExpertHub Logo" 
-                 className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
-               />
-               <span className="font-heading font-extrabold text-2xl tracking-tight text-on-background">
-                 ExpertHub
-               </span>
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white border border-slate-200/90 shadow-md flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/50 transition-all duration-300">
+                <div className="w-full h-full overflow-hidden rounded-xl flex items-center justify-center bg-slate-50/50">
+                  <img 
+                    src="/logo.png" 
+                    alt="ExpertHub Logo" 
+                    className="w-full h-full object-cover object-[center_16%] scale-[1.55]" 
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-heading font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
+                  Expert<span className="text-amber-500">Hub</span>
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">
+                  Expert Portal
+                </span>
+              </div>
             </Link>
           </div>
 

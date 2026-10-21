@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import UserLayout from '../components/UserLayout';
 import ExpertLayout from '../layouts/ExpertLayout';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { Search, Calendar, Clock, ChevronRight, User } from 'lucide-react';
 
@@ -80,7 +82,7 @@ function Blog() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   
-  const Layout = user?.role === 'EXPERT' ? ExpertLayout : UserLayout;
+  const Layout = user?.role === 'EXPERT' ? ExpertLayout : (user ? UserLayout : null);
 
   const filteredPosts = BLOG_POSTS.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) || post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
@@ -88,9 +90,8 @@ function Blog() {
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <Layout title="Blog & Resources" subtitle="Expert advice, guides, and insights to help you grow.">
-      
+  const blogContent = (
+    <>
       {/* Search & Filter Section */}
       <div className="flex flex-col md:flex-row gap-4 mb-10 justify-between items-center">
         {/* Categories */}
@@ -99,11 +100,11 @@ function Blog() {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 ${Number(
+              className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
                 selectedCategory === category 
                   ? 'bg-primary text-background shadow-md transform scale-105' 
                   : 'bg-surface border border-border-color text-on-surface/70 hover:border-primary hover:text-primary'
-              ).toFixed(2)}`}
+              }`}
             >
               {category}
             </button>
@@ -241,8 +242,35 @@ function Blog() {
           </form>
         </div>
       </div>
+    </>
+  );
 
-    </Layout>
+  if (Layout) {
+    return (
+      <Layout title="Blog & Resources" subtitle="Expert advice, guides, and insights to help you grow.">
+        {blogContent}
+      </Layout>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
+      <Header />
+      <main className="flex-1 w-full pt-20">
+        <div className="bg-slate-900 text-white py-14 px-4 sm:px-6 lg:px-8 text-center mb-10">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3">
+            Blog & Expert Resources
+          </h1>
+          <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
+            Actionable advice, guides, and insights to help you make informed decisions across life, career, and wellbeing.
+          </p>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+          {blogContent}
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 }
 

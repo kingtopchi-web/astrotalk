@@ -4,7 +4,8 @@ import {
   fetchNotifications, 
   markNotificationAsRead, 
   markAllNotificationsAsRead, 
-  deleteNotificationItem 
+  deleteNotificationItem,
+  deleteAllNotifications 
 } from '../utils/notificationService';
 import { 
   Bell, 
@@ -15,7 +16,11 @@ import {
   UserCheck, 
   AlertTriangle, 
   FileText,
-  Activity
+  Activity,
+  Wallet,
+  CreditCard,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 
 function Notifications() {
@@ -64,6 +69,14 @@ function Notifications() {
     setUnreadCount(res.unreadCount);
   };
 
+  const handleDeleteAll = async () => {
+    if (window.confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) {
+      const res = await deleteAllNotifications();
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    }
+  };
+
   const handleItemClick = async (notif) => {
     if (!notif.isRead) {
       await markNotificationAsRead(notif._id);
@@ -75,10 +88,25 @@ function Notifications() {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'expert_registration':
-        return <UserCheck className="w-6 h-6 text-purple-600" />;
+      case 'wallet_recharge':
+        return <Wallet className="w-6 h-6 text-emerald-600" />;
+      case 'payout_request':
+        return <CreditCard className="w-6 h-6 text-blue-600" />;
+      case 'payout_processed':
+        return <Check className="w-6 h-6 text-emerald-600" />;
+      case 'refund_request':
+        return <RefreshCw className="w-6 h-6 text-rose-600" />;
+      case 'payment_issue':
       case 'payment_alert':
         return <AlertTriangle className="w-6 h-6 text-rose-600" />;
+      case 'expert_registration':
+        return <UserCheck className="w-6 h-6 text-purple-600" />;
+      case 'expert_documents':
+        return <FileText className="w-6 h-6 text-indigo-600" />;
+      case 'expert_reapproval':
+        return <UserCheck className="w-6 h-6 text-amber-600" />;
+      case 'expert_pending':
+        return <Clock className="w-6 h-6 text-amber-500" />;
       case 'complaint_report':
         return <FileText className="w-6 h-6 text-amber-600" />;
       case 'system_alert':
@@ -104,15 +132,27 @@ function Notifications() {
           </p>
         </div>
 
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={handleMarkAllRead}
-            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 rounded-xl text-sm font-semibold border border-slate-200 shadow-sm transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-          >
-            <CheckCheck size={16} /> Mark all as read
-          </button>
-        )}
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 rounded-xl text-sm font-semibold border border-slate-200 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <CheckCheck size={16} /> Mark all as read
+            </button>
+          )}
+
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteAll}
+              className="px-4 py-2 bg-white hover:bg-red-50 text-slate-700 hover:text-red-600 rounded-xl text-sm font-semibold border border-slate-200 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Trash2 size={16} className="text-red-500" /> Delete all
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

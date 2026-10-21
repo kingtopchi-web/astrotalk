@@ -67,7 +67,9 @@ const expertSchema = new mongoose.Schema({
     accountNumber: { type: String, default: '' },
     ifscCode: { type: String, default: '' },
     bankName: { type: String, default: '' }
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
 }, { timestamps: true });
 
 // Hash password before saving

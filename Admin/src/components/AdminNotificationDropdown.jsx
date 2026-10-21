@@ -9,16 +9,21 @@ import {
   UserCheck, 
   AlertTriangle, 
   FileText,
-  Activity
+  Activity,
+  Wallet,
+  CreditCard,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import { 
   fetchNotifications, 
   markNotificationAsRead, 
   markAllNotificationsAsRead, 
-  deleteNotificationItem 
+  deleteNotificationItem,
+  deleteAllNotifications 
 } from '../utils/notificationService';
 
-export default function AdminNotificationDropdown() {
+export default function AdminNotificationDropdown({ buttonClassName = '', containerClassName = '' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -80,6 +85,15 @@ export default function AdminNotificationDropdown() {
     setUnreadCount(res.unreadCount);
   };
 
+  const handleDeleteAll = async (e) => {
+    if (e) e.stopPropagation();
+    if (window.confirm('Delete all notifications?')) {
+      const res = await deleteAllNotifications();
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    }
+  };
+
   const handleItemClick = async (notif) => {
     if (!notif.isRead) {
       await markNotificationAsRead(notif._id);
@@ -92,10 +106,25 @@ export default function AdminNotificationDropdown() {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'expert_registration':
-        return <UserCheck className="w-5 h-5 text-purple-600" />;
+      case 'wallet_recharge':
+        return <Wallet className="w-5 h-5 text-emerald-600" />;
+      case 'payout_request':
+        return <CreditCard className="w-5 h-5 text-blue-600" />;
+      case 'payout_processed':
+        return <Check className="w-5 h-5 text-emerald-600" />;
+      case 'refund_request':
+        return <RefreshCw className="w-5 h-5 text-rose-600" />;
+      case 'payment_issue':
       case 'payment_alert':
         return <AlertTriangle className="w-5 h-5 text-rose-600" />;
+      case 'expert_registration':
+        return <UserCheck className="w-5 h-5 text-purple-600" />;
+      case 'expert_documents':
+        return <FileText className="w-5 h-5 text-indigo-600" />;
+      case 'expert_reapproval':
+        return <UserCheck className="w-5 h-5 text-amber-600" />;
+      case 'expert_pending':
+        return <Clock className="w-5 h-5 text-amber-500" />;
       case 'complaint_report':
         return <FileText className="w-5 h-5 text-amber-600" />;
       case 'system_alert':
@@ -110,14 +139,14 @@ export default function AdminNotificationDropdown() {
     : notifications;
 
   return (
-    <div className="relative inline-block" ref={dropdownRef}>
+    <div className={`relative inline-block ${containerClassName}`} ref={dropdownRef}>
       {/* Bell Button with Dynamic Count Badge */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Admin Notifications"
         title={unreadCount > 0 ? `${unreadCount} unread system alerts` : 'Notifications'}
-        className="relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors focus:outline-none"
+        className={buttonClassName || "relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors focus:outline-none"}
       >
         <Bell size={18} />
         {unreadCount > 0 && (
@@ -142,15 +171,28 @@ export default function AdminNotificationDropdown() {
               )}
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllRead}
-                className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 transition-colors"
-              >
-                <CheckCheck size={14} /> Mark all read
-              </button>
-            )}
+            <div className="flex items-center gap-2.5">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 transition-colors"
+                >
+                  <CheckCheck size={13} /> Mark read
+                </button>
+              )}
+
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDeleteAll}
+                  className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1 transition-colors"
+                  title="Delete all notifications"
+                >
+                  <Trash2 size={13} /> Delete all
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filters */}

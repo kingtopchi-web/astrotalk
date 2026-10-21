@@ -3,28 +3,41 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
   let transporter;
 
-  // If email config is missing in .env, create a test account (Ethereal Email)
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
-    const testAccount = await nodemailer.createTestAccount();
+  // 1. Direct Gmail Service
+  if (process.env.EMAIL_SERVICE === 'gmail' || (process.env.EMAIL_HOST && process.env.EMAIL_HOST.includes('gmail'))) {
     transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: testAccount.user, // generated ethereal user
-        pass: testAccount.pass, // generated ethereal password
-      },
-    });
-    console.log('Using Ethereal Email for testing');
-  } else {
-    transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
+      service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     });
+  }
+  // 2. Custom SMTP (Host + Port)
+  else if (process.env.EMAIL_HOST && process.env.EMAIL_USER) {
+    transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT) || 587,
+      secure: Number(process.env.EMAIL_PORT) === 465,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+  } 
+  // 3. Fallback: Ethereal test inbox (Fake mail for local dev without SMTP)
+  else {
+    const testAccount = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+    console.log('⚠️ No Gmail/SMTP credentials in .env. Using Ethereal Email mock for testing.');
   }
 
   const message = {

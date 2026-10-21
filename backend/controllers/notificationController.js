@@ -141,12 +141,12 @@ const getDefaultNotifications = (role, userId) => {
         recipient: userId,
         recipientModel,
         recipientRole: 'ADMIN',
-        title: 'New Expert Registration',
-        message: 'A new expert has submitted an application for approval.',
-        actionText: 'Review application',
-        badge: 'New',
-        link: '/admin/experts',
-        type: 'expert_registration',
+        title: 'Wallet Recharge Successful',
+        message: 'User Rohit Verma added ₹1,000.00 to their wallet via Razorpay.',
+        actionText: 'View transaction',
+        badge: 'Payment',
+        link: '/transactions',
+        type: 'wallet_recharge',
         isRead: false,
         createdAt: new Date(Date.now() - 10 * 60 * 1000)
       },
@@ -154,25 +154,51 @@ const getDefaultNotifications = (role, userId) => {
         recipient: userId,
         recipientModel,
         recipientRole: 'ADMIN',
-        title: 'Payment / Refund Alert',
-        message: 'A payment, refund or payout requires attention.',
-        actionText: 'Open transaction details',
-        badge: '',
-        link: '/admin/payments',
-        type: 'payment_alert',
+        title: 'New Expert Registration',
+        message: 'Dr. Sameer Kapoor (Astrology & Vedic) has submitted an application for verification.',
+        actionText: 'Review application',
+        badge: 'New',
+        link: '/expert-applications',
+        type: 'expert_registration',
         isRead: false,
-        createdAt: new Date(Date.now() - 30 * 60 * 1000)
+        createdAt: new Date(Date.now() - 25 * 60 * 1000)
       },
       {
         recipient: userId,
         recipientModel,
         recipientRole: 'ADMIN',
-        title: 'New Complaint or Report',
-        message: 'A user has reported an issue with a consultation.',
-        actionText: 'Review support case',
-        badge: '',
-        link: '/admin/consultations',
-        type: 'complaint_report',
+        title: 'Expert Payout Request',
+        message: 'Dr. Priya Sharma requested a payout of ₹4,500.00 to registered bank account.',
+        actionText: 'Process payout',
+        badge: 'Payout',
+        link: '/transactions',
+        type: 'payout_request',
+        isRead: false,
+        createdAt: new Date(Date.now() - 45 * 60 * 1000)
+      },
+      {
+        recipient: userId,
+        recipientModel,
+        recipientRole: 'ADMIN',
+        title: 'Expert Documents Uploaded',
+        message: 'Expert Kavita Mehta uploaded degree certificates & ID verification documents.',
+        actionText: 'Verify documents',
+        badge: 'Documents',
+        link: '/expert-applications',
+        type: 'expert_documents',
+        isRead: false,
+        createdAt: new Date(Date.now() - 60 * 60 * 1000)
+      },
+      {
+        recipient: userId,
+        recipientModel,
+        recipientRole: 'ADMIN',
+        title: 'Expert Re-approval Request',
+        message: 'Expert Rajesh Rao updated profile qualification & rates and requested re-approval.',
+        actionText: 'Review profile',
+        badge: 'Re-approval',
+        link: '/expert-applications',
+        type: 'expert_reapproval',
         isRead: false,
         createdAt: new Date(Date.now() - 2 * 3600 * 1000)
       },
@@ -180,15 +206,56 @@ const getDefaultNotifications = (role, userId) => {
         recipient: userId,
         recipientModel,
         recipientRole: 'ADMIN',
-        title: 'System Alert',
-        message: 'Important failures or unusual activity requiring admin attention.',
-        actionText: 'Open system monitoring',
-        badge: '',
-        link: '/admin/dashboard',
-        type: 'system_alert',
+        title: 'Refund Request Received',
+        message: 'User Sneha Kapoor submitted a refund request for Consultation session #CS-3021.',
+        actionText: 'Review refund',
+        badge: 'Refund',
+        link: '/refunds',
+        type: 'refund_request',
+        isRead: false,
+        createdAt: new Date(Date.now() - 3 * 3600 * 1000)
+      },
+      {
+        recipient: userId,
+        recipientModel,
+        recipientRole: 'ADMIN',
+        title: 'Payment Verification Issue',
+        message: 'Signature mismatch detected on Razorpay order #order_98312 for ₹500.00 wallet recharge.',
+        actionText: 'Investigate issue',
+        badge: 'Alert',
+        link: '/transactions',
+        type: 'payment_issue',
+        isRead: true,
+        readAt: new Date(),
+        createdAt: new Date(Date.now() - 5 * 3600 * 1000)
+      },
+      {
+        recipient: userId,
+        recipientModel,
+        recipientRole: 'ADMIN',
+        title: 'Payout Processed Successfully',
+        message: 'Payout of ₹3,200.00 to Astrologer Ankit has been marked as completed.',
+        actionText: 'View payout log',
+        badge: 'Completed',
+        link: '/transactions',
+        type: 'payout_processed',
         isRead: true,
         readAt: new Date(),
         createdAt: new Date(Date.now() - 6 * 3600 * 1000)
+      },
+      {
+        recipient: userId,
+        recipientModel,
+        recipientRole: 'ADMIN',
+        title: 'Expert Approvals Pending',
+        message: '3 expert verification applications are currently awaiting admin review.',
+        actionText: 'View pending experts',
+        badge: 'Pending',
+        link: '/expert-applications',
+        type: 'expert_pending',
+        isRead: true,
+        readAt: new Date(),
+        createdAt: new Date(Date.now() - 24 * 3600 * 1000)
       }
     ];
   }
@@ -201,7 +268,7 @@ const getDefaultNotifications = (role, userId) => {
 // @access  Private
 exports.getNotifications = async (req, res) => {
   try {
-    const role = req.user.role || 'USER';
+    const role = (req.user.role || 'USER').toUpperCase();
     const userId = req.user._id;
 
     // Check if user has any notification records (including deleted ones)
@@ -221,13 +288,34 @@ exports.getNotifications = async (req, res) => {
     }
 
     // Return active notifications that are not marked as deleted
-    const notifications = await Notification.find({
+    let notifications = await Notification.find({
       $or: [
         { recipient: userId },
         { recipientRole: role, recipient: null }
       ],
       isDeleted: { $ne: true }
     }).sort({ createdAt: -1 });
+
+    // Ensure ADMIN never sees user-specific feedback / rating or user chat notifications
+    if (role === 'ADMIN') {
+      const disallowedTypes = [
+        'rate_consultation',
+        'booking_confirmed',
+        'expert_ready',
+        'chat_message',
+        'incoming_call',
+        'upcoming_session'
+      ];
+
+      notifications = notifications.filter(n => {
+        const type = (n.type || '').toLowerCase();
+        const title = (n.title || '').toLowerCase();
+        if (disallowedTypes.includes(type)) return false;
+        if (title.includes('rate your') || title.includes('rate consultation')) return false;
+        if (title.includes('booking confirmed') || title.includes('expert ready')) return false;
+        return true;
+      });
+    }
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 

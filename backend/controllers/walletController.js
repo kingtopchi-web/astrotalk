@@ -125,6 +125,19 @@ exports.verifyPayment = async (req, res) => {
       .digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipientRole: 'ADMIN',
+        recipientModel: 'Admin',
+        title: 'Payment Verification Issue',
+        message: `Payment verification failed (signature mismatch) for Razorpay Order ${razorpay_order_id}.`,
+        actionText: 'Investigate payment',
+        link: '/transactions',
+        type: 'payment_issue',
+        badge: 'Alert'
+      }, io).catch(e => console.error(e));
+
       return res.status(400).json({ message: 'Invalid signature' });
     }
 
@@ -169,16 +182,16 @@ exports.verifyPayment = async (req, res) => {
       badge: 'New'
     }, io);
 
-    // 2. Admin Notification: Payment Alert
+    // 2. Admin Notification: Wallet Recharge Successful
     await sendNotification({
       recipientRole: 'ADMIN',
       recipientModel: 'Admin',
-      title: 'Payment / Refund Alert',
-      message: `User ${user.name || 'User'} completed a wallet recharge of ₹${transaction.amount}.`,
-      actionText: 'Open transaction details',
-      link: '/admin/transactions',
-      type: 'payment_alert',
-      badge: 'New'
+      title: 'Wallet Recharge Successful',
+      message: `User ${user.name || 'User'} added ₹${transaction.amount} to their wallet.`,
+      actionText: 'View transaction',
+      link: '/transactions',
+      type: 'wallet_recharge',
+      badge: 'Payment'
     }, io);
 
     res.json({ message: 'Payment verified and wallet updated' });

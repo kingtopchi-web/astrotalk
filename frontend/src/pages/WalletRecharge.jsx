@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import UserLayout from '../components/UserLayout';
-import { CreditCard, History, Plus, ArrowUpRight, ArrowDownRight, RefreshCcw } from 'lucide-react';
+import { CreditCard, History, Plus, ArrowUpRight, ArrowDownRight, RefreshCcw, Wallet } from 'lucide-react';
 
 function WalletRecharge() {
   const navigate = useNavigate();
@@ -123,22 +123,25 @@ function WalletRecharge() {
         {/* Top Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Balance Card */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-lg text-background relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-surface/10 rounded-full blur-2xl"></div>
-            <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl"></div>
-            
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <CreditCard size={24} className="text-blue-200" />
-                  <span className="text-blue-100 font-medium">Available Balance</span>
+          <div className="bg-surface rounded-2xl p-6 shadow-sm border border-border-color flex flex-col justify-between relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Wallet size={24} />
                 </div>
-                <span className="bg-surface/20 px-3 py-1 rounded-full text-xs font-bold text-background backdrop-blur-md">Verified</span>
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-on-surface/50 block">Wallet</span>
+                  <span className="text-sm font-bold text-on-surface">Available Balance</span>
+                </div>
               </div>
-              <div>
-                <div className="text-5xl font-extrabold tracking-tight">₹{balance.toFixed(2)}</div>
-                <p className="text-blue-200 mt-2 text-sm">Can be used for booking consultations</p>
-              </div>
+              <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Active
+              </span>
+            </div>
+            <div>
+              <div className="text-4xl sm:text-5xl font-extrabold tracking-tight text-on-surface">₹{balance.toFixed(2)}</div>
+              <p className="text-on-surface/60 mt-2 text-xs font-medium">Can be used for booking consultations</p>
             </div>
           </div>
 
@@ -148,7 +151,7 @@ function WalletRecharge() {
               <h3 className="text-lg font-bold text-on-surface mb-1">Add Money</h3>
               <p className="text-sm text-on-surface/60 mb-4">Top up your wallet securely</p>
               
-              {error && <div className="text-red-500 text-sm mb-3 font-medium bg-red-50 p-2 rounded">{error}</div>}
+              {error && <div className="text-red-500 text-sm mb-3 font-medium bg-red-50 dark:bg-red-950/30 p-2 rounded">{error}</div>}
 
               <div className="flex gap-2 mb-4">
                 {quickAmounts.map(amt => (
@@ -156,7 +159,7 @@ function WalletRecharge() {
                     key={amt} 
                     onClick={() => handleAddMoney(amt)}
                     disabled={addingMoney}
-                    className="flex-1 py-2 rounded-xl bg-primary/10 text-primary font-bold hover:bg-blue-100 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 border border-blue-100"
+                    className="flex-1 py-2.5 rounded-xl bg-surface-muted hover:bg-surface-light text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 border border-border-color hover:border-primary/40"
                   >
                     +₹{Number(amt).toFixed(2)}
                   </button>
@@ -170,7 +173,7 @@ function WalletRecharge() {
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
                   placeholder="Enter custom amount"
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-medium text-on-surface"
+                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-border-color bg-surface-muted focus:bg-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-medium text-on-surface"
                   disabled={addingMoney}
                 />
               </div>
@@ -179,7 +182,7 @@ function WalletRecharge() {
             <button 
               onClick={() => handleAddMoney(parseFloat(customAmount))}
               disabled={addingMoney || !customAmount}
-              className="w-full mt-4 bg-primary text-background font-bold py-3 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-4 bg-primary text-background font-bold py-3 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
             >
               <Plus size={18} />
               {addingMoney ? 'Processing...' : 'Proceed to Pay'}

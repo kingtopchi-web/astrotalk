@@ -63,9 +63,6 @@ function Footer() {
               <a href="#" aria-label="LinkedIn" className="w-10 h-10 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
               </a>
-              <a href="#" aria-label="Telegram" className="w-10 h-10 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all">
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm5.894-17.585l-2.08 13.784c-.161 1.055-.838 1.332-1.687.844l-4.665-3.43-2.25 2.164c-.25.25-.456.456-.932.456l.334-4.75 8.647-7.81c.375-.333-.082-.518-.58-.184l-10.686 6.72-4.59-1.436c-.997-.312-1.018-.999.208-1.478l17.93-6.907c.83-.306 1.554.195 1.35 1.027z"/></svg>
-              </a>
             </div>
           </div>
           
@@ -77,8 +74,8 @@ function Footer() {
             <ul className="flex flex-col gap-4">
               <li><Link to="/experts" className="text-sm text-slate-400 hover:text-white transition-colors">Find Experts</Link></li>
               <li><Link to="/expert/register" className="text-sm text-slate-400 hover:text-white transition-colors">Offer Expertise</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">How It Works</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Trust & Safety</Link></li>
+              <li><Link to="/how-it-works" className="text-sm text-slate-400 hover:text-white transition-colors">How It Works</Link></li>
+              <li><Link to="/trust-and-safety" className="text-sm text-slate-400 hover:text-white transition-colors">Trust & Safety</Link></li>
             </ul>
           </div>
           
@@ -89,10 +86,10 @@ function Footer() {
             </h3>
             <ul className="flex flex-col gap-4">
               <li><Link to="/about" className="text-sm text-slate-400 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Careers</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Press</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Blog</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Partners</Link></li>
+              <li><Link to="/careers" className="text-sm text-slate-400 hover:text-white transition-colors">Careers</Link></li>
+              <li><Link to="/press" className="text-sm text-slate-400 hover:text-white transition-colors">Press</Link></li>
+              <li><Link to="/blog" className="text-sm text-slate-400 hover:text-white transition-colors">Blog</Link></li>
+              <li><Link to="/partners" className="text-sm text-slate-400 hover:text-white transition-colors">Partners</Link></li>
             </ul>
           </div>
           
@@ -102,11 +99,11 @@ function Footer() {
               Support <span className="material-symbols-outlined text-[16px] text-slate-500">arrow_outward</span>
             </h3>
             <ul className="flex flex-col gap-4">
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Help Center</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Community</Link></li>
+              <li><Link to="/help-center" className="text-sm text-slate-400 hover:text-white transition-colors">Help Center</Link></li>
+              <li><Link to="/community" className="text-sm text-slate-400 hover:text-white transition-colors">Community</Link></li>
               <li><Link to="/contact" className="text-sm text-slate-400 hover:text-white transition-colors">Contact Us</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="#" className="text-sm text-slate-400 hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy-policy" className="text-sm text-slate-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="text-sm text-slate-400 hover:text-white transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
 

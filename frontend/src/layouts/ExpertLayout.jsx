@@ -40,6 +40,9 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Expert dashboard must never have black background theme
+    document.documentElement.classList.add('light-theme');
+
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -117,7 +120,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
   const displayName = expert?.name || 'Expert';
 
   return (
-    <div className="min-h-screen bg-surface-light flex font-sans">
+    <div className="light-theme min-h-screen bg-surface-light flex font-sans">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-surface-light border-r border-border-color text-on-surface h-screen fixed z-20">
         <div className="p-4 border-b border-border-color">

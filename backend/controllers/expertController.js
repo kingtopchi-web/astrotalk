@@ -117,6 +117,19 @@ exports.resubmitVerification = async (req, res) => {
     expert.rejectedBy = undefined;
     await expert.save();
 
+    const io = req.app.get('io');
+    const { sendNotification } = require('../utils/notificationDispatcher');
+    sendNotification({
+      recipientRole: 'ADMIN',
+      recipientModel: 'Admin',
+      title: 'Expert Re-approval Request',
+      message: `Expert ${expert.name} updated profile details & documents and requested re-approval.`,
+      actionText: 'Review application',
+      link: '/expert-applications',
+      type: 'expert_reapproval',
+      badge: 'Re-approval'
+    }, io).catch(e => console.error(e));
+
     res.json({ message: 'Profile submitted for review', verificationStatus: expert.verificationStatus });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -218,7 +231,19 @@ exports.getEarnings = async (req, res) => {
 // POST /api/expert/payouts/request
 exports.requestPayout = async (req, res) => {
   try {
-    // In a real app, you would create a Payout model entry
+    const io = req.app.get('io');
+    const { sendNotification } = require('../utils/notificationDispatcher');
+    sendNotification({
+      recipientRole: 'ADMIN',
+      recipientModel: 'Admin',
+      title: 'Expert Payout Request',
+      message: `Expert ${req.user.name || 'Expert'} has requested a payout of earnings.`,
+      actionText: 'Process payout',
+      link: '/transactions',
+      type: 'payout_request',
+      badge: 'Payout'
+    }, io).catch(e => console.error(e));
+
     res.json({ message: 'Payout requested successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

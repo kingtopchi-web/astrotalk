@@ -154,7 +154,7 @@ function Support() {
     return (
       <UserLayout title="Help & Support" subtitle="We're here to help you">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </UserLayout>
     );
@@ -164,14 +164,16 @@ function Support() {
     <UserLayout title="Help & Support" subtitle="Find answers or contact our support team">
       
       {/* Search Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 mb-8 text-center text-background relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-surface opacity-5"></div>
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 rounded-full bg-surface opacity-5"></div>
-        
-        <h2 className="text-3xl font-bold mb-4 relative z-10">How can we help you today?</h2>
+      <div className="bg-surface rounded-2xl p-6 sm:p-8 mb-8 text-center border border-border-color shadow-sm relative overflow-hidden">
         <div className="max-w-2xl mx-auto relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-muted text-on-surface/70 text-xs font-semibold mb-3 border border-border-color">
+            <HelpCircle size={14} className="text-primary" />
+            <span>Support Helpdesk</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-on-surface mb-2">How can we help you today?</h2>
+          <p className="text-sm text-on-surface/60 mb-6">Search for articles, guides, or find quick solutions to your questions</p>
           <div className="relative flex items-center">
-            <Search className="absolute left-4 text-on-surface/50" size={20} />
+            <Search className="absolute left-4 text-on-surface/40" size={20} />
             <input 
               type="text" 
               placeholder="Search for articles, guides, or keywords..." 
@@ -180,7 +182,7 @@ function Support() {
                 setSearchQuery(e.target.value);
                 setActiveTab('faq');
               }}
-              className="w-full pl-12 pr-4 py-4 rounded-xl text-on-surface placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/30 text-lg shadow-lg"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-surface-muted border border-border-color text-on-surface placeholder-on-surface/40 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-base shadow-sm transition-all"
             />
           </div>
         </div>
@@ -374,7 +376,7 @@ function Support() {
                   required
                   value={newTicket.subject}
                   onChange={e => setNewTicket({...newTicket, subject: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" 
+                  className="w-full px-4 py-3 rounded-xl border border-border-color bg-surface-muted focus:bg-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-on-surface" 
                   placeholder="Brief summary of your issue"
                 />
               </div>
@@ -384,7 +386,7 @@ function Support() {
                   <select 
                     value={newTicket.category}
                     onChange={e => setNewTicket({...newTicket, category: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-blue-500 bg-surface"
+                    className="w-full px-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-primary bg-surface text-on-surface"
                   >
                     <option value="Account">Account Settings</option>
                     <option value="Payments">Billing & Payments</option>
@@ -399,7 +401,7 @@ function Support() {
                   <select 
                     value={newTicket.priority}
                     onChange={e => setNewTicket({...newTicket, priority: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-blue-500 bg-surface"
+                    className="w-full px-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-primary bg-surface text-on-surface"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -415,12 +417,12 @@ function Support() {
                   rows="4" 
                   value={newTicket.description}
                   onChange={e => setNewTicket({...newTicket, description: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-border-color focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none" 
+                  className="w-full px-4 py-3 rounded-xl border border-border-color bg-surface-muted focus:bg-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-on-surface resize-none" 
                   placeholder="Please describe your issue in detail..."
                 ></textarea>
               </div>
               <div className="pt-2">
-                <button type="submit" className="w-full bg-primary hover:bg-primary-light text-background font-bold py-3.5 px-4 rounded-xl transition-all shadow-md shadow-blue-200">
+                <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-background font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm">
                   Submit Ticket
                 </button>
               </div>

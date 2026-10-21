@@ -102,16 +102,25 @@ function Login() {
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 bg-white relative">
           <div className="w-full max-w-md relative z-10 py-8">
           
-          <div className="flex justify-center mb-10">
-            <Link to="/" className="flex items-center gap-2.5 group">
-               <img 
-                 src="/logo.png" 
-                 alt="ExpertHub Logo" 
-                 className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
-               />
-               <span className="font-heading font-extrabold text-2xl tracking-tight text-on-background">
-                 ExpertHub
-               </span>
+          <div className="flex justify-center mb-8">
+            <Link to="/" className="flex items-center gap-3.5 group">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-slate-200/90 shadow-md flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/50 transition-all duration-300">
+                <div className="w-full h-full overflow-hidden rounded-xl flex items-center justify-center bg-slate-50/50">
+                  <img 
+                    src="/logo.png" 
+                    alt="ExpertHub Logo" 
+                    className="w-full h-full object-cover object-[center_16%] scale-[1.55]" 
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-heading font-black text-2xl sm:text-3xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
+                  Expert<span className="text-amber-500">Hub</span>
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-1.5">
+                  Real Experts • Real Guidance
+                </span>
+              </div>
             </Link>
           </div>
 

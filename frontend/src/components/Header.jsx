@@ -20,15 +20,20 @@ function Header() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('app_theme') || 'light';
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.remove('light-theme');
-      setIsDarkMode(true);
+    if (location.pathname === '/') {
+      const savedTheme = localStorage.getItem('home_theme') || 'light';
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.remove('light-theme');
+        setIsDarkMode(true);
+      } else {
+        document.documentElement.classList.add('light-theme');
+        setIsDarkMode(false);
+      }
     } else {
       document.documentElement.classList.add('light-theme');
       setIsDarkMode(false);
     }
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
     // Fetch categories for the navbar dropdown
@@ -52,11 +57,11 @@ function Header() {
     if (isDarkMode) {
       document.documentElement.classList.add('light-theme');
       setIsDarkMode(false);
-      localStorage.setItem('app_theme', 'light');
+      localStorage.setItem('home_theme', 'light');
     } else {
       document.documentElement.classList.remove('light-theme');
       setIsDarkMode(true);
-      localStorage.setItem('app_theme', 'dark');
+      localStorage.setItem('home_theme', 'dark');
     }
   };
 
@@ -216,16 +221,18 @@ function Header() {
 
         {/* Right Section (Auth / Profile) */}
         <div className="hidden md:flex items-center justify-end gap-4 flex-1">
-          {/* Theme Toggle Button */}
-          <button 
-            onClick={toggleTheme} 
-            className="w-10 h-10 rounded-full border border-border/50 flex items-center justify-center text-primary hover:bg-primary/10 transition-colors"
-            title="Toggle Theme"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              {isDarkMode ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
+          {/* Theme Toggle Button - Only on Home */}
+          {location.pathname === '/' && (
+            <button 
+              onClick={toggleTheme} 
+              className="w-10 h-10 rounded-full border border-border/50 flex items-center justify-center text-primary hover:bg-primary/10 transition-colors"
+              title="Toggle Theme"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {isDarkMode ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
+          )}
           
           {!auth.token ? (
             <div className="flex items-center gap-3">

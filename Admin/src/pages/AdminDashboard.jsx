@@ -6,7 +6,8 @@ import {
   BarChart, Bar,
   LineChart, Line
 } from 'recharts';
-import { Search, Calendar, Bell, Settings, ChevronRight, Wand2 } from 'lucide-react';
+import { Calendar, Settings, ChevronRight, Wand2 } from 'lucide-react';
+import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 
 // Sparkbar component
 const SparkBar = () => (
@@ -60,24 +61,12 @@ function AdminDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-9 pr-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-            />
-          </div>
-
-          <button className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50">
+          <button className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700 shadow-xs">
             <Calendar size={16} />
             <span className="hidden sm:inline">{currentDate}</span>
           </button>
 
-          <button className="p-2 bg-white border border-slate-200 rounded-lg relative hover:bg-slate-50">
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <AdminNotificationDropdown buttonClassName="p-2 bg-white border border-slate-200 rounded-lg relative hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-colors shadow-xs" />
 
           <button
             onClick={() => navigate('/settings')}
