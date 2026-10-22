@@ -14,7 +14,7 @@ function Experts() {
   useEffect(() => {
     const fetchExperts = async () => {
       try {
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/experts');
+        const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/experts');
         setExperts(res.data);
         setLoading(false);
       } catch (err) {

@@ -174,7 +174,7 @@ function Home() {
     const fetchExperts = async () => {
       setLoading(true);
       try {
-        let url = 'https://astrotalk-hlg2.onrender.com/api/public/experts';
+        let url = 'https://experthub.nextgoodtechnologies.in/api/public/experts';
         if (activeCategory !== 'all') {
           url += `?categoryId=${activeCategory}`;
         }
@@ -199,7 +199,7 @@ function Home() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/saved-experts', {
+        const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/user/saved-experts', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (Array.isArray(res.data)) {
@@ -228,7 +228,7 @@ function Home() {
 
     try {
       const res = await axios.post(
-        `https://astrotalk-hlg2.onrender.com/api/user/saved-experts/${expertId}`,
+        `https://experthub.nextgoodtechnologies.in/api/user/saved-experts/${expertId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -248,7 +248,7 @@ function Home() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories');
+        const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/public/categories');
         if (res.data) setDbCategories(res.data);
       } catch (err) {
         console.error('Failed to fetch categories', err);

@@ -27,10 +27,10 @@ function UserDashboard() {
       try {
         const token = localStorage.getItem('token');
         const [aptRes, savedRes] = await Promise.all([
-          axios.get('https://astrotalk-hlg2.onrender.com/api/bookings/my-bookings', {
+          axios.get('https://experthub.nextgoodtechnologies.in/api/bookings/my-bookings', {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get('https://astrotalk-hlg2.onrender.com/api/user/saved-experts', {
+          axios.get('https://experthub.nextgoodtechnologies.in/api/user/saved-experts', {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -55,7 +55,7 @@ function UserDashboard() {
     setSavedExpertsCount(prev => Math.max(0, prev - 1));
     try {
       await axios.post(
-        `https://astrotalk-hlg2.onrender.com/api/user/saved-experts/${expertId}`,
+        `https://experthub.nextgoodtechnologies.in/api/user/saved-experts/${expertId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

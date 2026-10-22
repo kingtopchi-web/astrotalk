@@ -35,7 +35,7 @@ function Categories() {
   };
 
   useEffect(() => {
-    axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories')
+    axios.get('https://experthub.nextgoodtechnologies.in/api/public/categories')
       .then(res => {
         setCategories(Array.isArray(res.data) ? res.data : []);
         setLoading(false);

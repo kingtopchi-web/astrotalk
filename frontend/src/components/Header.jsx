@@ -37,7 +37,7 @@ function Header() {
 
   useEffect(() => {
     // Fetch categories for the navbar dropdown
-    fetch('https://astrotalk-hlg2.onrender.com/api/public/categories')
+    fetch('https://experthub.nextgoodtechnologies.in/api/public/categories')
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(err => console.error(err));

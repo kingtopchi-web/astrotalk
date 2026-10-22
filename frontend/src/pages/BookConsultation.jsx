@@ -126,7 +126,7 @@ function BookConsultation() {
       };
 
       // 1. Create Consultation (Pending Status)
-      const bookingResponse = await axios.post('https://astrotalk-hlg2.onrender.com/api/bookings', bookingData, config);
+      const bookingResponse = await axios.post('https://experthub.nextgoodtechnologies.in/api/bookings', bookingData, config);
       const consultation = bookingResponse.data;
 
       const basePrice = service ? service.price : (expert.rates?.video || expert.pricePerMinute || 500);

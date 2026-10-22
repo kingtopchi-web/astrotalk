@@ -7,7 +7,7 @@ import {
   User as UserIcon, BookOpen, ExternalLink, CheckCircle
 } from 'lucide-react';
 
-const API_BASE = 'https://astrotalk-hlg2.onrender.com/api';
+const API_BASE = 'https://experthub.nextgoodtechnologies.in/api';
 
 const QUICK_LINKS = [
   { title: 'Find Experts', path: '/experts', icon: Compass, badge: 'Explore' },

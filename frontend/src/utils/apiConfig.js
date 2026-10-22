@@ -9,7 +9,7 @@ export const isLocalhost = Boolean(
 );
 
 export const LOCAL_API_URL = 'http://localhost:5000/api';
-export const PROD_API_URL = 'https://astrotalk-hlg2.onrender.com/api';
+export const PROD_API_URL = 'https://experthub.nextgoodtechnologies.in/api';
 
 // Prefer local backend during local development; fallback to Render in production
 export const API_BASE_URL = isLocalhost ? LOCAL_API_URL : PROD_API_URL;

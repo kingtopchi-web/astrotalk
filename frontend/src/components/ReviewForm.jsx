@@ -64,7 +64,7 @@ export default function ReviewForm({
 
       // Connect form submit to real backend endpoint
       const response = await axios.post(
-        'https://astrotalk-hlg2.onrender.com/api/reviews',
+        'https://experthub.nextgoodtechnologies.in/api/reviews',
         {
           consultationId,
           rating,

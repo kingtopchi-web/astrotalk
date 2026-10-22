@@ -54,7 +54,7 @@ function ExpertPublicProfile() {
   const fetchExpertReviews = async () => {
     try {
       setLoadingReviews(true);
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/reviews/expert/${id}`);
+      const res = await axios.get(`https://experthub.nextgoodtechnologies.in/api/reviews/expert/${id}`);
       if (res.data?.success) {
         setReviewsData({
           reviews: res.data.reviews || [],
@@ -82,7 +82,7 @@ function ExpertPublicProfile() {
     if (!token) return 0;
     try {
       setLoadingWallet(true);
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/wallet', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const bal = Number(res.data?.balance || 0);
@@ -142,7 +142,7 @@ function ExpertPublicProfile() {
 
       // 1. Create Pay-As-You-Go booking (NO upfront wallet deduction!)
       const bookingRes = await axios.post(
-        'https://astrotalk-hlg2.onrender.com/api/bookings',
+        'https://experthub.nextgoodtechnologies.in/api/bookings',
         {
           expertId: id,
           date: new Date().toISOString(),
@@ -161,7 +161,7 @@ function ExpertPublicProfile() {
 
       if (callType === 'chat') {
         axios.post(
-          'https://astrotalk-hlg2.onrender.com/api/messages/conversations',
+          'https://experthub.nextgoodtechnologies.in/api/messages/conversations',
           { expertId: id },
           { headers }
         ).finally(() => {
@@ -241,8 +241,8 @@ function ExpertPublicProfile() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         const [expertRes, servicesRes] = await Promise.all([
-          axios.get(`https://astrotalk-hlg2.onrender.com/api/user/experts/${id}`, { headers }),
-          axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`)
+          axios.get(`https://experthub.nextgoodtechnologies.in/api/user/experts/${id}`, { headers }),
+          axios.get(`https://experthub.nextgoodtechnologies.in/api/expert-services/public/${id}`)
         ]);
 
         setExpert(expertRes.data);

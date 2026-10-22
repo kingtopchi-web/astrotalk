@@ -74,14 +74,14 @@ function LiveSession() {
     try {
       const token = localStorage.getItem('token');
       // Fetch consultation details
-      const res = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}`, {
+      const res = await axios.get(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConsultation(res.data);
       setRemoteUser(isExpert ? res.data.user : res.data.expert);
 
       // Fetch video session status
-      const statusRes = await axios.get(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/status`, {
+      const statusRes = await axios.get(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -113,17 +113,17 @@ function LiveSession() {
       // If incoming, don't join until accepted!
       if (!incomingFlag) {
         if (isExpert) {
-           await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
-           await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
         } else {
-           await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
         }
       }
       
       // Fetch user wallet balance for pay-as-you-go live metering
       if (!isExpert) {
         try {
-          const wRes = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+          const wRes = await axios.get('https://experthub.nextgoodtechnologies.in/api/wallet', {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (wRes.data && typeof wRes.data.balance === 'number') {
@@ -147,7 +147,7 @@ function LiveSession() {
       soundService.stopRing();
       const token = localStorage.getItem('token');
       // Verify consultation has not ended before accepting
-      const checkRes = await axios.get(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}`, {
+      const checkRes = await axios.get(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (checkRes.data?.status === 'completed' || checkRes.data?.status === 'cancelled') {
@@ -157,10 +157,10 @@ function LiveSession() {
         return;
       }
       if (isExpert) {
-         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
-         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
       } else {
-         await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
       }
       setCallAccepted(true);
     } catch (err) {
@@ -543,7 +543,7 @@ function LiveSession() {
     // Heartbeat
     const heartbeat = setInterval(() => {
        const token = localStorage.getItem('token');
-       axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/heartbeat`, {}, {
+       axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/heartbeat`, {}, {
          headers: { Authorization: `Bearer ${token}` }
        }).catch(() => {});
     }, 15000);
@@ -587,17 +587,17 @@ function LiveSession() {
       const actualDuration = Number((usedSeconds / 60).toFixed(2)) || 0.01;
 
       if (isExpert) {
-        await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/expert/sessions/${consultationId}/end`, {}, {
+        await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/end`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(()=>{});
       } else {
-        await axios.post(`https://astrotalk-hlg2.onrender.com/api/video/sessions/${consultationId}/leave`, {}, {
+        await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/leave`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(()=>{});
       }
 
       // Call end endpoint to deduct actual duration from wallet
-      await axios.post(`https://astrotalk-hlg2.onrender.com/api/bookings/${consultationId}/end`, { actualDuration }, {
+      await axios.post(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}/end`, { actualDuration }, {
         headers: { Authorization: `Bearer ${token}` }
       }).catch((e)=>{
         console.warn('Booking end response:', e?.response?.data || e.message);
@@ -675,25 +675,25 @@ function LiveSession() {
   // Live or Joined Session
   return (
     <div className="bg-slate-900 font-sans text-background antialiased flex flex-col min-h-screen">
-      <header className="fixed top-0 inset-x-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
-        <div className="h-16 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <h1 className="text-lg font-bold truncate">
+      <header className="fixed top-0 inset-x-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800">
+        <div className="h-14 sm:h-16 px-3 sm:px-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+             <h1 className="text-sm sm:text-base md:text-lg font-bold truncate max-w-[130px] sm:max-w-xs">
                {isAudioOnly ? 'Audio Consultation' : 'Live Session'}
              </h1>
              {sessionStatus === 'LIVE' && (
-                 <span className="bg-red-500 text-background text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">Live</span>
+                 <span className="bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider animate-pulse shrink-0">Live</span>
              )}
           </div>
           {!isExpert && sessionStatus === 'LIVE' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold text-emerald-400 gap-1.5">
-                <span className="material-symbols-outlined text-[15px]">account_balance_wallet</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <div className="flex items-center bg-emerald-500/10 border border-emerald-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-emerald-400 gap-1 sm:gap-1.5">
+                <span className="material-symbols-outlined text-[13px] sm:text-[15px]">account_balance_wallet</span>
                 <span>₹{remainingLiveBalance.toFixed(2)}</span>
               </div>
-              <div className={`flex items-center px-3 py-1 rounded-full text-xs font-bold gap-1 ${remainingSeconds < 60 ? 'bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse' : 'bg-primary/20 border border-primary/30 text-primary'}`}>
-                <span className="material-symbols-outlined text-[15px]">hourglass_top</span>
-                <span>{formatTime(remainingSeconds)} left</span>
+              <div className={`flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold gap-1 ${remainingSeconds < 60 ? 'bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse' : 'bg-primary/20 border border-primary/30 text-primary'}`}>
+                <span className="material-symbols-outlined text-[13px] sm:text-[15px]">hourglass_top</span>
+                <span>{formatTime(remainingSeconds)}</span>
               </div>
             </div>
           )}
@@ -702,31 +702,31 @@ function LiveSession() {
 
       {isAudioOnly ? (
         /* SIMPLE CLEAN AUDIO CALL SCREEN */
-        <main className="flex flex-col relative w-full pt-20 pb-8 bg-slate-900 min-h-screen">
+        <main className="flex flex-col relative w-full pt-16 sm:pt-20 pb-6 sm:pb-8 bg-slate-900 min-h-[calc(100dvh-3.5rem)] flex-1 justify-between">
           {/* Hidden video elements so WebRTC audio streams remain actively playing */}
           <video ref={remoteVideoRef} autoPlay playsInline className="hidden" />
           <video ref={localVideoRef} autoPlay playsInline muted className="hidden" />
 
-          <div className="flex flex-col items-center justify-between w-full max-w-md mx-auto px-4 flex-1 py-6">
+          <div className="flex flex-col items-center justify-between w-full max-w-md mx-auto px-4 flex-1 py-4 sm:py-6">
             
             {/* Center Simple Audio Call Avatar & Details */}
             <div className="flex flex-col items-center my-auto w-full text-center">
-              <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-4xl md:text-5xl font-bold text-white shadow-xl mb-4">
+              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-3xl sm:text-5xl font-bold text-white shadow-xl mb-4">
                 {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold text-white flex items-center justify-center gap-1.5">
+              <h2 className="text-lg sm:text-2xl font-bold text-white flex items-center justify-center gap-1.5">
                 {remoteUser?.name || 'Remote User'}
                 {remoteUser?.role === 'EXPERT' && (
-                  <span className="material-symbols-outlined text-blue-400 text-lg" title="Verified Expert">verified</span>
+                  <span className="material-symbols-outlined text-blue-400 text-base sm:text-lg" title="Verified Expert">verified</span>
                 )}
               </h2>
 
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-slate-400 text-xs sm:text-sm mt-1">
                 {remoteUser?.role === 'EXPERT' ? 'Expert Consultant' : 'Client Consultation'}
               </p>
 
-              <div className="mt-4 px-4 py-1.5 bg-slate-800/80 rounded-full border border-slate-700 text-xs font-mono font-bold text-emerald-400 inline-flex items-center gap-2">
+              <div className="mt-3 sm:mt-4 px-3 sm:px-4 py-1 sm:py-1.5 bg-slate-800/80 rounded-full border border-slate-700 text-xs font-mono font-bold text-emerald-400 inline-flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <span>{sessionStatus === 'LIVE' ? formatTime(seconds) : 'Connecting...'}</span>
               </div>
@@ -740,43 +740,43 @@ function LiveSession() {
             </div>
 
             {/* Simple Call Controls */}
-            <div className="w-full bg-slate-800/90 border border-slate-700/70 rounded-2xl shadow-xl p-4 flex items-center justify-center gap-6">
+            <div className="w-full bg-slate-800/90 border border-slate-700/70 rounded-2xl shadow-xl p-3 sm:p-4 flex items-center justify-center gap-4 sm:gap-6 mt-4">
               {/* Mic Toggle */}
               <div className="flex flex-col items-center gap-1">
                 <button 
-                  className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                   onClick={toggleMic}
                   title={micOn ? 'Mute' : 'Unmute'}
                 >
-                  <span className="material-symbols-outlined text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
+                  <span className="material-symbols-outlined text-xl sm:text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
                 </button>
-                <span className="text-[11px] font-medium text-slate-400">{micOn ? 'Mute' : 'Unmuted'}</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-slate-400">{micOn ? 'Mute' : 'Unmuted'}</span>
               </div>
 
               {/* Gift button for client */}
               {!isExpert && sessionStatus === 'LIVE' && (
                 <div className="flex flex-col items-center gap-1">
                   <button 
-                    className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-95 shadow-md"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-95 shadow-md"
                     onClick={() => setShowGiftTray(!showGiftTray)}
                     title="Send Gift"
                   >
-                    <span className="material-symbols-outlined text-2xl">featured_seasonal_and_gifts</span>
+                    <span className="material-symbols-outlined text-xl sm:text-2xl">featured_seasonal_and_gifts</span>
                   </button>
-                  <span className="text-[11px] font-medium text-slate-400">Gift</span>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-slate-400">Gift</span>
                 </div>
               )}
 
               {/* End Call Button */}
               <div className="flex flex-col items-center gap-1">
                 <button 
-                  className="w-16 h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg hover:bg-red-500 transition-all active:scale-95"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg hover:bg-red-500 transition-all active:scale-95"
                   onClick={() => setShowEndModal(true)}
                   title="End Call"
                 >
-                  <span className="material-symbols-outlined text-3xl">call_end</span>
+                  <span className="material-symbols-outlined text-2xl sm:text-3xl">call_end</span>
                 </button>
-                <span className="text-[11px] font-medium text-red-400">End</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-red-400">End</span>
               </div>
             </div>
 
@@ -784,20 +784,10 @@ function LiveSession() {
         </main>
       ) : (
         /* STANDARD VIDEO CALL SCREEN */
-        <main className="flex flex-col relative w-full pt-16 pb-6 bg-slate-900 min-h-screen">
-          <div className="flex flex-col w-full px-4 flex-1">
+        <main className="flex flex-col relative w-full pt-14 sm:pt-16 pb-4 sm:pb-6 bg-slate-900 min-h-[calc(100dvh-3.5rem)]">
+          <div className="flex flex-col w-full max-w-5xl mx-auto px-2.5 sm:px-4 flex-1">
             
-            <div className="relative w-full rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 my-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 bg-slate-700/30 px-3 py-1 rounded-full">
-                  <span className="text-sm font-bold tracking-tight text-slate-300">
-                    {sessionStatus === 'LIVE' ? formatTime(seconds) : 'Pre-Session'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-black aspect-[3/4] md:aspect-video flex items-center justify-center border border-slate-700/50">
+            <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl bg-black h-[58vh] sm:h-[68vh] md:h-[72vh] flex items-center justify-center border border-slate-700/50 mt-2 sm:mt-4">
               <video 
                 ref={remoteVideoRef} 
                 autoPlay 
@@ -806,25 +796,28 @@ function LiveSession() {
               />
               
               {/* Overlays */}
-              <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10 pointer-events-none">
-                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full pointer-events-auto border border-white/10">
+              <div className="absolute top-3 sm:top-4 inset-x-3 sm:inset-x-4 flex items-center justify-between z-10 pointer-events-none">
+                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full pointer-events-auto border border-white/10 text-[10px] sm:text-xs text-white">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                   </span>
-                  <span className="text-xs font-medium text-background">Encrypted</span>
+                  <span>Encrypted</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full pointer-events-auto border border-white/10 text-[10px] sm:text-xs text-white font-mono">
+                  <span>{sessionStatus === 'LIVE' ? formatTime(seconds) : 'Pre-Session'}</span>
                 </div>
               </div>
 
-              <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1 pointer-events-none">
-                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-                  <span className="text-sm font-bold text-background">{remoteUser?.name || 'Remote User'}</span>
-                  {remoteUser?.role === 'EXPERT' && <span className="material-symbols-outlined text-[14px] text-blue-400">verified</span>}
+              <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-10 flex flex-col gap-1 pointer-events-none">
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-black/60 backdrop-blur-md px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-white/10">
+                  <span className="text-xs sm:text-sm font-bold text-white">{remoteUser?.name || 'Remote User'}</span>
+                  {remoteUser?.role === 'EXPERT' && <span className="material-symbols-outlined text-[13px] sm:text-[14px] text-blue-400">verified</span>}
                 </div>
               </div>
 
               {/* Local Video Picture-in-Picture */}
-              <div className="absolute top-4 right-4 w-24 h-36 md:w-32 md:h-48 rounded-xl overflow-hidden shadow-2xl z-20 bg-slate-800 border-2 border-slate-700/50">
+              <div className="absolute top-12 sm:top-14 right-3 sm:right-4 w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-48 rounded-xl overflow-hidden shadow-2xl z-20 bg-slate-800 border-2 border-slate-700/50">
                 <video 
                   ref={localVideoRef} 
                   autoPlay 
@@ -834,47 +827,51 @@ function LiveSession() {
                 />
                 {!camOn && (
                   <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-                    <span className="material-symbols-outlined text-3xl text-on-surface/60">videocam_off</span>
+                    <span className="material-symbols-outlined text-2xl sm:text-3xl text-white/60">videocam_off</span>
                   </div>
                 )}
-                <div className="absolute bottom-1 right-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] font-bold text-background">You</div>
+                <div className="absolute bottom-1 right-1 bg-black/60 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold text-white">You</div>
               </div>
               
               {toastMsg && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-black/80 text-background backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-bounce border border-white/10">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-black/80 text-white backdrop-blur-md px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-bounce border border-white/10">
                   <span className="text-3xl">{toastMsg.icon}</span>
                   <span className="text-sm font-bold">Sent!</span>
                 </div>
               )}
             </div>
 
-            {/* Call Controls */}
-            <div className="w-full bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-4 mt-6 flex items-center justify-center gap-4 md:gap-6">
+            {/* Video Call Controls */}
+            <div className="w-full max-w-sm sm:max-w-md mx-auto bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-3 sm:p-4 mt-3 sm:mt-5 flex items-center justify-center gap-3 sm:gap-6">
               <button 
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-background'}`}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                 onClick={toggleMic}
+                title={micOn ? 'Mute' : 'Unmute'}
               >
-                <span className="material-symbols-outlined text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
+                <span className="material-symbols-outlined text-xl sm:text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
               </button>
               <button 
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!camOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-background'}`}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!camOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                 onClick={toggleCam}
+                title={camOn ? 'Turn Off Cam' : 'Turn On Cam'}
               >
-                <span className="material-symbols-outlined text-2xl">{camOn ? 'videocam' : 'videocam_off'}</span>
+                <span className="material-symbols-outlined text-xl sm:text-2xl">{camOn ? 'videocam' : 'videocam_off'}</span>
               </button>
               {!isExpert && sessionStatus === 'LIVE' && (
                 <button 
-                  className="w-14 h-14 rounded-full flex items-center justify-center bg-primary/100/20 text-blue-400 border border-blue-500/50 hover:bg-primary/100/30 transition-all active:scale-95 shadow-lg"
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-95 shadow-lg"
                   onClick={() => setShowGiftTray(!showGiftTray)}
+                  title="Send Gift"
                 >
-                  <span className="material-symbols-outlined text-2xl">featured_seasonal_and_gifts</span>
+                  <span className="material-symbols-outlined text-xl sm:text-2xl">featured_seasonal_and_gifts</span>
                 </button>
               )}
               <button 
-                className="w-16 h-16 rounded-full flex items-center justify-center bg-red-600 text-background shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 transition-all active:scale-95"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 transition-all active:scale-95"
                 onClick={() => setShowEndModal(true)}
+                title="End Call"
               >
-                <span className="material-symbols-outlined text-3xl">call_end</span>
+                <span className="material-symbols-outlined text-2xl sm:text-3xl">call_end</span>
               </button>
             </div>
 

@@ -30,7 +30,7 @@ function Bookings() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/bookings/my-bookings', {
+      const response = await fetch('https://experthub.nextgoodtechnologies.in/api/bookings/my-bookings', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

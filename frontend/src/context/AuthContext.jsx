@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
         // Fetch fresh profile in background so profileImage and updates stay synced
         if (parsedUser.role === 'USER') {
-          axios.get('https://astrotalk-hlg2.onrender.com/api/user/profile', {
+          axios.get('https://experthub.nextgoodtechnologies.in/api/user/profile', {
             headers: { Authorization: `Bearer ${token}` }
           }).then((res) => {
             if (res.data) {
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
             }
           }).catch(() => {});
         } else if (parsedUser.role === 'EXPERT') {
-          axios.get('https://astrotalk-hlg2.onrender.com/api/expert/profile', {
+          axios.get('https://experthub.nextgoodtechnologies.in/api/expert/profile', {
             headers: { Authorization: `Bearer ${token}` }
           }).then((res) => {
             if (res.data) {

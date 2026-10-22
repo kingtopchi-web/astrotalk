@@ -28,7 +28,7 @@ function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/profile', {
+      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/user/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const cachedAvatar = localStorage.getItem('user_avatar') || user?.profileImage || '';
@@ -66,7 +66,7 @@ function Profile() {
       const activeImg = form.profileImage || '';
       const payload = { ...form, profileImage: activeImg };
 
-      const res = await axios.patch('https://astrotalk-hlg2.onrender.com/api/user/profile', payload, {
+      const res = await axios.patch('https://experthub.nextgoodtechnologies.in/api/user/profile', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const savedUser = res.data?.user || { ...profile, ...payload };

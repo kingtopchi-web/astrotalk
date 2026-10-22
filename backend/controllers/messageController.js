@@ -229,3 +229,138 @@ exports.createConversation = async (req, res) => {
     res.status(500).json({ message: 'Error creating conversation', error: error.message });
   }
 };
+
+// Delete a single message
+exports.deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    const conversation = await Conversation.findOne({
+      _id: message.conversationId,
+      'participants.participantId': req.user._id
+    });
+    if (!conversation) {
+      return res.status(403).json({ message: 'Not authorized to delete this message' });
+    }
+
+    await Message.findByIdAndDelete(messageId);
+
+    // Update conversation lastMessage
+    const latest = await Message.findOne({ conversationId: conversation._id }).sort({ createdAt: -1 });
+    conversation.lastMessage = latest ? (latest.text || 'File attached') : '';
+    conversation.lastMessageAt = latest ? latest.createdAt : null;
+    await conversation.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conversation_${conversation._id}`).emit('message_deleted', {
+        conversationId: conversation._id,
+        messageId
+      });
+    }
+
+    res.json({ success: true, message: 'Message deleted successfully', messageId });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting message', error: error.message });
+  }
+};
+
+// Delete multiple selected messages
+exports.deleteBulkMessages = async (req, res) => {
+  try {
+    const { conversationId, messageIds } = req.body;
+    if (!conversationId || !Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ message: 'Please provide conversationId and messageIds array' });
+    }
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      'participants.participantId': req.user._id
+    });
+    if (!conversation) {
+      return res.status(403).json({ message: 'Not authorized for this conversation' });
+    }
+
+    await Message.deleteMany({ _id: { $in: messageIds }, conversationId });
+
+    // Update conversation lastMessage
+    const latest = await Message.findOne({ conversationId }).sort({ createdAt: -1 });
+    conversation.lastMessage = latest ? (latest.text || 'File attached') : '';
+    conversation.lastMessageAt = latest ? latest.createdAt : null;
+    await conversation.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conversation_${conversationId}`).emit('messages_bulk_deleted', {
+        conversationId,
+        messageIds
+      });
+    }
+
+    res.json({ success: true, message: `${messageIds.length} messages deleted successfully`, messageIds });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting messages', error: error.message });
+  }
+};
+
+// Clear all messages in a conversation
+exports.clearConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      'participants.participantId': req.user._id
+    });
+    if (!conversation) {
+      return res.status(403).json({ message: 'Not authorized for this conversation' });
+    }
+
+    await Message.deleteMany({ conversationId });
+
+    conversation.lastMessage = '';
+    conversation.lastMessageAt = null;
+    conversation.unreadCounts = {};
+    await conversation.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conversation_${conversationId}`).emit('conversation_cleared', { conversationId });
+    }
+
+    res.json({ success: true, message: 'All messages cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error clearing conversation', error: error.message });
+  }
+};
+
+// Delete entire conversation and its messages
+exports.deleteConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      'participants.participantId': req.user._id
+    });
+    if (!conversation) {
+      return res.status(403).json({ message: 'Not authorized for this conversation' });
+    }
+
+    await Message.deleteMany({ conversationId });
+    await Conversation.findByIdAndDelete(conversationId);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conversation_${conversationId}`).emit('conversation_deleted', { conversationId });
+    }
+
+    res.json({ success: true, message: 'Conversation deleted successfully', conversationId });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting conversation', error: error.message });
+  }
+};

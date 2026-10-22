@@ -71,7 +71,7 @@ function ExpertDiscovery() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/user/saved-experts', {
+        const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/user/saved-experts', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (Array.isArray(res.data)) {
@@ -102,7 +102,7 @@ function ExpertDiscovery() {
 
     try {
       const res = await axios.post(
-        `https://astrotalk-hlg2.onrender.com/api/user/saved-experts/${expertId}`,
+        `https://experthub.nextgoodtechnologies.in/api/user/saved-experts/${expertId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -126,7 +126,7 @@ function ExpertDiscovery() {
     if (!token) return 0;
     try {
       setLoadingWallet(true);
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/wallet', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const bal = Number(res.data?.balance || 0);
@@ -259,12 +259,12 @@ function ExpertDiscovery() {
   }, [catParam]);
 
   useEffect(() => {
-    axios.get('https://astrotalk-hlg2.onrender.com/api/public/categories').then(res => setCategories(res.data)).catch(() => {});
+    axios.get('https://experthub.nextgoodtechnologies.in/api/public/categories').then(res => setCategories(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (selectedCategory) {
-      axios.get(`https://astrotalk-hlg2.onrender.com/api/public/categories/${selectedCategory}/subcategories`)
+      axios.get(`https://experthub.nextgoodtechnologies.in/api/public/categories/${selectedCategory}/subcategories`)
         .then(res => setSubCategories(res.data))
         .catch(() => setSubCategories([]));
     } else {
@@ -282,7 +282,7 @@ function ExpertDiscovery() {
       if (selectedSubCategory) params.subCategoryId = selectedSubCategory;
       if (search.trim()) params.search = search.trim();
 
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/public/experts', {
+      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/public/experts', {
         params
       });
       setExperts(res.data.data);

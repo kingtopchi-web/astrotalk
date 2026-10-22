@@ -77,7 +77,7 @@ const ExpertSettings = () => {
         payload.bankDetails = formData.bankDetails;
       }
       const token = localStorage.getItem('token');
-      const res = await axios.put('https://astrotalk-hlg2.onrender.com/api/experts/settings', payload, {
+      const res = await axios.put('https://experthub.nextgoodtechnologies.in/api/experts/settings', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert(res.data.message);

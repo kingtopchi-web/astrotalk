@@ -7,7 +7,7 @@ import {
   ExternalLink, ArrowRight, Clock, CheckCircle
 } from 'lucide-react';
 
-const API_BASE = 'https://astrotalk-hlg2.onrender.com/api';
+const API_BASE = 'https://experthub.nextgoodtechnologies.in/api';
 
 const EXPERT_PAGES = [
   { title: 'Dashboard Overview', path: '/expert/dashboard', icon: Briefcase, badge: 'Home' },
