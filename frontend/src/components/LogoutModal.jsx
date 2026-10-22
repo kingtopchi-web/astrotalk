@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LogOut, X } from 'lucide-react';
 
 export default function LogoutModal({ isOpen, onClose, onConfirm, title = "Confirm Logout", message = "Are you sure you want to log out of your account?" }) {
@@ -17,9 +18,9 @@ export default function LogoutModal({ isOpen, onClose, onConfirm, title = "Confi
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
@@ -70,4 +71,6 @@ export default function LogoutModal({ isOpen, onClose, onConfirm, title = "Confi
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

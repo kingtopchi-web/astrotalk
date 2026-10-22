@@ -182,7 +182,35 @@ exports.verifyPayment = async (req, res) => {
       badge: 'New'
     }, io);
 
-    // 2. Admin Notification: Wallet Recharge Successful
+    // 2. Direct Wallet Recharge Email to User
+    if (user.email && user.notificationPreferences?.email?.wallet !== false) {
+      const sendEmail = require('../utils/sendEmail');
+      const platformName = process.env.FROM_NAME || 'ExpertHub';
+      sendEmail({
+        email: user.email,
+        subject: `₹${transaction.amount} Added to Your Wallet - ${platformName}`,
+        message: `Hello ${user.name || 'User'},\n\nYour wallet recharge of ₹${transaction.amount} has been credited.\nCurrent Balance: ₹${balanceAfter}\nTransaction ID: ${transaction._id}`,
+        htmlMessage: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="border-bottom: 2px solid #16a34a; padding-bottom: 14px; margin-bottom: 20px;">
+              <h2 style="color: #15803d; margin: 0; font-size: 20px; font-weight: 700;">₹${transaction.amount} Added to Your Wallet</h2>
+            </div>
+            <p style="color: #334155; font-size: 15px; margin-bottom: 12px;">Hello <strong>${user.name || 'User'}</strong>,</p>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+              Your wallet recharge was successful and ₹${transaction.amount} has been credited to your account.
+            </p>
+            <div style="background-color: #f0fdf4; border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1px solid #bbf7d0;">
+              <p style="margin: 0 0 6px; font-size: 14px; color: #166534;"><strong>Recharge Amount:</strong> ₹${transaction.amount}</p>
+              <p style="margin: 0 0 6px; font-size: 14px; color: #166534;"><strong>Updated Balance:</strong> ₹${balanceAfter}</p>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 14px;" />
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">${platformName} Wallet Notifications</p>
+          </div>
+        `
+      }).catch(e => console.error('Wallet recharge email failed:', e));
+    }
+
+    // 3. Admin Notification: Wallet Recharge Successful
     await sendNotification({
       recipientRole: 'ADMIN',
       recipientModel: 'Admin',
@@ -194,7 +222,7 @@ exports.verifyPayment = async (req, res) => {
       badge: 'Payment'
     }, io);
 
-    res.json({ message: 'Payment verified and wallet updated' });
+    res.json({ success: true, message: 'Payment verified and wallet updated', balance: balanceAfter });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -247,8 +275,8 @@ exports.payConsultation = async (req, res) => {
     consultation.status = 'scheduled';
     await consultation.save();
 
-    // Send email in background without blocking response
-    if (user.email) {
+    // Send email in background without blocking response if user enabled wallet emails
+    if (user.email && user.notificationPreferences?.email?.wallet !== false) {
       sendEmail({
         email: user.email,
         subject: 'Consultation Payment Successful',

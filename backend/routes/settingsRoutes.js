@@ -8,5 +8,6 @@ router.put('/profile', protect, settingsController.updateProfile);
 router.put('/password', protect, settingsController.updatePassword);
 router.put('/preferences', protect, settingsController.updatePreferences);
 router.post('/deactivate', protect, settingsController.deactivateAccount);
+router.post('/test-email', protect, settingsController.sendTestEmail);
 
 module.exports = router;

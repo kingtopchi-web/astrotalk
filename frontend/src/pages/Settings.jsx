@@ -9,6 +9,7 @@ function Settings() {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   // Form states
@@ -18,6 +19,22 @@ function Settings() {
     email: { consultation: true, payment: true, wallet: true, messages: true, support: true, marketing: false },
     push: { consultation: true, messages: true, payment: true, wallet: false, support: true }
   });
+
+  const handleSendTestEmail = async () => {
+    setSendingTestEmail(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(getApiUrl('/settings/test-email'), {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showMessage('success', res.data.message || 'Test email sent successfully!');
+    } catch (error) {
+      console.error(error);
+      showMessage('error', error.response?.data?.message || 'Failed to send test email');
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -33,7 +50,14 @@ function Settings() {
       const data = res.data;
       setUserData(data);
       setProfileForm({ name: data.name || '', mobile: data.mobile || '', bio: data.bio || '', location: data.location || '', gender: data.gender || '' });
-      if (data.notificationPreferences) setNotifications(data.notificationPreferences);
+      if (data.notificationPreferences) {
+        setNotifications(data.notificationPreferences);
+        try {
+          const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+          storedUser.notificationPreferences = data.notificationPreferences;
+          localStorage.setItem('user', JSON.stringify(storedUser));
+        } catch (e) {}
+      }
     } catch (error) {
       console.error(error);
       showMessage('error', 'Failed to load settings');
@@ -45,6 +69,41 @@ function Settings() {
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
+
+  const handleToggleNotification = async (channel, key, checked) => {
+    const updatedNotifications = {
+      ...notifications,
+      [channel]: {
+        ...notifications[channel],
+        [key]: checked
+      }
+    };
+    setNotifications(updatedNotifications);
+
+    // Update localStorage user object immediately
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      storedUser.notificationPreferences = updatedNotifications;
+      localStorage.setItem('user', JSON.stringify(storedUser));
+    } catch (e) {}
+
+    // Dispatch real-time update event so header and notification dropdown update dynamically
+    window.dispatchEvent(new CustomEvent('notifications-updated'));
+
+    // Auto-save to backend
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(getApiUrl('/settings/preferences'), {
+        notificationPreferences: updatedNotifications
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showMessage('success', `${channel === 'email' ? 'Email' : 'Push'} ${key} notification turned ${checked ? 'ON' : 'OFF'}`);
+    } catch (error) {
+      console.error('Failed to auto-save preference:', error);
+      showMessage('error', 'Failed to sync preferences to server');
+    }
   };
 
   const handleProfileSave = async (e) => {
@@ -95,6 +154,12 @@ function Settings() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        storedUser.notificationPreferences = notifications;
+        localStorage.setItem('user', JSON.stringify(storedUser));
+      } catch (e) {}
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
       showMessage('success', 'Preferences updated successfully');
     } catch (error) {
       showMessage('error', 'Failed to update preferences');
@@ -220,29 +285,101 @@ function Settings() {
                 </button>
               </div>
               <div className="p-6">
-                <h4 className="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">Email Notifications</h4>
-                <div className="space-y-4 mb-8">
-                  {Object.keys(notifications.email).map(key => (
-                    <div key={`email-${key}`} className="flex items-center justify-between">
-                      <span className="text-slate-700 capitalize font-medium">{key} Updates</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={notifications.email[key]} onChange={(e) => setNotifications({...notifications, email: {...notifications.email, [key]: e.target.checked}})} />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                  ))}
+                <div className="mb-8">
+                  <h4 className="font-bold text-slate-800 mb-1 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-blue-600">notifications_active</span> In-App / Push Notifications
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-4">Control notifications in your header bell icon and live screen popups.</p>
+                  <div className="space-y-4 divide-y divide-slate-100">
+                    {Object.keys(notifications.push).map(key => {
+                      const labels = {
+                        consultation: { title: 'Consultation & Bookings', desc: 'Alerts when booking is confirmed, expert joins, or call starts' },
+                        messages: { title: 'Chat & Direct Messages', desc: 'Instant alerts when you receive a new chat message' },
+                        payment: { title: 'Payment & Billing', desc: 'Updates on invoice generation, payments, and refunds' },
+                        wallet: { title: 'Wallet & Recharge', desc: 'Alerts on wallet balance additions and consultation deductions' },
+                        support: { title: 'Customer Support', desc: 'Updates on your complaints, tickets, and inquiries' }
+                      };
+                      const item = labels[key] || { title: `${key} Alerts`, desc: `Enable or disable ${key} notifications` };
+
+                      return (
+                        <div key={`push-${key}`} className="pt-3 first:pt-0 flex items-center justify-between">
+                          <div className="pr-4">
+                            <span className="text-slate-800 font-semibold text-sm block">{item.title}</span>
+                            <span className="text-slate-500 text-xs">{item.desc}</span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={!!notifications.push[key]} 
+                              onChange={(e) => handleToggleNotification('push', key, e.target.checked)} 
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <h4 className="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">Push Notifications</h4>
-                <div className="space-y-4">
-                  {Object.keys(notifications.push).map(key => (
-                    <div key={`push-${key}`} className="flex items-center justify-between">
-                      <span className="text-slate-700 capitalize font-medium">{key} Alerts</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={notifications.push[key]} onChange={(e) => setNotifications({...notifications, push: {...notifications.push, [key]: e.target.checked}})} />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
+
+                <div className="border-t border-slate-100 pt-6">
+                  <h4 className="font-bold text-slate-800 mb-1 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-blue-600">mail</span> Email Notifications
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-4">Emails sent directly to your registered inbox.</p>
+                  <div className="space-y-4 divide-y divide-slate-100">
+                    {Object.keys(notifications.email).map(key => {
+                      const labels = {
+                        consultation: { title: 'Consultation & Appointments', desc: 'Email reminders before consultations and summary after completion' },
+                        payment: { title: 'Payment Invoices', desc: 'Receipts and transaction invoices sent to your email' },
+                        wallet: { title: 'Wallet Transactions', desc: 'Email confirmation for money added or refunded to wallet' },
+                        messages: { title: 'Unread Message Digests', desc: 'Summary of unread messages when you are offline' },
+                        support: { title: 'Helpdesk & Ticket Replies', desc: 'Email responses from support team for open queries' },
+                        marketing: { title: 'Offers & Promotions', desc: 'Periodic emails with seasonal discounts and new feature announcements' }
+                      };
+                      const item = labels[key] || { title: `${key} Updates`, desc: `Enable or disable ${key} emails` };
+
+                      return (
+                        <div key={`email-${key}`} className="pt-3 first:pt-0 flex items-center justify-between">
+                          <div className="pr-4">
+                            <span className="text-slate-800 font-semibold text-sm block">{item.title}</span>
+                            <span className="text-slate-500 text-xs">{item.desc}</span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={!!notifications.email[key]} 
+                              onChange={(e) => handleToggleNotification('email', key, e.target.checked)} 
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Test Email Button Box */}
+                  <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50/70 p-4 rounded-xl border border-blue-100">
+                    <div>
+                      <span className="text-slate-800 font-semibold text-sm flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[18px] text-blue-600">mark_email_read</span>
+                        Test Email Delivery
+                      </span>
+                      <span className="text-slate-500 text-xs mt-0.5 block">
+                        Send a live test notification to <strong>{userData?.email || 'your registered email'}</strong> to verify delivery.
+                      </span>
                     </div>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={handleSendTestEmail}
+                      disabled={sendingTestEmail}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60 active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">{sendingTestEmail ? 'hourglass_top' : 'send'}</span>
+                      {sendingTestEmail ? 'Sending...' : 'Send Test Email'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

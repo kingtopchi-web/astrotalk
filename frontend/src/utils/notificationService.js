@@ -174,6 +174,35 @@ export const getInitialNotificationsByRole = (role) => {
   ];
 };
 
+export const getNotificationCategory = (type = '', title = '') => {
+  const t = (type || '').toLowerCase();
+  const text = (title || '').toLowerCase();
+
+  if (['booking_confirmed', 'consultation_request', 'expert_ready', 'rate_consultation', 'consultation_completed', 'incoming_call', 'upcoming_session'].includes(t) ||
+      text.includes('consultation') || text.includes('booking') || text.includes('call') || text.includes('session')) {
+    return 'consultation';
+  }
+
+  if (['chat', 'chat_message'].includes(t) || text.includes('message') || text.includes('chat')) {
+    return 'messages';
+  }
+
+  if (['wallet_topup', 'wallet_update', 'wallet_recharge', 'earnings_update', 'payout_request', 'payout_processed'].includes(t) ||
+      text.includes('wallet') || text.includes('recharge') || text.includes('payout') || text.includes('earnings')) {
+    return 'wallet';
+  }
+
+  if (['payment_issue', 'payment_alert', 'refund_request'].includes(t) || text.includes('payment') || text.includes('refund')) {
+    return 'payment';
+  }
+
+  if (['complaint_report', 'support', 'system_alert'].includes(t) || text.includes('support') || text.includes('complaint')) {
+    return 'support';
+  }
+
+  return 'general';
+};
+
 const getStorageKey = (role) => `app_notifications_${role || 'USER'}`;
 const getDeletedKey = (role) => `app_notifications_deleted_${role || 'USER'}`;
 
@@ -181,6 +210,27 @@ export const fetchNotifications = async (role = 'USER') => {
   const token = localStorage.getItem('token');
   const storageKey = getStorageKey(role);
   const deletedKey = getDeletedKey(role);
+
+  // Load user notification preferences from localStorage
+  let userPrefs = null;
+  try {
+    const rawUser = localStorage.getItem('user');
+    if (rawUser) {
+      const parsed = JSON.parse(rawUser);
+      userPrefs = parsed.notificationPreferences?.push;
+    }
+  } catch (e) {}
+
+  const filterByPreferences = (list) => {
+    if (!userPrefs || typeof userPrefs !== 'object') return list;
+    return list.filter(n => {
+      const cat = getNotificationCategory(n.type, n.title);
+      if (cat in userPrefs && userPrefs[cat] === false) {
+        return false;
+      }
+      return true;
+    });
+  };
 
   // Load set of deleted IDs
   let deletedIds = [];
@@ -207,8 +257,8 @@ export const fetchNotifications = async (role = 'USER') => {
     localStorage.setItem(isInitializedKey, 'true');
   }
 
-  // Filter out any locally deleted IDs
-  localList = localList.filter(n => !deletedIds.includes(n._id));
+  // Filter out any locally deleted IDs and disabled preference categories
+  localList = filterByPreferences(localList.filter(n => !deletedIds.includes(n._id)));
 
   if (token) {
     try {
@@ -218,8 +268,10 @@ export const fetchNotifications = async (role = 'USER') => {
       });
 
       if (res.data && res.data.notifications) {
-        // Filter out any deleted IDs
-        const filteredFromBackend = res.data.notifications.filter(n => !deletedIds.includes(n._id) && !n.isDeleted);
+        // Filter out any deleted IDs and disabled preferences
+        const filteredFromBackend = filterByPreferences(
+          res.data.notifications.filter(n => !deletedIds.includes(n._id) && !n.isDeleted)
+        );
         localStorage.setItem(storageKey, JSON.stringify(filteredFromBackend));
         localStorage.setItem(isInitializedKey, 'true');
         const unreadCount = filteredFromBackend.filter(n => !n.isRead).length;

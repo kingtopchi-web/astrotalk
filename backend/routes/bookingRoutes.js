@@ -717,6 +717,21 @@ router.post('/:id/end', protect, async (req, res) => {
       badge: 'New'
     }, io);
 
+    // Dynamic Notification to User: Wallet Debit / Update
+    if (actualTotalCost > 0) {
+      await sendNotification({
+        recipient: user._id,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: 'Wallet Deduction',
+        message: `₹${actualTotalCost} was charged for your ${actualDuration}m ${consultation.type} consultation with ${expert.name}. Updated balance: ₹${user.walletBalance}.`,
+        actionText: 'View wallet',
+        link: '/wallet',
+        type: 'wallet_update',
+        badge: 'Debit'
+      }, io);
+    }
+
     // Dynamic Notification to Expert: Earnings Update
     await sendNotification({
       recipient: expert._id,

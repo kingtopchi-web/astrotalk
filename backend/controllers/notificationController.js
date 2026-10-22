@@ -317,6 +317,30 @@ exports.getNotifications = async (req, res) => {
       });
     }
 
+    // Dynamic User/Expert Preference Filtering:
+    // If the user turned off consultation, wallet, messages, payment, or support alerts, dynamically exclude them
+    const { getNotificationCategory } = require('../utils/notificationDispatcher');
+    if (role === 'USER') {
+      const User = require('../models/User');
+      const userDoc = await User.findById(userId).select('notificationPreferences');
+      const pushPrefs = userDoc?.notificationPreferences?.push;
+      if (pushPrefs) {
+        notifications = notifications.filter(n => {
+          const cat = getNotificationCategory(n.type, n.title);
+          if (cat in pushPrefs && pushPrefs[cat] === false) {
+            return false;
+          }
+          return true;
+        });
+      }
+    } else if (role === 'EXPERT') {
+      const Expert = require('../models/Expert');
+      const expertDoc = await Expert.findById(userId).select('notificationPreferences');
+      if (expertDoc?.notificationPreferences?.push === false) {
+        notifications = [];
+      }
+    }
+
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
     res.json({

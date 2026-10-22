@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema({
       consultation: { type: Boolean, default: true },
       messages: { type: Boolean, default: true },
       payment: { type: Boolean, default: true },
-      wallet: { type: Boolean, default: false },
+      wallet: { type: Boolean, default: true },
       support: { type: Boolean, default: true }
     }
   },

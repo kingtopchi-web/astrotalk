@@ -4,6 +4,7 @@ import axios from 'axios';
 import Header from '../components/Header';
 import { ArrowLeft, ArrowRight, BadgeCheck, Star, Calendar as CalendarIcon, Clock, Video, Phone, MessageSquare, ShieldCheck, ChevronLeft, ChevronRight, Lock, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getApiUrl } from '../utils/apiConfig';
 
 function BookConsultation() {
   const { id } = useParams();
@@ -41,17 +42,17 @@ function BookConsultation() {
       try {
         const promises = [];
         if (id) {
-          promises.push(axios.get(`https://astrotalk-hlg2.onrender.com/api/experts/${id}`));
+          promises.push(axios.get(getApiUrl(`/experts/${id}`)));
         }
         
         if (user && token) {
-          promises.push(axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', {
+          promises.push(axios.get(getApiUrl('/wallet'), {
             headers: { Authorization: `Bearer ${token}` }
           }));
         }
 
         if (serviceId) {
-          promises.push(axios.get(`https://astrotalk-hlg2.onrender.com/api/expert-services/public/${id}`));
+          promises.push(axios.get(getApiUrl(`/expert-services/public/${id}`)));
         }
 
         const results = await Promise.all(promises);
@@ -137,7 +138,7 @@ function BookConsultation() {
         return new Promise(async (resolve, reject) => {
           try {
             const orderRes = await axios.post(
-              'https://astrotalk-hlg2.onrender.com/api/wallet/add-money',
+              getApiUrl('/wallet/add-money'),
               { amount: Math.ceil(rechargeAmount) },
               config
             );
@@ -158,7 +159,7 @@ function BookConsultation() {
               handler: async function (response) {
                 try {
                   const verifyRes = await axios.post(
-                    'https://astrotalk-hlg2.onrender.com/api/wallet/verify-payment',
+                    getApiUrl('/wallet/verify-payment'),
                     {
                       razorpay_order_id: response.razorpay_order_id,
                       razorpay_payment_id: response.razorpay_payment_id,
@@ -168,7 +169,7 @@ function BookConsultation() {
                   );
 
                   if (verifyRes.data.success || verifyRes.data.message) {
-                    const wRes = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', config);
+                    const wRes = await axios.get(getApiUrl('/wallet'), config);
                     setWalletBalance(wRes.data.balance || 0);
                     resolve(true);
                   } else {
@@ -197,7 +198,7 @@ function BookConsultation() {
       // Check wallet balance against totalAmount
       let currentBal = walletBalance;
       try {
-        const wRes = await axios.get('https://astrotalk-hlg2.onrender.com/api/wallet', config);
+        const wRes = await axios.get(getApiUrl('/wallet'), config);
         currentBal = wRes.data.balance || 0;
         setWalletBalance(currentBal);
       } catch (e) {}
@@ -207,7 +208,7 @@ function BookConsultation() {
           showToast('Processing wallet payment...', 'info');
 
           // Always pay consultation from wallet
-          await axios.post('https://astrotalk-hlg2.onrender.com/api/wallet/pay-consultation', {
+          await axios.post(getApiUrl('/wallet/pay-consultation'), {
             consultationId: consultation._id
           }, config);
           

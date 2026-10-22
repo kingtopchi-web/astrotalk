@@ -130,8 +130,8 @@ exports.verifyPayment = async (req, res) => {
           }
         }
 
-        // Send Email Notification to User
-        if (payment.user && payment.user.email) {
+        // Send Email Notification to User if enabled in settings
+        if (payment.user && payment.user.email && payment.user.notificationPreferences?.email?.payment !== false) {
           try {
             await sendEmail({
               email: payment.user.email,
@@ -213,7 +213,7 @@ exports.webhook = async (req, res) => {
           }
         }
 
-        if (payment.user && payment.user.email) {
+        if (payment.user && payment.user.email && payment.user.notificationPreferences?.email?.payment !== false) {
           await sendEmail({
             email: payment.user.email,
             subject: 'Payment Successful',
@@ -241,7 +241,7 @@ exports.webhook = async (req, res) => {
              walletTx.completedAt = new Date();
              await walletTx.save();
 
-             if (user.email) {
+             if (user.email && user.notificationPreferences?.email?.wallet !== false) {
                await sendEmail({
                  email: user.email,
                  subject: 'Wallet Top-up Successful',
