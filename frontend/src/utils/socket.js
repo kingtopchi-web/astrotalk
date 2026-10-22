@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
+import { isLocalhost } from './apiConfig';
 
-const SOCKET_URL = 'https://experthub.nextgoodtechnologies.in';
+const SOCKET_URL = isLocalhost ? 'http://localhost:5000' : 'https://experthub.nextgoodtechnologies.in';
 
 /**
  * Creates a new Socket.IO connection with robust reconnection settings.

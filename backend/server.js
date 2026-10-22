@@ -366,6 +366,28 @@ io.on('connection', (socket) => {
     socket.leave(`call_room_${roomId}`);
     socket.to(`call_room_${roomId}`).emit('user_left_call', { userId: socket.id });
   });
+
+  // Handle call decline / reject from expert
+  socket.on('reject_call', (data) => {
+    if (data?.consultationId) {
+      const reason = data.reason || 'Call declined by expert';
+      io.to(`call_room_${data.consultationId}`).emit('VIDEO_SESSION_ENDED', { consultationId: data.consultationId, reason });
+      io.to(`call_room_${data.consultationId}`).emit('session_ended', { consultationId: data.consultationId, reason });
+      if (data.userId) {
+        io.to(`user_${data.userId}`).emit('VIDEO_SESSION_ENDED', { consultationId: data.consultationId, reason });
+        io.to(`user_${data.userId}`).emit('session_ended', { consultationId: data.consultationId, reason });
+      }
+    }
+  });
+
+  // Handle chat consultation decline / reject from expert
+  socket.on('reject_chat', (data) => {
+    if (data?.consultationId && data?.userId) {
+      const reason = data.reason || 'Chat request declined by expert';
+      io.to(`user_${data.userId}`).emit('chat_rejected', { consultationId: data.consultationId, reason });
+      io.to(`user_${data.userId}`).emit('session_ended', { consultationId: data.consultationId, reason });
+    }
+  });
 });
 
 connectDB().then(() => {

@@ -141,6 +141,7 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
         type: 'chat',
         partnerId: req.user._id,
         partnerModel: 'User',
+        userName: req.user.name || 'Client',
         consultation,
         conversationId: conversation._id
       });
@@ -308,6 +309,7 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
         type: schemaType,
         partnerId: req.user._id,
         partnerModel: 'User',
+        userName: req.user.name || 'Client',
         consultation
       });
     }
@@ -435,6 +437,54 @@ router.get('/active-chat/:partnerId', protect, async (req, res) => {
   } catch (error) {
     console.error('Fetch active chat error:', error);
     res.status(500).json({ message: 'Failed to fetch active chat consultation' });
+  }
+});
+
+// @route   POST /api/bookings/:id/reject
+// @desc    Expert rejects/declines an incoming consultation (call or chat)
+// @access  Private (EXPERT)
+router.post('/:id/reject', protect, authorizeRoles('EXPERT'), async (req, res) => {
+  try {
+    const consultation = await Consultation.findById(req.params.id).populate('user expert');
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' });
+    }
+
+    if (consultation.expert._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to reject this consultation' });
+    }
+
+    if (consultation.status === 'completed' || consultation.status === 'cancelled') {
+      return res.status(200).json({ message: 'Consultation already finished or cancelled', consultation });
+    }
+
+    consultation.status = 'cancelled';
+    await consultation.save();
+
+    // Mark associated VideoSession cancelled if exists
+    const VideoSession = require('../models/VideoSession');
+    await VideoSession.updateMany(
+      { consultationId: consultation._id },
+      { $set: { status: 'CANCELLED', endedAt: new Date() } }
+    ).catch(() => {});
+
+    const io = req.app.get('io');
+    if (io) {
+      const reason = req.body.reason || 'Consultation declined by expert';
+      io.to(`call_room_${consultation._id}`).emit('VIDEO_SESSION_ENDED', { consultationId: consultation._id, reason });
+      io.to(`call_room_${consultation._id}`).emit('session_ended', { consultationId: consultation._id, reason });
+
+      if (consultation.user?._id) {
+        io.to(`user_${consultation.user._id}`).emit('VIDEO_SESSION_ENDED', { consultationId: consultation._id, reason });
+        io.to(`user_${consultation.user._id}`).emit('chat_rejected', { consultationId: consultation._id, reason });
+        io.to(`user_${consultation.user._id}`).emit('session_ended', { consultationId: consultation._id, reason });
+      }
+    }
+
+    res.json({ message: 'Consultation rejected successfully', consultation });
+  } catch (error) {
+    console.error('Reject consultation error:', error);
+    res.status(500).json({ message: 'Failed to reject consultation', error: error.message });
   }
 });
 

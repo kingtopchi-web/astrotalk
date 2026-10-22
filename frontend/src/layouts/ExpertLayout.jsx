@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { createSocket } from '../utils/socket';
-import { soundService } from '../utils/soundService';
 import { getApiUrl } from '../utils/apiConfig';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
 import { 
@@ -35,7 +33,6 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
   const [expert, setExpert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [waitingNotification, setWaitingNotification] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,39 +56,6 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
     fetchProfile();
   }, [navigate]);
 
-  useEffect(() => {
-    if (!expert) return;
-    const socket = createSocket();
-
-    socket.on('connect', () => {
-      console.log('[Socket] Connected:', socket.id);
-      socket.emit('join_user', expert._id);
-    });
-
-    socket.on('connect_error', (err) => {
-      console.warn('[Socket] Connection error (server may be waking up):', err.message);
-    });
-
-    socket.on('VIDEO_USER_WAITING', (data) => {
-      setWaitingNotification(data);
-      soundService.playIncomingRing();
-    });
-
-    socket.on('VIDEO_USER_LEFT', () => {
-      setWaitingNotification(null);
-      soundService.stopRing();
-    });
-
-    socket.on('VIDEO_SESSION_ENDED', () => {
-      setWaitingNotification(null);
-      soundService.stopRing();
-    });
-
-    return () => {
-      soundService.stopRing();
-      socket.disconnect();
-    };
-  }, [expert?._id]);
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -209,41 +173,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
 
       {/* Main Content */}
       <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
-        {waitingNotification && (
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
-             <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">
-                  {waitingNotification.type === 'video' ? 'videocam' : 'call'}
-                </span>
-             </div>
-             <div>
-                <h4 className="font-bold text-white">
-                  {waitingNotification.type === 'video' ? 'Incoming Video Call' : 'Incoming Audio Call'}
-                </h4>
-                <p className="text-sm text-slate-300">
-                  {waitingNotification.userName || 'Client'} is calling for a consultation.
-                </p>
-             </div>
-             <button 
-               onClick={() => {
-                 soundService.stopRing();
-                 setWaitingNotification(null);
-                 const callType = waitingNotification.type === 'video' ? 'video' : 'audio';
-                 navigate(`/live/${waitingNotification.consultationId}?type=${callType}&incoming=true`);
-               }}
-               className="ml-4 px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 transition-colors shadow-md flex items-center gap-1.5 shrink-0"
-             >
-               <span className="material-symbols-outlined text-base">call</span>
-               Accept Call
-             </button>
-             <button onClick={() => {
-               soundService.stopRing();
-               setWaitingNotification(null);
-             }} className="ml-2 text-slate-400 hover:text-white shrink-0">
-               <X size={20} />
-             </button>
-          </div>
-        )}
+
         {/* Header - Desktop & Mobile */}
         <header className="bg-surface border-b border-border-color p-4 flex justify-between items-center sticky top-0 z-10">
           <div className="flex items-center gap-2.5 md:hidden">

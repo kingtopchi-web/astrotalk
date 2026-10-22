@@ -53,6 +53,7 @@ import ExpertServices from './pages/expert/ExpertServices';
 import ExpertClients from './pages/expert/ExpertClients';
 import ExpertSettings from './pages/expert/ExpertSettings';
 import ExpertNotifications from './pages/expert/ExpertNotifications';
+import IncomingConsultationAlert from './components/IncomingConsultationAlert';
 
 import './index.css';
 
@@ -100,6 +101,7 @@ function App() {
         <Router>
           <ScrollToTop />
           <ThemeManager />
+          <IncomingConsultationAlert />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
