@@ -22,7 +22,7 @@ import UserSearchBar from './UserSearchBar';
 import NotificationDropdown from './NotificationDropdown';
 import LogoutModal from './LogoutModal';
 
-const UserLayout = ({ children, title = '', subtitle = '' }) => {
+const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = false }) => {
   const { user, logout } = useAuth();
   const { platformName, supportEmail, contactPhone, address } = usePlatformSettings();
   const navigate = useNavigate();
@@ -340,12 +340,12 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-3.5 sm:p-5 md:p-8 w-full max-w-full min-w-0">
+        <div className="flex-1 p-2.5 sm:p-5 md:p-8 w-full max-w-full min-w-0">
           <div className="max-w-6xl mx-auto">
             {title && (
-              <div className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>
-                {subtitle && <p className="text-sm text-on-surface/60 mt-1">{subtitle}</p>}
+              <div className={`mb-2.5 sm:mb-4 md:mb-6 ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>
+                {subtitle && <p className="text-xs sm:text-sm text-on-surface/60 mt-0.5 md:mt-1">{subtitle}</p>}
               </div>
             )}
             {children}

@@ -28,7 +28,7 @@ import NotificationDropdown from '../components/NotificationDropdown';
 import LogoutModal from '../components/LogoutModal';
 import ExpertSearchBar from '../components/ExpertSearchBar';
 
-const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
+const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = false }) => {
   const { platformName, supportEmail, contactPhone, address } = usePlatformSettings();
   const [expert, setExpert] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -180,7 +180,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full max-w-full min-w-0 overflow-x-hidden">
 
         {/* Header - Desktop & Mobile */}
         <header className="bg-surface border-b border-border-color p-4 flex justify-between items-center sticky top-0 z-10">
@@ -318,11 +318,11 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
         )}
 
         {/* Page Content passed through Outlet */}
-        <div className="flex-1 p-4 md:p-6 bg-surface-light overflow-x-hidden">
+        <div className="flex-1 p-2.5 sm:p-4 md:p-6 bg-surface-light overflow-x-hidden min-w-0 max-w-full">
           {title && (
-            <div className="mb-6 max-w-6xl mx-auto">
-              <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>
-              {subtitle && <p className="text-sm text-on-surface/60 mt-1">{subtitle}</p>}
+            <div className={`mb-2.5 sm:mb-4 md:mb-6 max-w-6xl mx-auto ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>
+              {subtitle && <p className="text-xs sm:text-sm text-on-surface/60 mt-0.5 md:mt-1">{subtitle}</p>}
             </div>
           )}
           {loading ? (
