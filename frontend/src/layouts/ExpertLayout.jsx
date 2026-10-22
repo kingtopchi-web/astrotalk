@@ -63,8 +63,16 @@ const ExpertLayout = ({ children, title = '', subtitle = '' }) => {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     setShowLogoutModal(false);
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await axios.patch(getApiUrl('/expert/profile'), { onlineStatus: 'offline' }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch (e) {}
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/expert/login');

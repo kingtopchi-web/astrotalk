@@ -85,11 +85,18 @@ exports.getPublicExperts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
-    // Base filter: only public-facing experts
+    // Base filter: only public-facing APPROVED + ACTIVE experts who are ONLINE
     const query = {
       verificationStatus: 'APPROVED',
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      onlineStatus: 'online'
     };
+
+    if (req.query.onlineStatus && req.query.onlineStatus !== 'any') {
+      query.onlineStatus = req.query.onlineStatus;
+    } else if (req.query.onlineStatus === 'any') {
+      delete query.onlineStatus;
+    }
 
     if (req.query.categoryId) query.categoryId = req.query.categoryId;
     if (req.query.subCategoryId) query.subCategoryId = req.query.subCategoryId;

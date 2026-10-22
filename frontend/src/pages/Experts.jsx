@@ -277,17 +277,18 @@ function ExpertDiscovery() {
     setLoading(true);
     setError('');
     try {
-      const params = { page, limit: 12 };
+      const params = { page, limit: 12, onlineStatus: 'online' };
       if (selectedCategory) params.categoryId = selectedCategory;
       if (selectedSubCategory) params.subCategoryId = selectedSubCategory;
       if (search.trim()) params.search = search.trim();
 
-      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/public/experts', {
+      const res = await axios.get(getApiUrl('/public/experts'), {
         params
       });
-      setExperts(res.data.data);
-      setTotalPages(res.data.totalPages);
-      setTotal(res.data.total);
+      const data = (res.data?.data || []).filter(e => e.onlineStatus === 'online');
+      setExperts(data);
+      setTotalPages(res.data.totalPages || 1);
+      setTotal(res.data.total ?? data.length);
     } catch (err) {
       setError('Unable to load experts. Please try again.');
     } finally {

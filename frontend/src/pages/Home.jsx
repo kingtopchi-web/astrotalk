@@ -174,13 +174,14 @@ function Home() {
     const fetchExperts = async () => {
       setLoading(true);
       try {
-        let url = 'https://experthub.nextgoodtechnologies.in/api/public/experts';
+        let url = getApiUrl('/public/experts?onlineStatus=online');
         if (activeCategory !== 'all') {
-          url += `?categoryId=${activeCategory}`;
+          url += `&categoryId=${activeCategory}`;
         }
         const res = await axios.get(url);
         if (res.data && res.data.data) {
-          setExperts(res.data.data);
+          const onlineOnly = res.data.data.filter(exp => exp.onlineStatus === 'online');
+          setExperts(onlineOnly);
         } else {
           setExperts([]);
         }

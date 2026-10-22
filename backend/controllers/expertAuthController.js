@@ -95,13 +95,16 @@ const loginExpert = async (req, res) => {
         });
       }
 
-      // We still allow login if PENDING, but frontend should redirect to onboarding or show pending screen
+      // Auto-set expert status to online upon login
+      expert.onlineStatus = 'online';
+      await expert.save();
 
       res.json({
         _id: expert._id,
         name: expert.name,
         email: expert.email,
         role: expert.role,
+        onlineStatus: expert.onlineStatus,
         verificationStatus: expert.verificationStatus,
         token: generateToken(expert._id),
       });

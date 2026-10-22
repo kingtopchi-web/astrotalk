@@ -110,9 +110,16 @@ io.on('connection', (socket) => {
   console.log(`User connected to socket: ${socket.id}`);
   
   // Join a room specific to a user ID to receive direct notifications/messages
-  socket.on('join_user', (userId) => {
+  socket.on('join_user', async (userId) => {
     socket.join(`user_${userId}`);
+    socket.userId = userId;
     console.log(`Socket ${socket.id} joined user_${userId}`);
+
+    // If an expert connects, ensure their status is marked online
+    try {
+      const Expert = require('./models/Expert');
+      await Expert.findByIdAndUpdate(userId, { onlineStatus: 'online' });
+    } catch (e) {}
   });
 
   // Join a role-based room (for ADMIN/EXPERT alerts)
