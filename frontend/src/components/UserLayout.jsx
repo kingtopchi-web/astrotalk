@@ -61,7 +61,7 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
   const displayName = user?.name || 'User';
 
   return (
-    <div className="light-theme min-h-screen bg-background flex font-sans">
+    <div className="light-theme min-h-screen bg-background flex font-sans w-full max-w-full overflow-x-hidden">
 
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
@@ -125,7 +125,7 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden">
 
         {/* Mobile Header */}
         <header className="md:hidden bg-surface border-b border-border-color p-4 sticky top-0 z-20">
@@ -340,7 +340,7 @@ const UserLayout = ({ children, title = '', subtitle = '' }) => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 p-3.5 sm:p-5 md:p-8 w-full max-w-full min-w-0">
           <div className="max-w-6xl mx-auto">
             {title && (
               <div className="mb-6">
