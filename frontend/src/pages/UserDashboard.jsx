@@ -72,28 +72,28 @@ function UserDashboard() {
 
   return (
     <UserLayout>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         
         {/* Welcome Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-2">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-on-surface flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-on-surface flex items-center gap-2">
               Good Morning, {displayName}! <span className="animate-wave inline-block origin-bottom-right">👋</span>
             </h1>
-            <p className="text-on-surface/60 mt-2 font-medium">Here's what's happening with your consultations.</p>
+            <p className="text-on-surface/60 mt-1 font-medium text-xs sm:text-sm">Here's what's happening with your consultations.</p>
           </div>
 
-          <div className="hidden lg:flex items-center gap-6 bg-primary/10/50 p-4 rounded-2xl border border-blue-100">
-            <div className="relative w-32 h-20">
-              <div className="absolute inset-0 bg-blue-100 rounded-xl transform -rotate-3"></div>
-              <div className="absolute inset-0 bg-surface rounded-xl shadow-sm border border-blue-50 flex items-center justify-center p-2">
-                <div className="w-full h-full bg-primary/10 rounded-lg flex items-center justify-center text-blue-300">
-                  <Calendar size={24} />
+          <div className="hidden lg:flex items-center gap-4 bg-primary/10/50 p-3.5 rounded-xl border border-blue-100">
+            <div className="relative w-28 h-16">
+              <div className="absolute inset-0 bg-blue-100 rounded-lg transform -rotate-3"></div>
+              <div className="absolute inset-0 bg-surface rounded-lg shadow-sm border border-blue-50 flex items-center justify-center p-2">
+                <div className="w-full h-full bg-primary/10 rounded-md flex items-center justify-center text-blue-300">
+                  <Calendar size={20} />
                 </div>
               </div>
             </div>
-            <div className="w-48">
-              <p className="text-sm font-medium text-on-surface/80 italic leading-relaxed">
+            <div className="w-44">
+              <p className="text-xs font-medium text-on-surface/80 italic leading-relaxed">
                 "The best way to predict your future is to create it."
               </p>
             </div>
@@ -101,78 +101,78 @@ function UserDashboard() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
           {/* Card 1 */}
-          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <Calendar size={24} />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Calendar size={20} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-on-surface/60 mb-1">Upcoming Appointments</p>
-                <h3 className="text-3xl font-bold text-on-surface">{upcomingCount}</h3>
+                <p className="text-xs font-semibold text-on-surface/60 mb-0.5">Upcoming Appointments</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-on-surface">{upcomingCount}</h3>
               </div>
             </div>
-            <Link to="/bookings" className="text-primary text-sm font-semibold mt-6 inline-flex items-center gap-1 hover:text-primary">
-              View details <ChevronRight size={16} />
+            <Link to="/bookings" className="text-primary text-xs sm:text-sm font-semibold mt-4 inline-flex items-center gap-1 hover:text-primary">
+              View details <ChevronRight size={15} />
             </Link>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                <Wallet size={24} />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <Wallet size={20} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-on-surface/60 mb-1">Total Spent</p>
-                <h3 className="text-3xl font-bold text-on-surface">₹{Number(totalSpent).toFixed(2)}</h3>
+                <p className="text-xs font-semibold text-on-surface/60 mb-0.5">Total Spent</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-on-surface">₹{Number(totalSpent).toFixed(2)}</h3>
               </div>
             </div>
-            <Link to="/wallet" className="text-primary text-sm font-semibold mt-6 inline-flex items-center gap-1 hover:text-primary">
-              View details <ChevronRight size={16} />
+            <Link to="/wallet" className="text-primary text-xs sm:text-sm font-semibold mt-4 inline-flex items-center gap-1 hover:text-primary">
+              View details <ChevronRight size={15} />
             </Link>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
-                <Heart size={24} className="fill-rose-500" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl shadow-sm border border-border-color flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+                <Heart size={20} className="fill-rose-500" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-on-surface/60 mb-1">Saved Experts</p>
-                <h3 className="text-3xl font-bold text-on-surface">{savedExpertsCount}</h3>
+                <p className="text-xs font-semibold text-on-surface/60 mb-0.5">Saved Experts</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-on-surface">{savedExpertsCount}</h3>
               </div>
             </div>
             <a 
               href="#saved-experts-section" 
-              className="text-primary text-sm font-semibold mt-6 inline-flex items-center gap-1 hover:text-primary cursor-pointer"
+              className="text-primary text-xs sm:text-sm font-semibold mt-4 inline-flex items-center gap-1 hover:text-primary cursor-pointer"
             >
-              View details <ChevronRight size={16} />
+              View details <ChevronRight size={15} />
             </a>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
           {/* Recent Appointments */}
-          <div className="lg:col-span-2 bg-surface rounded-2xl shadow-sm border border-border-color p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-on-surface">Recent Appointments</h2>
-              <Link to="/bookings" className="text-sm font-semibold text-primary flex items-center gap-1 hover:text-primary">
-                View all <ChevronRight size={16} />
+          <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border-color p-4 sm:p-5 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-base sm:text-lg font-bold text-on-surface">Recent Appointments</h2>
+              <Link to="/bookings" className="text-xs sm:text-sm font-semibold text-primary flex items-center gap-1 hover:text-primary">
+                View all <ChevronRight size={15} />
               </Link>
             </div>
             
-            <div className="flex-1 flex flex-col gap-4">
+            <div className="flex-1 flex flex-col gap-3">
               {loading ? (
-                <div className="animate-pulse space-y-4">
+                <div className="animate-pulse space-y-3">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-16 bg-surface-light rounded-xl"></div>
+                    <div key={i} className="h-14 bg-surface-light rounded-xl"></div>
                   ))}
                 </div>
               ) : recentAppointments.length === 0 ? (
-                <div className="text-center py-10 text-on-surface/60">
+                <div className="text-center py-8 text-on-surface/60 text-sm">
                   <p>No recent appointments found.</p>
                 </div>
               ) : (
@@ -187,22 +187,22 @@ function UserDashboard() {
                     : dateObj.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
 
                   return (
-                    <div key={apt._id} onClick={() => navigate('/bookings')} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-border-color hover:bg-surface-light transition-colors cursor-pointer group gap-4">
-                      <div className="flex items-center gap-4 sm:w-2/5">
-                        <img src={expertImg} alt={expertName} className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0" />
+                    <div key={apt._id} onClick={() => navigate('/bookings')} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-3.5 rounded-xl border border-border-color hover:bg-surface-light transition-colors cursor-pointer group gap-3">
+                      <div className="flex items-center gap-3 sm:w-2/5">
+                        <img src={expertImg} alt={expertName} className="w-9 h-9 rounded-full object-cover shadow-sm shrink-0" />
                         <div className="min-w-0">
                           <h4 className="text-sm font-bold text-on-surface truncate">{expertName}</h4>
                           <p className="text-xs text-on-surface/60 truncate">{expertSpec}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-on-surface/60 text-sm sm:w-1/4">
-                        <Calendar size={14} className="shrink-0" />
+                      <div className="flex items-center gap-2 text-on-surface/60 text-xs sm:text-sm sm:w-1/4">
+                        <Calendar size={13} className="shrink-0" />
                         <span className="truncate">{timeString}</span>
                       </div>
                       
                       <div className="flex items-center justify-between sm:w-1/4 sm:justify-end gap-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${Number(
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${Number(
                           ['scheduled', 'ongoing'].includes(apt.status) ? 'bg-primary/10 text-primary' : 
                           apt.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-surface-light text-on-surface/80'
                         ).toFixed(2)}`}>
@@ -210,7 +210,7 @@ function UserDashboard() {
                         </span>
                         {apt.paymentStatus === 'paid' && <span className="text-[10px] text-emerald-600 font-bold block mt-1">PAID</span>}
                         <div className="text-slate-300 group-hover:text-blue-500 transition-colors sm:ml-4">
-                          <ChevronRight size={18} />
+                          <ChevronRight size={16} />
                         </div>
                       </div>
                     </div>
@@ -221,66 +221,66 @@ function UserDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-surface rounded-2xl shadow-sm border border-border-color p-6 flex flex-col">
-            <h2 className="text-lg font-bold text-on-surface mb-6">Quick Actions</h2>
+          <div className="bg-surface rounded-xl shadow-sm border border-border-color p-4 sm:p-5 flex flex-col">
+            <h2 className="text-base sm:text-lg font-bold text-on-surface mb-4">Quick Actions</h2>
             
-            <div className="flex flex-col gap-4">
-              <Link to="/experts" className="flex items-center gap-4 p-4 rounded-xl border border-border-color hover:border-blue-200 hover:bg-primary/10/50 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-blue-100 group-hover:scale-110 transition-transform">
-                  <Search size={20} />
+            <div className="flex flex-col gap-2.5 sm:gap-3">
+              <Link to="/experts" className="flex items-center gap-3 p-3 rounded-xl border border-border-color hover:border-blue-200 hover:bg-primary/10/50 transition-all group">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-blue-100 group-hover:scale-105 transition-transform shrink-0">
+                  <Search size={18} />
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-on-surface">Find Experts</h4>
-                  <p className="text-xs text-on-surface/60 mt-0.5">Browse all categories</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">Find Experts</h4>
+                  <p className="text-[11px] text-on-surface/60 truncate mt-0.5">Browse all categories</p>
                 </div>
-                <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
               </Link>
 
-              <Link to="/experts" className="flex items-center gap-4 p-4 rounded-xl border border-border-color hover:border-blue-200 hover:bg-primary/10/50 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-blue-100 group-hover:scale-110 transition-transform">
-                  <Calendar size={20} />
+              <Link to="/experts" className="flex items-center gap-3 p-3 rounded-xl border border-border-color hover:border-blue-200 hover:bg-primary/10/50 transition-all group">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-blue-100 group-hover:scale-105 transition-transform shrink-0">
+                  <Calendar size={18} />
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-on-surface">Book Appointment</h4>
-                  <p className="text-xs text-on-surface/60 mt-0.5">Schedule a session</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">Book Appointment</h4>
+                  <p className="text-[11px] text-on-surface/60 truncate mt-0.5">Schedule a session</p>
                 </div>
-                <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
               </Link>
 
-              <Link to="/messages" className="flex items-center gap-4 p-4 rounded-xl border border-border-color hover:border-blue-200 hover:bg-primary/10/50 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-blue-100 group-hover:scale-110 transition-transform">
-                  <MessageSquare size={20} />
+              <Link to="/messages" className="flex items-center gap-3 p-3 rounded-xl border border-border-color hover:border-blue-200 hover:bg-primary/10/50 transition-all group">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-blue-100 group-hover:scale-105 transition-transform shrink-0">
+                  <MessageSquare size={18} />
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-on-surface">Send Message</h4>
-                  <p className="text-xs text-on-surface/60 mt-0.5">Chat with your expert</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">Send Message</h4>
+                  <p className="text-[11px] text-on-surface/60 truncate mt-0.5">Chat with your expert</p>
                 </div>
-                <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
               </Link>
             </div>
             
-            <div className="mt-auto pt-6">
-              <Link to="/experts" className="text-sm font-bold text-primary flex items-center gap-1 hover:text-primary">
-                View All <ChevronRight size={16} />
+            <div className="mt-auto pt-4">
+              <Link to="/experts" className="text-xs sm:text-sm font-bold text-primary flex items-center gap-1 hover:text-primary">
+                View All <ChevronRight size={15} />
               </Link>
             </div>
           </div>
         </div>
 
         {/* Saved Experts Dynamic Section */}
-        <div id="saved-experts-section" className="bg-surface rounded-2xl shadow-sm border border-border-color p-6 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
-                <Heart size={20} className="fill-rose-500 text-rose-500" />
+        <div id="saved-experts-section" className="bg-surface rounded-xl shadow-sm border border-border-color p-4 sm:p-5 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+                <Heart size={18} className="fill-rose-500 text-rose-500" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-on-surface">Saved Experts ({savedExperts.length})</h2>
-                <p className="text-xs text-on-surface/60">Your bookmarked professionals for quick consultations</p>
+                <h2 className="text-base sm:text-lg font-bold text-on-surface">Saved Experts ({savedExperts.length})</h2>
+                <p className="text-[11px] sm:text-xs text-on-surface/60">Your bookmarked professionals for quick consultations</p>
               </div>
             </div>
-            <Link to="/experts" className="text-sm font-semibold text-primary flex items-center gap-1 hover:underline">
-              Browse More <ChevronRight size={16} />
+            <Link to="/experts" className="text-xs sm:text-sm font-semibold text-primary flex items-center gap-1 hover:underline">
+              Browse More <ChevronRight size={15} />
             </Link>
           </div>
 

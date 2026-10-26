@@ -200,24 +200,24 @@ function Settings() {
 
   return (
     <UserLayout title="Settings" subtitle="Manage your account settings and preferences">
-      <div className="flex flex-col md:flex-row gap-6 max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-5 max-w-6xl mx-auto">
         
         {/* Sidebar */}
-        <div className="w-full md:w-64 shrink-0">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 bg-slate-50">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <SettingsIcon size={18} /> Settings Menu
+        <div className="w-full md:w-60 shrink-0">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-3.5 border-b border-slate-100 bg-slate-50">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <SettingsIcon size={16} /> Settings Menu
               </h3>
             </div>
-            <div className="p-2 flex flex-col gap-1">
+            <div className="p-1.5 flex flex-col gap-1">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
                 >
-                  <tab.icon size={18} className={activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'} />
+                  <tab.icon size={16} className={activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'} />
                   {tab.label}
                 </button>
               ))}
@@ -228,44 +228,44 @@ function Settings() {
         {/* Content Area */}
         <div className="flex-1">
           {message.text && (
-            <div className={`mb-6 p-4 rounded-xl text-sm font-semibold flex items-center gap-2 ${message.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+            <div className={`mb-4 p-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 ${message.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
               {message.text}
             </div>
           )}
 
           {/* Security Tab */}
           {activeTab === 'security' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
-                  <h3 className="text-xl font-bold text-slate-800">Change Password</h3>
-                  <p className="text-slate-500 text-sm mt-1">Ensure your account is using a long, random password to stay secure.</p>
+            <div className="space-y-4 sm:space-y-5">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-slate-100">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-800">Change Password</h3>
+                  <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Ensure your account is using a long, random password to stay secure.</p>
                 </div>
-                <form onSubmit={handlePasswordSave} className="p-6 space-y-5">
+                <form onSubmit={handlePasswordSave} className="p-4 sm:p-5 space-y-3.5 sm:space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Current Password</label>
-                    <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500" required />
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">Current Password</label>
+                    <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">New Password</label>
-                    <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500" required />
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">New Password</label>
+                    <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Confirm New Password</label>
-                    <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500" required />
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">Confirm New Password</label>
+                    <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
                   </div>
-                  <div className="pt-4 flex justify-end">
-                    <button type="submit" disabled={saving} className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50">
+                  <div className="pt-2 flex justify-end">
+                    <button type="submit" disabled={saving} className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-xl text-xs sm:text-sm transition-all disabled:opacity-50">
                       {saving ? 'Updating...' : 'Update Password'}
                     </button>
                   </div>
                 </form>
               </div>
 
-              <div className="bg-red-50 rounded-2xl border border-red-100 p-6">
-                <h3 className="text-lg font-bold text-red-700 mb-2">Danger Zone</h3>
-                <p className="text-red-600 text-sm mb-4">Once you deactivate your account, there is no going back. Please be certain.</p>
-                <button onClick={handleDeactivate} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-colors">
+              <div className="bg-red-50 rounded-xl border border-red-100 p-4 sm:p-5">
+                <h3 className="text-base font-bold text-red-700 mb-1">Danger Zone</h3>
+                <p className="text-red-600 text-xs sm:text-sm mb-3">Once you deactivate your account, there is no going back. Please be certain.</p>
+                <button onClick={handleDeactivate} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-xl text-xs sm:text-sm transition-colors">
                   Deactivate Account
                 </button>
               </div>
@@ -274,19 +274,19 @@ function Settings() {
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800">Notification Preferences</h3>
-                  <p className="text-slate-500 text-sm mt-1">Manage how you receive alerts and updates.</p>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-800">Notification Preferences</h3>
+                  <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Manage how you receive alerts and updates.</p>
                 </div>
-                <button onClick={handlePreferencesSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50">
+                <button onClick={handlePreferencesSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl transition-all text-xs sm:text-sm disabled:opacity-50">
                   {saving ? 'Saving...' : 'Save Preferences'}
                 </button>
               </div>
-              <div className="p-6">
-                <div className="mb-8">
-                  <h4 className="font-bold text-slate-800 mb-1 text-sm uppercase tracking-wider flex items-center gap-2">
+              <div className="p-4 sm:p-5">
+                <div className="mb-5 sm:mb-6">
+                  <h4 className="font-bold text-slate-800 mb-1 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-blue-600">notifications_active</span> In-App / Push Notifications
                   </h4>
                   <p className="text-xs text-slate-500 mb-4">Control notifications in your header bell icon and live screen popups.</p>

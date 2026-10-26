@@ -327,9 +327,9 @@ function ExpertDiscovery() {
 
   return (
     <UserLayout title="Find an Expert" subtitle="Browse verified professionals ready to help you.">
-      <div className="bg-surface border border-border-color rounded-xl p-4 md:p-6 mb-6 shadow-sm">
+      <div className="bg-surface border border-border-color rounded-xl p-3.5 sm:p-4 mb-4 shadow-sm">
         {/* Dynamic Toolbar */}
-            <div className="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap flex-1">
                 {showSearch && (
                   <form onSubmit={handleSearch} className="relative">
@@ -407,9 +407,9 @@ function ExpertDiscovery() {
               ))}
             </div>
           ) : experts.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-5xl mb-4">🔍</div>
-              <h3 className="text-xl font-bold text-on-surface mb-2">No experts found</h3>
+            <div className="text-center py-12 sm:py-16">
+              <div className="text-4xl mb-3">🔍</div>
+              <h3 className="text-lg font-bold text-on-surface mb-1.5">No experts found</h3>
               <p className="text-on-surface/60 text-sm">No experts matching your filters. Try adjusting your search.</p>
             </div>
           ) : (

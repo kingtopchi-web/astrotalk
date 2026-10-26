@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
 import NotificationDropdown from './NotificationDropdown';
 import LogoutModal from './LogoutModal';
+import { getApiUrl } from '../utils/apiConfig';
 
 function Header() {
   const { auth, logout } = useAuth();
@@ -37,10 +38,15 @@ function Header() {
 
   useEffect(() => {
     // Fetch categories for the navbar dropdown
-    fetch('https://experthub.nextgoodtechnologies.in/api/public/categories')
+    fetch(getApiUrl('/public/categories'))
       .then(res => res.json())
-      .then(data => setCategories(data))
-      .catch(err => console.error(err));
+      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {
+        fetch('https://experthub.nextgoodtechnologies.in/api/public/categories')
+          .then(res => res.json())
+          .then(data => setCategories(Array.isArray(data) ? data : []))
+          .catch(err => console.error(err));
+      });
   }, []);
 
   useEffect(() => {
@@ -96,10 +102,26 @@ function Header() {
       ]
     };
     
-    // Core public links
+    // Consultations Dropdown (available for both guest & logged in users)
+    const consultationsMenu = { 
+      name: 'Consultations', 
+      path: '#',
+      dropdown: [
+        { name: 'Chat with Expert', path: '/experts?mode=chat', icon: 'chat' },
+        { name: 'Audio Call with Expert', path: '/experts?mode=audio', icon: 'call' },
+        { name: 'Video Call with Expert', path: '/experts?mode=video', icon: 'videocam' },
+        { name: 'My Consultations', path: '/bookings', icon: 'history' },
+        { name: 'Upcoming Consultations', path: '/bookings?tab=upcoming', icon: 'event' },
+        { name: 'Ongoing Consultations', path: '/bookings?tab=ongoing', icon: 'timelapse' },
+        { name: 'Completed Consultations', path: '/bookings?tab=completed', icon: 'check_circle' },
+      ]
+    };
+
+    // Core public links (without login)
     const publicLinks = [
       { name: 'Find Experts', path: '/experts' },
       categoriesMenu,
+      consultationsMenu,
       { name: 'Free Services', path: '/free-services' },
       { name: 'Blog / Resources', path: '/blog' },
       { name: 'Contact', path: '/contact' },
@@ -130,20 +152,8 @@ function Header() {
     return [
       { name: 'Find Experts', path: '/experts' },
       categoriesMenu,
+      consultationsMenu,
       { name: 'Free Services', path: '/free-services' },
-      { 
-        name: 'Consultations', 
-        path: '#',
-        dropdown: [
-          { name: 'Chat with Expert', path: '/experts?mode=chat', icon: 'chat' },
-          { name: 'Audio Call with Expert', path: '/experts?mode=audio', icon: 'call' },
-          { name: 'Video Call with Expert', path: '/experts?mode=video', icon: 'videocam' },
-          { name: 'My Consultations', path: '/bookings', icon: 'history' },
-          { name: 'Upcoming Consultations', path: '/bookings?tab=upcoming', icon: 'event' },
-          { name: 'Ongoing Consultations', path: '/bookings?tab=ongoing', icon: 'timelapse' },
-          { name: 'Completed Consultations', path: '/bookings?tab=completed', icon: 'check_circle' },
-        ]
-      },
       { name: 'Blog / Resources', path: '/blog' },
     ];
   };
@@ -152,7 +162,7 @@ function Header() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 glass-panel-dark border-b border-border transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 h-[72px] flex items-center justify-between">
         {/* Logo & Mobile Back to Home */}
         <div className="flex items-center flex-1 gap-2.5">
           {location.pathname !== '/' && (

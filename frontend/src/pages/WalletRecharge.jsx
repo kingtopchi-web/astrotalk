@@ -119,48 +119,48 @@ function WalletRecharge() {
 
   return (
     <UserLayout title="My Wallet" subtitle="Manage your funds and transactions">
-      <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto pb-10">
+      <div className="flex flex-col gap-4 sm:gap-5 w-full max-w-4xl mx-auto pb-6">
         
         {/* Top Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {/* Balance Card */}
-          <div className="bg-surface rounded-2xl p-6 shadow-sm border border-border-color flex flex-col justify-between relative overflow-hidden">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <Wallet size={24} />
+          <div className="bg-surface rounded-xl p-4 sm:p-5 shadow-sm border border-border-color flex flex-col justify-between relative overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Wallet size={20} />
                 </div>
                 <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-on-surface/50 block">Wallet</span>
-                  <span className="text-sm font-bold text-on-surface">Available Balance</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-on-surface/50 block">Wallet</span>
+                  <span className="text-xs sm:text-sm font-bold text-on-surface">Available Balance</span>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 Active
               </span>
             </div>
             <div>
-              <div className="text-4xl sm:text-5xl font-extrabold tracking-tight text-on-surface">₹{balance.toFixed(2)}</div>
-              <p className="text-on-surface/60 mt-2 text-xs font-medium">Can be used for booking consultations</p>
+              <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface">₹{balance.toFixed(2)}</div>
+              <p className="text-on-surface/60 mt-1 text-xs font-medium">Can be used for booking consultations</p>
             </div>
           </div>
 
           {/* Add Money Card */}
-          <div className="bg-surface rounded-2xl p-6 shadow-sm border border-border-color flex flex-col justify-between">
+          <div className="bg-surface rounded-xl p-4 sm:p-5 shadow-sm border border-border-color flex flex-col justify-between">
             <div>
-              <h3 className="text-lg font-bold text-on-surface mb-1">Add Money</h3>
-              <p className="text-sm text-on-surface/60 mb-4">Top up your wallet securely</p>
+              <h3 className="text-base sm:text-lg font-bold text-on-surface mb-0.5">Add Money</h3>
+              <p className="text-xs sm:text-sm text-on-surface/60 mb-3">Top up your wallet securely</p>
               
-              {error && <div className="text-red-500 text-sm mb-3 font-medium bg-red-50 dark:bg-red-950/30 p-2 rounded">{error}</div>}
+              {error && <div className="text-red-500 text-xs sm:text-sm mb-2.5 font-medium bg-red-50 dark:bg-red-950/30 p-2 rounded">{error}</div>}
 
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-3">
                 {quickAmounts.map(amt => (
                   <button 
                     key={amt} 
                     onClick={() => handleAddMoney(amt)}
                     disabled={addingMoney}
-                    className="flex-1 py-2.5 rounded-xl bg-surface-muted hover:bg-surface-light text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 border border-border-color hover:border-primary/40"
+                    className="flex-1 py-1.5 sm:py-2 rounded-lg bg-surface-muted hover:bg-surface-light text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs sm:text-sm disabled:opacity-50 border border-border-color hover:border-primary/40"
                   >
                     +₹{Number(amt).toFixed(2)}
                   </button>
@@ -168,13 +168,13 @@ function WalletRecharge() {
               </div>
 
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/50 font-bold">₹</span>
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface/50 font-bold text-sm">₹</span>
                 <input 
                   type="number"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
                   placeholder="Enter custom amount"
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-border-color bg-surface-muted focus:bg-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-medium text-on-surface"
+                  className="w-full pl-7 pr-3.5 py-2 sm:py-2.5 rounded-lg border border-border-color bg-surface-muted focus:bg-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-medium text-on-surface text-sm"
                   disabled={addingMoney}
                 />
               </div>
@@ -183,30 +183,30 @@ function WalletRecharge() {
             <button 
               onClick={() => handleAddMoney(parseFloat(customAmount))}
               disabled={addingMoney || !customAmount}
-              className="w-full mt-4 bg-primary text-background font-bold py-3 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+              className="w-full mt-3 bg-primary text-background font-bold py-2.5 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm text-sm"
             >
-              <Plus size={18} />
+              <Plus size={16} />
               {addingMoney ? 'Processing...' : 'Proceed to Pay'}
             </button>
           </div>
         </div>
 
         {/* Transaction History */}
-        <div className="bg-surface rounded-2xl p-6 shadow-sm border border-border-color">
-          <div className="flex items-center gap-2 mb-6">
-            <History size={20} className="text-on-surface/80" />
-            <h2 className="text-lg font-bold text-on-surface">Transaction History</h2>
+        <div className="bg-surface rounded-xl p-4 sm:p-5 shadow-sm border border-border-color">
+          <div className="flex items-center gap-2 mb-4">
+            <History size={18} className="text-on-surface/80" />
+            <h2 className="text-base sm:text-lg font-bold text-on-surface">Transaction History</h2>
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-on-surface/60">Loading transactions...</div>
+            <div className="text-center py-6 text-on-surface/60 text-sm">Loading transactions...</div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-12 text-on-surface/50 flex flex-col items-center">
-              <RefreshCcw size={32} className="mb-3 opacity-20" />
-              <p>No transactions found</p>
+            <div className="text-center py-8 text-on-surface/50 flex flex-col items-center">
+              <RefreshCcw size={28} className="mb-2 opacity-20" />
+              <p className="text-xs sm:text-sm">No transactions found</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2.5 sm:space-y-3">
               {transactions.map(tx => {
                 const isCredit = tx.type === 'CREDIT' || tx.type === 'REFUND';
                 const Icon = isCredit ? ArrowUpRight : ArrowDownRight;
@@ -214,16 +214,16 @@ function WalletRecharge() {
                 const bgColor = tx.status === 'FAILED' ? 'bg-red-50' : isCredit ? 'bg-emerald-50' : 'bg-rose-50';
 
                 return (
-                  <div key={tx._id} className="flex items-center justify-between p-4 rounded-xl border border-border-color hover:bg-surface-light transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${bgColor}`}>
-                        <Icon size={20} className={iconColor} />
+                  <div key={tx._id} className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl border border-border-color hover:bg-surface-light transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 ${bgColor}`}>
+                        <Icon size={16} className={iconColor} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-on-surface">
+                        <h4 className="text-xs sm:text-sm font-bold text-on-surface">
                           {tx.type === 'CREDIT' ? 'Wallet Top-up' : tx.type === 'DEBIT' ? 'Consultation Booking' : 'Refund'}
                         </h4>
-                        <p className="text-xs text-on-surface/60 mt-0.5">
+                        <p className="text-[11px] text-on-surface/60 mt-0.5">
                           {new Date(tx.createdAt).toLocaleString()} 
                           {tx.status === 'FAILED' && <span className="text-red-500 ml-2 font-semibold">Failed</span>}
                           {tx.status === 'PENDING' && <span className="text-orange-500 ml-2 font-semibold">Pending</span>}
@@ -231,11 +231,11 @@ function WalletRecharge() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-base font-extrabold ${iconColor}`}>
+                      <div className={`text-sm sm:text-base font-extrabold ${iconColor}`}>
                         {isCredit ? '+' : '-'}₹{Number(tx.amount).toFixed(2)}
                       </div>
                       {tx.status === 'SUCCESS' && (
-                        <div className="text-xs text-on-surface/50 font-medium mt-0.5">
+                        <div className="text-[10px] sm:text-xs text-on-surface/50 font-medium mt-0.5">
                           Bal: ₹{Number(tx.balanceAfter).toFixed(2)}
                         </div>
                       )}

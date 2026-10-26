@@ -180,10 +180,10 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full max-w-full min-w-0 overflow-x-hidden">
+      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full max-w-full min-w-0">
 
         {/* Header - Desktop & Mobile */}
-        <header className="bg-surface border-b border-border-color p-4 flex justify-between items-center sticky top-0 z-10">
+        <header className="bg-surface border-b border-border-color px-4 sm:px-6 py-3 flex justify-between items-center sticky top-0 z-10 backdrop-blur-md bg-surface/95">
           <div className="flex items-center gap-2.5 md:hidden">
             <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1">
               <Menu size={22} />
@@ -318,9 +318,9 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         )}
 
         {/* Page Content passed through Outlet */}
-        <div className="flex-1 p-2.5 sm:p-4 md:p-6 bg-surface-light overflow-x-hidden min-w-0 max-w-full">
+        <div className="flex-1 p-3.5 sm:p-5 md:p-6 bg-surface-light min-w-0 max-w-full">
           {title && (
-            <div className={`mb-2.5 sm:mb-4 md:mb-6 max-w-6xl mx-auto ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
+            <div className={`mb-3 sm:mb-4 md:mb-5 max-w-7xl mx-auto ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>
               {subtitle && <p className="text-xs sm:text-sm text-on-surface/60 mt-0.5 md:mt-1">{subtitle}</p>}
             </div>

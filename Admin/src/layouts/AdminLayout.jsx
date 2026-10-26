@@ -531,7 +531,7 @@ function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-5 lg:p-7">
+        <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
           <Outlet />
         </div>
       </main>

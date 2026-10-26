@@ -9,6 +9,7 @@ const {
   getPublicSettings,
   globalSearch
 } = require('../controllers/userController');
+const { getTopReviews } = require('../controllers/reviewController');
 
 // Public Global Search
 router.get('/search', globalSearch);
@@ -20,6 +21,9 @@ router.get('/experts/:id', getPublicExpertById);
 // Public Stats & Settings
 router.get('/stats', getPublicStats);
 router.get('/settings', getPublicSettings);
+
+// Public Testimonials (Dynamic Top-Rated Reviews)
+router.get('/testimonials', getTopReviews);
 
 // Categories (public, used for filtering)
 router.get('/categories', getPublicCategories);

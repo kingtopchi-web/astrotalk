@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
-import { Search, Star, ShieldCheck, ChevronRight, Video, Phone, MessageCircle, Heart, Clock, X } from 'lucide-react';
+import { Search, Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X } from 'lucide-react';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 
 function Home() {
@@ -22,6 +22,127 @@ function Home() {
   const [startingFreeChat, setStartingFreeChat] = useState(false);
   const [freeChatNotice, setFreeChatNotice] = useState(null);
   const navigate = useNavigate();
+  const expertScrollRef = useRef(null);
+  const categoryScrollRef = useRef(null);
+
+  const scrollCategory = (direction) => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const defaultTestimonials = [
+    {
+      _id: 'seed-1',
+      rating: 5,
+      feedback: "This app helped me to get a job in my dream company. I was stressed about not getting a career opportunity after my graduation. One prediction from an astrologer gave me a ray of hope and within a few months, I had a job offer in hand. Thank you so much AstroTalk for helping me out.",
+      userName: "Amar Thakur",
+      userLocation: "Pune · India",
+      userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-2',
+      rating: 5,
+      feedback: "Dr. Ananya's preventive care consultation was life-changing. She patiently listened to my health concerns and gave practical lifestyle changes that improved my energy levels within weeks.",
+      userName: "Pooja Sharma",
+      userLocation: "Bengaluru · India",
+      userAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-3',
+      rating: 5,
+      feedback: "Arjun Mehta helped us architect our entire cloud infrastructure. His technical depth and real-world experience saved our startup months of trial and error.",
+      userName: "Vikram Malhotra",
+      userLocation: "Delhi · India",
+      userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-4',
+      rating: 5,
+      feedback: "The legal consultation regarding our angel round term sheet was crisp and highly strategic. Adv. Rajesh spotted clauses that protected our founder equity.",
+      userName: "Neha Bansal",
+      userLocation: "Mumbai · India",
+      userAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-5',
+      rating: 5,
+      feedback: "Got instant response in under 12 seconds for my urgent consultation. The video call was crystal clear and the expert gave actionable advice on the spot.",
+      userName: "Rahul Verma",
+      userLocation: "Hyderabad · India",
+      userAvatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-6',
+      rating: 5,
+      feedback: "Sneha Kapoor's pitch deck strategy transformed our investor presentation. We secured our pre-seed funding within 3 weeks of implementing her feedback.",
+      userName: "Ankit Jain",
+      userLocation: "Jaipur · India",
+      userAvatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-7',
+      rating: 5,
+      feedback: "The cognitive behavioral session helped me manage work anxiety effectively. Truly grateful for the empathy and professional conduct.",
+      userName: "Divya Nair",
+      userLocation: "Kochi · India",
+      userAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-8',
+      rating: 5,
+      feedback: "Honest and transparent consultation. The expert didn't try to upsell anything, just gave honest valuation insights for our business.",
+      userName: "Suresh Patel",
+      userLocation: "Ahmedabad · India",
+      userAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      _id: 'seed-9',
+      rating: 5,
+      feedback: "Best consultation marketplace in India. Seamless recharge, instant connection, and verified experts who actually know their domains.",
+      userName: "Meera Krishnan",
+      userLocation: "Chennai · India",
+      userAvatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80"
+    }
+  ];
+
+  const [testimonials, setTestimonials] = useState(defaultTestimonials);
+  const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
+  const [testimonialStats, setTestimonialStats] = useState({ averageRating: 4.7, totalReviews: 1900000 });
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const res = await axios.get(getApiUrl('/public/testimonials'));
+        if (res.data && res.data.success && res.data.testimonials?.length) {
+          setTestimonials(res.data.testimonials);
+          if (res.data.stats) setTestimonialStats(res.data.stats);
+        }
+      } catch (err) {
+        // Fallback already in state
+      }
+    };
+    fetchTestimonials();
+  }, []);
+
+  const handlePrevTestimonial = () => {
+    setCurrentTestimonialIndex((prev) => (prev > 0 ? prev - 1 : testimonials.length - 1));
+  };
+
+  const handleNextTestimonial = () => {
+    setCurrentTestimonialIndex((prev) => (prev < testimonials.length - 1 ? prev + 1 : 0));
+  };
+
+  const scrollExperts = (direction) => {
+    if (expertScrollRef.current) {
+      const scrollAmount = 300;
+      expertScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Load free chat settings on mount
   useEffect(() => {
@@ -259,74 +380,96 @@ function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-on-background pb-20 md:pb-0 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-background text-on-background pb-20 md:pb-0">
       <Header />
 
-      <main className="flex-1 w-full pt-16 md:pt-20">
+      <main className="flex-1 w-full pt-[72px]">
 
         {/* HERO SECTION - Carousel Concept */}
-        <section className="relative overflow-hidden bg-background text-on-background pt-10 pb-6 px-4 sm:px-6 lg:px-8">
-          <div className="relative max-w-7xl mx-auto z-10">
-            <div className="flex flex-col md:flex-row items-center gap-8 bg-surface-muted rounded-[2rem] p-8 md:p-12 border border-border">
+        <section className="relative overflow-hidden bg-background text-on-background pt-4 sm:pt-6 pb-4 sm:pb-6 px-3 sm:px-5 lg:px-6">
+          <div className="relative max-w-screen-2xl mx-auto z-10">
+            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 py-3 sm:py-5 md:py-6 px-1 sm:px-2">
               {/* Left Content */}
-              <div className="flex-1 space-y-6 text-center md:text-left">
-                <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-on-background">
+              <div className="flex-1 space-y-4 text-center md:text-left">
+                <h1 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.15] text-on-background">
                   India's most accurate <br />
                   <span className="text-primary">
                     expert platform
                   </span>
                 </h1>
 
-                <div className="space-y-2 text-sm text-on-surface-variant font-medium pt-2">
+                <div className="space-y-1.5 text-xs sm:text-sm text-on-surface-variant font-medium pt-1">
                   <div className="flex items-center gap-2 justify-center md:justify-start">
-                    <div className="w-5 h-5 rounded-full bg-primary text-background flex items-center justify-center text-xs"><span className="material-symbols-outlined text-[14px]">check</span></div>
+                    <div className="w-4 h-4 rounded-full bg-primary text-background flex items-center justify-center text-[11px] shrink-0"><span className="material-symbols-outlined text-[12px]">check</span></div>
                     <span>Get Free initial consultation</span>
                   </div>
                   <div className="flex items-center gap-2 justify-center md:justify-start">
-                    <div className="w-5 h-5 rounded-full bg-primary text-background flex items-center justify-center text-xs"><span className="material-symbols-outlined text-[14px]">check</span></div>
+                    <div className="w-4 h-4 rounded-full bg-primary text-background flex items-center justify-center text-[11px] shrink-0"><span className="material-symbols-outlined text-[12px]">check</span></div>
                     <span>Average reply under 12 seconds</span>
                   </div>
                 </div>
 
-                <div className="pt-6">
+                <div className="pt-3 sm:pt-4">
                   <button 
                     onClick={handleStartFreeChatClick}
-                    className="px-8 py-3.5 bg-primary text-background rounded-full font-heading font-bold text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-lg hover:shadow-primary/20 active:scale-95"
+                    className="px-7 py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
                   >
-                    Start Free Chat <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    Start Free Chat <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
                 </div>
 
                 {/* Statistics */}
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-8 pt-10">
+                <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 pt-5 sm:pt-7">
                   <div className="text-left">
-                    <p className="text-2xl font-bold text-on-background">{formatStat(platformStats.usersCount)}</p>
-                    <p className="text-xs text-on-surface-variant">Users guided</p>
+                    <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
+                      {formatStat(platformStats.usersCount)}
+                    </p>
+                    <p className="text-xs sm:text-[13px] text-on-surface-variant font-normal mt-1 whitespace-nowrap">
+                      Users guided
+                    </p>
                   </div>
+
+                  <div className="h-8 sm:h-10 w-px bg-border/80 shrink-0"></div>
+
                   <div className="text-left">
-                    <p className="text-2xl font-bold text-on-background">{formatStat(platformStats.verifiedExpertsCount)}</p>
-                    <p className="text-xs text-on-surface-variant">Verified experts</p>
+                    <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
+                      {formatStat(platformStats.verifiedExpertsCount)}
+                    </p>
+                    <p className="text-xs sm:text-[13px] text-on-surface-variant font-normal mt-1 whitespace-nowrap">
+                      Verified experts
+                    </p>
+                  </div>
+
+                  <div className="h-8 sm:h-10 w-px bg-border/80 shrink-0"></div>
+
+                  <div className="text-left">
+                    <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
+                      13+
+                    </p>
+                    <p className="text-xs sm:text-[13px] text-on-surface-variant font-normal mt-1 whitespace-nowrap">
+                      Languages
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Right Image area */}
-              <div className="flex-1 relative w-full flex justify-center mt-8 md:mt-0">
-                <div className="relative w-full max-w-[420px] h-[280px] flex items-center justify-center">
+              <div className="flex-1 relative w-full flex justify-center mt-6 md:mt-0">
+                <div className="relative w-full max-w-[500px] lg:max-w-[620px] h-[320px] sm:h-[380px] md:h-[430px] flex items-center justify-center">
                   {heroImages.map((img, idx) => {
                     let positionClass = '';
 
                     if (idx === currentHeroImgIndex) {
-                      positionClass = 'w-48 h-64 z-20 translate-x-0 border-4 border-primary shadow-2xl opacity-100 scale-100';
+                      positionClass = 'w-48 h-66 sm:w-60 sm:h-82 md:w-68 md:h-94 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_14px_40px_rgba(247,200,60,0.35)] opacity-100 scale-100';
                     } else if (idx === (currentHeroImgIndex + 1) % heroImages.length) {
-                      positionClass = 'w-32 h-48 z-10 translate-x-28 border-2 border-border shadow-xl opacity-70 scale-95';
+                      positionClass = 'w-38 h-52 sm:w-48 sm:h-68 md:w-56 md:h-80 z-10 translate-x-26 sm:translate-x-36 md:translate-x-44 border-2 border-primary/35 shadow-xl opacity-90 scale-95';
                     } else {
-                      positionClass = 'w-32 h-48 z-10 -translate-x-28 border-2 border-border shadow-xl opacity-70 scale-95';
+                      positionClass = 'w-38 h-52 sm:w-48 sm:h-68 md:w-56 md:h-80 z-10 -translate-x-26 sm:-translate-x-36 md:-translate-x-44 border-2 border-primary/35 shadow-xl opacity-90 scale-95';
                     }
 
                     return (
-                      <div key={idx} className={`absolute rounded-[4rem] overflow-hidden transition-all duration-700 ease-in-out ${positionClass}`}>
-                        <img src={img} alt={`Expert ${idx}`} className="w-full h-full object-cover" />
+                      <div key={idx} className={`absolute rounded-[50%] overflow-hidden transition-all duration-700 ease-in-out ${positionClass}`}>
+                        <img src={img} alt={`Expert ${idx}`} className="w-full h-full object-cover rounded-[50%]" />
                       </div>
                     );
                   })}
@@ -338,37 +481,69 @@ function Home() {
 
         {/* POPULAR EXPERTS SECTION (RECOMMENDED EXPERTS) */}
         {user?.role !== 'EXPERT' && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="flex items-center justify-between mb-8">
+          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 py-6 sm:py-8">
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="font-heading font-bold text-2xl md:text-3xl text-on-background">Recommended Experts</h2>
-                <p className="text-sm text-on-surface-variant mt-1">Top-rated professionals ready to help you.</p>
+                <h2 className="font-heading font-bold text-xl sm:text-2xl md:text-3xl text-on-background">Recommended Experts</h2>
+                <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Top-rated professionals ready to help you.</p>
               </div>
-              <button onClick={() => navigate('/experts')} className="hidden md:flex px-5 py-2 bg-primary/20 text-primary rounded-full font-semibold text-sm hover:bg-primary hover:text-background transition-colors">
-                See All Experts
-              </button>
+              <div className="flex items-center gap-2">
+                {experts.length > 2 && (
+                  <div className="flex items-center gap-1.5 mr-1 sm:mr-2">
+                    <button
+                      type="button"
+                      onClick={() => scrollExperts('left')}
+                      className="w-8 h-8 rounded-full bg-surface-muted hover:bg-primary/20 text-on-surface border border-border flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Scroll left"
+                      title="Scroll left"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollExperts('right')}
+                      className="w-8 h-8 rounded-full bg-surface-muted hover:bg-primary/20 text-on-surface border border-border flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Scroll right"
+                      title="Scroll right"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                )}
+                <button onClick={() => navigate('/experts')} className="hidden md:flex px-4 py-1.5 bg-primary/15 text-primary rounded-full font-semibold text-xs sm:text-sm hover:bg-primary hover:text-background transition-colors">
+                  See All Experts
+                </button>
+              </div>
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex items-stretch gap-4 sm:gap-5 overflow-x-hidden pb-4">
                 {[1, 2, 3, 4].map(n => (
-                  <div key={n} className="bg-surface-muted rounded-3xl p-6 border border-border shadow-sm animate-pulse">
-                    <div className="w-24 h-24 bg-surface-card rounded-full mx-auto mb-4"></div>
+                  <div key={n} className="w-[260px] sm:w-[280px] shrink-0 bg-surface-muted rounded-2xl p-5 border border-border shadow-xs animate-pulse">
+                    <div className="w-20 h-20 bg-surface-card rounded-full mx-auto mb-3"></div>
                     <div className="h-4 bg-surface-card rounded w-2/3 mx-auto mb-2"></div>
-                    <div className="h-3 bg-surface-card rounded w-1/2 mx-auto mb-6"></div>
-                    <div className="h-10 bg-surface-card rounded-xl w-full"></div>
+                    <div className="h-3 bg-surface-card rounded w-1/2 mx-auto mb-4"></div>
+                    <div className="h-9 bg-surface-card rounded-xl w-full"></div>
                   </div>
                 ))}
               </div>
             ) : experts.length === 0 ? (
-              <div className="bg-surface-muted border border-border shadow-sm rounded-3xl p-12 text-center text-on-surface-variant flex flex-col items-center">
-                <span className="material-symbols-outlined text-4xl mb-3 opacity-50">search_off</span>
-                <p>No experts available at the moment. Please check back later.</p>
+              <div className="bg-surface-muted border border-border shadow-xs rounded-2xl p-8 sm:p-10 text-center text-on-surface-variant flex flex-col items-center">
+                <span className="material-symbols-outlined text-4xl mb-2 opacity-50">search_off</span>
+                <p className="text-sm">No experts available at the moment. Please check back later.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {experts.slice(0, 4).map((expert) => (
-                  <div key={expert._id} onClick={() => navigate(`/expert/${expert._id}`)} className="bg-surface-muted rounded-3xl border border-border shadow-sm hover:border-primary/50 transition-all cursor-pointer group flex flex-col overflow-hidden relative">
+              <div 
+                ref={expertScrollRef}
+                className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0"
+                style={{ scrollbarWidth: 'thin' }}
+              >
+                {experts.map((expert) => (
+                  <div 
+                    key={expert._id} 
+                    onClick={() => navigate(`/expert/${expert._id}`)} 
+                    className="w-[260px] sm:w-[280px] shrink-0 snap-start bg-surface-muted rounded-2xl border border-border shadow-xs hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group flex flex-col overflow-hidden relative"
+                  >
 
                     {/* Heart Save Button */}
                     <button
@@ -376,14 +551,14 @@ function Home() {
                       onClick={(e) => handleToggleSave(expert._id, e)}
                       aria-label="Save expert"
                       title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
-                      className={`absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 border ${
+                      className={`absolute top-3.5 left-3.5 w-7 h-7 rounded-full flex items-center justify-center transition-all z-10 border ${
                         savedExpertIds.has(expert._id)
-                          ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
+                          ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-xs'
                           : 'bg-background/90 backdrop-blur border-border text-on-surface/50 hover:text-rose-500 hover:bg-rose-50'
                       }`}
                     >
                       <Heart
-                        size={16}
+                        size={14}
                         className={`transition-colors ${
                           savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
                         }`}
@@ -391,41 +566,45 @@ function Home() {
                     </button>
 
                     {/* Status Badge */}
-                    <div className="absolute top-4 right-4 bg-background/90 backdrop-blur px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm z-10 border border-border">
-                      <div className="w-2 h-2 rounded-full bg-success"></div>
-                      <span className="text-[10px] font-bold text-on-background uppercase tracking-wider">Online</span>
+                    <div className="absolute top-3.5 right-3.5 bg-background/90 backdrop-blur px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 border border-border">
+                      <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
+                      <span className="text-[9px] font-bold text-on-background uppercase tracking-wider">Online</span>
                     </div>
 
-                    <div className="p-6 flex flex-col items-center text-center relative">
-                      <div className="relative">
+                    <div className="p-5 flex flex-col items-center text-center relative flex-1">
+                      <div className="relative mt-1">
                         <img
-                          className="w-24 h-24 rounded-full object-cover border-2 border-primary shadow-md relative z-10"
+                          className="w-20 h-20 rounded-full object-cover border-2 border-primary shadow-sm relative z-10"
                           alt={expert.name}
-                          src={expert.profileImage || `https://ui-avatars.com/api/?name=${expert.name}&background=FFD700&color=000&font-size=0.33&bold=true`}
+                          src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`;
+                          }}
                         />
                         {expert.isVerified && (
-                          <div className="absolute bottom-1 right-1 bg-background rounded-full p-0.5 z-20 shadow-sm text-primary">
-                            <ShieldCheck size={18} className="fill-primary text-background" />
+                          <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 z-20 shadow-xs text-primary">
+                            <ShieldCheck size={16} className="fill-primary text-background" />
                           </div>
                         )}
                       </div>
 
-                      <h3 className="font-heading font-bold text-lg text-on-background mt-4 group-hover:text-primary transition-colors">
+                      <h3 className="font-heading font-bold text-base text-on-background mt-3 group-hover:text-primary transition-colors truncate max-w-full">
                         {expert.name}
                       </h3>
 
-                      <p className="font-body text-xs font-medium text-primary mt-1 mb-1">
+                      <p className="font-body text-xs font-medium text-primary mt-0.5 mb-1 truncate max-w-full">
                         {expert.category?.name || expert.specialty || 'Professional Consultant'}
                       </p>
 
                       {expert.experience && (
-                        <p className="text-[11px] text-on-surface-variant mb-3">{expert.experience} Years Exp.</p>
+                        <p className="text-[11px] text-on-surface-variant mb-2">{expert.experience} Years Exp.</p>
                       )}
 
-                      <div className="flex items-center justify-center gap-2 text-xs mb-3 w-full">
-                        <div className="flex items-center gap-1 bg-warning/10 text-warning px-2.5 py-1 rounded-lg">
-                          <Star size={12} className="fill-warning text-warning" />
-                          <span className="font-bold">{expert.rating || '4.9'}</span>
+                      <div className="flex items-center justify-center gap-1.5 text-xs mb-3 w-full">
+                        <div className="flex items-center gap-1 bg-warning/10 text-warning px-2 py-0.5 rounded-md">
+                          <Star size={11} className="fill-warning text-warning" />
+                          <span className="font-bold text-xs">{expert.rating || '4.9'}</span>
                         </div>
                         <span className="text-on-surface-variant text-[11px]">
                           ({expert.reviewsCount || 0} reviews)
@@ -433,32 +612,32 @@ function Home() {
                       </div>
 
                       {/* Dynamic Consultation Rates */}
-                      <div className="grid grid-cols-3 gap-1.5 w-full mb-5 py-2 px-1.5 bg-surface-card rounded-xl border border-border/70 text-center">
+                      <div className="grid grid-cols-3 gap-1 w-full mb-4 py-1.5 px-1 bg-surface-card rounded-xl border border-border/70 text-center">
                         <div className="flex flex-col items-center">
-                          <span className="text-[10px] text-on-surface-variant flex items-center gap-0.5">
-                            <MessageCircle size={10} className="text-primary" /> Chat
+                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
+                            <MessageCircle size={9} className="text-primary" /> Chat
                           </span>
                           <span className="text-xs font-bold text-on-background mt-0.5">
                             ₹{expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10)}
-                            <span className="text-[9px] font-normal text-on-surface-variant">/m</span>
+                            <span className="text-[8px] font-normal text-on-surface-variant">/m</span>
                           </span>
                         </div>
                         <div className="flex flex-col items-center border-x border-border/60">
-                          <span className="text-[10px] text-on-surface-variant flex items-center gap-0.5">
-                            <Phone size={10} className="text-success" /> Audio
+                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
+                            <Phone size={9} className="text-success" /> Audio
                           </span>
                           <span className="text-xs font-bold text-on-background mt-0.5">
                             ₹{expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 15)}
-                            <span className="text-[9px] font-normal text-on-surface-variant">/m</span>
+                            <span className="text-[8px] font-normal text-on-surface-variant">/m</span>
                           </span>
                         </div>
                         <div className="flex flex-col items-center">
-                          <span className="text-[10px] text-on-surface-variant flex items-center gap-0.5">
-                            <Video size={10} className="text-warning" /> Video
+                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
+                            <Video size={9} className="text-warning" /> Video
                           </span>
                           <span className="text-xs font-bold text-on-background mt-0.5">
                             ₹{expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20)}
-                            <span className="text-[9px] font-normal text-on-surface-variant">/m</span>
+                            <span className="text-[8px] font-normal text-on-surface-variant">/m</span>
                           </span>
                         </div>
                       </div>
@@ -471,9 +650,9 @@ function Home() {
                             e.stopPropagation();
                             navigate(`/expert/${expert._id}?action=chat`);
                           }}
-                          className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors"
+                          className="flex items-center justify-center gap-1 py-2 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors"
                         >
-                          <MessageCircle size={14} /> Chat
+                          <MessageCircle size={13} /> Chat
                         </button>
                         <button
                           type="button"
@@ -481,9 +660,9 @@ function Home() {
                             e.stopPropagation();
                             navigate(`/expert/${expert._id}?action=audio`);
                           }}
-                          className="flex items-center justify-center gap-1.5 py-2.5 bg-success/20 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors"
+                          className="flex items-center justify-center gap-1 py-2 bg-success/20 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors"
                         >
-                          <Phone size={14} /> Call
+                          <Phone size={13} /> Call
                         </button>
                       </div>
                     </div>
@@ -492,8 +671,8 @@ function Home() {
               </div>
             )}
 
-            <div className="mt-8 text-center md:hidden">
-              <button onClick={() => navigate('/experts')} className="px-6 py-2.5 bg-background border border-border text-on-background rounded-full font-semibold text-sm transition-colors w-full">
+            <div className="mt-6 text-center md:hidden">
+              <button onClick={() => navigate('/experts')} className="px-5 py-2 bg-background border border-border text-on-background rounded-full font-semibold text-xs sm:text-sm transition-colors w-full">
                 View All Experts
               </button>
             </div>
@@ -502,97 +681,97 @@ function Home() {
 
         {/* QUICK ACTION BLOCKS / EXPERT WORKSPACE */}
         {user?.role === 'EXPERT' ? (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
-            <h2 className="font-heading font-bold text-xl md:text-2xl text-on-background mb-4">
+          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 py-5 sm:py-6 relative z-20">
+            <h2 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-on-background mb-3">
               Expert Workspace
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div 
                 onClick={() => navigate('/expert/consultations')} 
-                className="bg-surface-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
               >
-                <span className="material-symbols-outlined text-amber-500 text-[26px] mb-3 block group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
                   inbox
                 </span>
-                <h3 className="font-heading font-bold text-on-background text-base">New Requests</h3>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">View and respond to consultation requests.</p>
+                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">New Requests</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">View and respond to consultation requests.</p>
               </div>
 
               <div 
                 onClick={() => navigate('/expert/schedule')} 
-                className="bg-surface-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
               >
-                <span className="material-symbols-outlined text-amber-500 text-[26px] mb-3 block group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
                   calendar_month
                 </span>
-                <h3 className="font-heading font-bold text-on-background text-base">My Schedule</h3>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">Manage upcoming sessions.</p>
+                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">My Schedule</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">Manage upcoming sessions.</p>
               </div>
 
               <div 
                 onClick={() => navigate('/expert/messages')} 
-                className="bg-surface-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
               >
-                <span className="material-symbols-outlined text-amber-500 text-[26px] mb-3 block group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
                   forum
                 </span>
-                <h3 className="font-heading font-bold text-on-background text-base">Messages & Calls</h3>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">Open active chats and calls.</p>
+                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">Messages & Calls</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">Open active chats and calls.</p>
               </div>
 
               <div 
                 onClick={() => navigate('/expert/earnings')} 
-                className="bg-surface-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
               >
-                <span className="material-symbols-outlined text-amber-500 text-[26px] mb-3 block group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
                   account_balance_wallet
                 </span>
-                <h3 className="font-heading font-bold text-on-background text-base">My Earnings</h3>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">View earnings and payout status.</p>
+                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">My Earnings</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">View earnings and payout status.</p>
               </div>
             </div>
           </section>
         ) : (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-2 sm:pt-3 pb-1.5 sm:pb-2 relative z-20">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
 
-              <div onClick={() => navigate('/experts?mode=chat')} className="bg-surface-muted rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-36">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
+              <div onClick={() => navigate('/experts?mode=chat')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
                 </div>
                 <div>
-                  <h3 className="font-heading font-bold text-on-background text-sm md:text-base">Chat with Expert</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 hidden md:block">Instant text consultation</p>
+                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Chat with Expert</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Instant text consultation</p>
                 </div>
               </div>
 
-              <div onClick={() => navigate('/experts?mode=audio')} className="bg-surface-muted rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-36">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
+              <div onClick={() => navigate('/experts?mode=audio')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
                 </div>
                 <div>
-                  <h3 className="font-heading font-bold text-on-background text-sm md:text-base">Call Expert</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 hidden md:block">One-on-one voice call</p>
+                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Call Expert</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">One-on-one voice call</p>
                 </div>
               </div>
 
-              <div onClick={() => navigate('/blog')} className="bg-surface-muted rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-36">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>article</span>
+              <div onClick={() => navigate('/blog')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>article</span>
                 </div>
                 <div>
-                  <h3 className="font-heading font-bold text-on-background text-sm md:text-base">Daily Articles</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 hidden md:block">Your personalized reading</p>
+                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Daily Articles</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Your personalized reading</p>
                 </div>
               </div>
 
-              <div onClick={() => navigate('/free-services')} className="bg-surface-muted rounded-2xl p-6 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-36">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>calculate</span>
+              <div onClick={() => navigate('/free-services')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>calculate</span>
                 </div>
                 <div>
-                  <h3 className="font-heading font-bold text-on-background text-sm md:text-base">Get Free Report</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 hidden md:block">Detailed issue analysis</p>
+                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Get Free Report</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Detailed issue analysis</p>
                 </div>
               </div>
 
@@ -602,66 +781,76 @@ function Home() {
 
         {/* OUR SERVICES */}
         {user?.role !== 'EXPERT' && (
-          <section className="bg-background py-12 mt-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="font-heading font-extrabold text-4xl text-on-background mb-8 flex gap-2">
+          <section className="bg-background pt-1 sm:pt-2 pb-1.5 sm:pb-2">
+            <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
+              <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-on-background mb-3 sm:mb-4 flex items-center gap-2">
                 Our <span className="text-secondary-dark">Services</span>
               </h2>
 
-              <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
+              <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-3 sm:gap-3.5 pb-1.5 snap-x hide-scrollbar">
 
-                <div onClick={() => navigate('/free-services')} className="min-w-[200px] md:min-w-[240px] bg-surface-card rounded-2xl p-5 shadow-sm snap-start cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-3 border border-secondary/20">
-                    <span className="material-symbols-outlined text-[20px]">assignment</span>
+                <div onClick={() => navigate('/free-services')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                  <div>
+                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                      <span className="material-symbols-outlined text-[18px]">assignment</span>
+                    </div>
+                    <h3 className="font-bold text-on-background text-sm">Free Audit</h3>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">Detailed project audit in 60 sec</p>
                   </div>
-                  <h3 className="font-bold text-on-background">Free Audit</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 mb-4">Detailed project audit in 60 sec</p>
-                  <div className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </div>
                 </div>
 
-                <div onClick={() => navigate('/blog')} className="min-w-[200px] md:min-w-[240px] bg-surface-card rounded-2xl p-5 shadow-sm snap-start cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-3 border border-secondary/20">
-                    <span className="material-symbols-outlined text-[20px]">lightbulb</span>
+                <div onClick={() => navigate('/blog')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                  <div>
+                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                      <span className="material-symbols-outlined text-[18px]">lightbulb</span>
+                    </div>
+                    <h3 className="font-bold text-on-background text-sm">Daily Tips</h3>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">For all 12 industries</p>
                   </div>
-                  <h3 className="font-bold text-on-background">Daily Tips</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 mb-4">For all 12 industries</p>
-                  <div className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                  </div>
-                </div>
-
-                <div onClick={() => navigate('/experts')} className="min-w-[200px] md:min-w-[240px] bg-surface-card rounded-2xl p-5 shadow-sm snap-start cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-3 border border-secondary/20">
-                    <span className="material-symbols-outlined text-[20px]">analytics</span>
-                  </div>
-                  <h3 className="font-bold text-on-background">Career Reading</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 mb-4">3-card, job, career, finance</p>
-                  <div className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </div>
                 </div>
 
-                <div onClick={() => navigate('/experts')} className="min-w-[200px] md:min-w-[240px] bg-surface-card rounded-2xl p-5 shadow-sm snap-start cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-3 border border-secondary/20">
-                    <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
+                <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                  <div>
+                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                      <span className="material-symbols-outlined text-[18px]">analytics</span>
+                    </div>
+                    <h3 className="font-bold text-on-background text-sm">Career Reading</h3>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">3-card, job, career, finance</p>
                   </div>
-                  <h3 className="font-bold text-on-background">Book a Mentor</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 mb-4">Live session, verified guides</p>
-                  <div className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </div>
                 </div>
 
-                <div onClick={() => navigate('/experts')} className="min-w-[200px] md:min-w-[240px] bg-surface-card rounded-2xl p-5 shadow-sm snap-start cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-3 border border-secondary/20">
-                    <span className="material-symbols-outlined text-[20px]">corporate_fare</span>
+                <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                  <div>
+                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                      <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
+                    </div>
+                    <h3 className="font-bold text-on-background text-sm">Book a Mentor</h3>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">Live session, verified guides</p>
                   </div>
-                  <h3 className="font-bold text-on-background">Legal Consult</h3>
-                  <p className="text-xs text-on-surface-variant mt-1 mb-4">For startup, business, tax</p>
-                  <div className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                  </div>
+                </div>
+
+                <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                  <div>
+                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                      <span className="material-symbols-outlined text-[18px]">corporate_fare</span>
+                    </div>
+                    <h3 className="font-bold text-on-background text-sm">Legal Consult</h3>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">For startup, business, tax</p>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </div>
                 </div>
 
@@ -672,157 +861,380 @@ function Home() {
 
         {/* CATEGORY EXPLORATION / EXPERT QUICK ACTIONS */}
         {user?.role === 'EXPERT' ? (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 -mt-8 relative z-20">
+          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6 relative z-20">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={() => navigate('/expert/dashboard')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center gap-2.5 transition-all group cursor-pointer shadow-sm text-center"
+                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
               >
-                <span className="material-symbols-outlined text-[30px] text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
                   grid_view
                 </span>
-                <span className="text-sm font-semibold text-on-background">Dashboard</span>
+                <span className="text-xs sm:text-sm font-semibold text-on-background">Dashboard</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate('/expert/consultations')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center gap-2.5 transition-all group cursor-pointer shadow-sm text-center"
+                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
               >
-                <span className="material-symbols-outlined text-[30px] text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
                   event_available
                 </span>
-                <span className="text-sm font-semibold text-on-background">Consultations</span>
+                <span className="text-xs sm:text-sm font-semibold text-on-background">Consultations</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate('/expert/messages')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center gap-2.5 transition-all group cursor-pointer shadow-sm text-center"
+                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
               >
-                <span className="material-symbols-outlined text-[30px] text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
                   forum
                 </span>
-                <span className="text-sm font-semibold text-on-background">Messages</span>
+                <span className="text-xs sm:text-sm font-semibold text-on-background">Messages</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate('/expert/earnings')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center gap-2.5 transition-all group cursor-pointer shadow-sm text-center"
+                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
               >
-                <span className="material-symbols-outlined text-[30px] text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
                   account_balance_wallet
                 </span>
-                <span className="text-sm font-semibold text-on-background">Earnings</span>
+                <span className="text-xs sm:text-sm font-semibold text-on-background">Earnings</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate('/expert/schedule')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center gap-2.5 transition-all group cursor-pointer shadow-sm text-center"
+                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
               >
-                <span className="material-symbols-outlined text-[30px] text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
                   calendar_clock
                 </span>
-                <span className="text-sm font-semibold text-on-background">Availability</span>
+                <span className="text-xs sm:text-sm font-semibold text-on-background">Availability</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate('/expert/profile')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center gap-2.5 transition-all group cursor-pointer shadow-sm text-center"
+                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
               >
-                <span className="material-symbols-outlined text-[30px] text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
                   person
                 </span>
-                <span className="text-sm font-semibold text-on-background">My Profile</span>
+                <span className="text-xs sm:text-sm font-semibold text-on-background">My Profile</span>
               </button>
             </div>
           </section>
         ) : (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-8 relative z-20">
-            <div className="bg-surface-card rounded-3xl shadow-soft border border-border p-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="font-heading font-bold text-xl md:text-2xl text-on-background">Explore Categories</h2>
-                <button 
-                  onClick={() => navigate('/categories')}
-                  className="text-primary font-semibold text-sm hover:text-primary-dark flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  View All <ChevronRight size={16} />
-                </button>
+          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6 relative z-20">
+            <div className="bg-surface-card rounded-2xl sm:rounded-3xl shadow-xs border border-border p-4 sm:p-5 md:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-5">
+                <div>
+                  <h2 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-on-background">Explore Categories</h2>
+                  <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Find experts specialized in your domain</p>
+                </div>
+
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Category Horizontal Scroll Buttons */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => scrollCategory('left')}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border bg-surface-muted hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer"
+                      aria-label="Scroll categories left"
+                      title="Previous categories"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCategory('right')}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border bg-surface-muted hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer"
+                      aria-label="Scroll categories right"
+                      title="Next categories"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={() => navigate('/categories')}
+                    className="text-primary font-semibold text-xs sm:text-sm hover:text-primary-dark flex items-center gap-0.5 transition-colors cursor-pointer ml-1"
+                  >
+                    View All <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x">
+              {/* Scrollable Categories List */}
+              <div 
+                ref={categoryScrollRef}
+                className="flex gap-3.5 sm:gap-4.5 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory hide-scrollbar"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {/* 'All' category button */}
                 <button 
-                    onClick={() => setActiveCategory('all')}
-                    className={`flex flex-col items-center min-w-[100px] shrink-0 gap-3 p-4 rounded-2xl border transition-all group snap-start cursor-pointer ${activeCategory === 'all' ? 'bg-primary-light/30 border-primary' : 'bg-surface-muted hover:bg-primary-light/50 border-transparent hover:border-primary/20'}`}
-                  >
-                    <div className={`w-14 h-14 rounded-full overflow-hidden shadow-sm border-2 transition-all ${activeCategory === 'all' ? 'border-primary ring-2 ring-primary/40 scale-110' : 'border-border group-hover:scale-110'}`}>
-                      <img 
-                        src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=300&q=80" 
-                        alt="All Categories" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className={`text-xs font-semibold text-center leading-tight ${activeCategory === 'all' ? 'text-primary' : 'text-on-surface group-hover:text-primary-dark'}`}>All</span>
+                  onClick={() => setActiveCategory('all')}
+                  className={`flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer ${
+                    activeCategory === 'all' 
+                      ? 'bg-primary/10 border-primary ring-2 ring-primary/30 shadow-sm' 
+                      : 'bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm'
+                  }`}
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 transition-all duration-300 ${
+                    activeCategory === 'all' 
+                      ? 'border-primary ring-4 ring-primary/30 scale-105' 
+                      : 'border-border/80 group-hover:border-primary/60 group-hover:scale-105'
+                  }`}>
+                    <img 
+                      src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=300&q=80" 
+                      alt="All Categories" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className={`text-xs sm:text-sm font-bold text-center leading-snug transition-colors ${
+                    activeCategory === 'all' ? 'text-primary' : 'text-on-surface group-hover:text-primary'
+                  }`}>
+                    All
+                  </span>
                 </button>
-                {dbCategories.map((cat) => (
-                  <button 
-                    key={cat._id} 
-                    onClick={() => setActiveCategory(cat._id)}
-                    className={`flex flex-col items-center min-w-[100px] shrink-0 gap-3 p-4 rounded-2xl border transition-all group snap-start cursor-pointer ${activeCategory === cat._id ? 'bg-primary-light/30 border-primary' : 'bg-surface-muted hover:bg-primary-light/50 border-transparent hover:border-primary/20'}`}
-                  >
-                    <div className={`w-14 h-14 rounded-full overflow-hidden shadow-sm border-2 transition-all ${activeCategory === cat._id ? 'border-primary ring-2 ring-primary/40 scale-110' : 'border-border group-hover:scale-110'}`}>
-                      <img 
-                        src={getCatImage(cat)} 
-                        alt={cat.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className={`text-xs font-semibold text-center leading-tight ${activeCategory === cat._id ? 'text-primary' : 'text-on-surface group-hover:text-primary-dark'}`}>{cat.name}</span>
-                  </button>
-                ))}
+
+                {/* Database Categories */}
+                {dbCategories.map((cat) => {
+                  const isActive = activeCategory === cat._id;
+                  return (
+                    <button 
+                      key={cat._id} 
+                      onClick={() => setActiveCategory(cat._id)}
+                      className={`flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer ${
+                        isActive 
+                          ? 'bg-primary/10 border-primary ring-2 ring-primary/30 shadow-sm' 
+                          : 'bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm'
+                      }`}
+                    >
+                      <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 transition-all duration-300 ${
+                        isActive 
+                          ? 'border-primary ring-4 ring-primary/30 scale-105' 
+                          : 'border-border/80 group-hover:border-primary/60 group-hover:scale-105'
+                      }`}>
+                        <img 
+                          src={getCatImage(cat)} 
+                          alt={cat.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <span className={`text-xs sm:text-sm font-bold text-center leading-snug line-clamp-2 max-w-[130px] transition-colors ${
+                        isActive ? 'text-primary' : 'text-on-surface group-hover:text-primary'
+                      }`}>
+                        {cat.name}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </section>
         )}
 
-        {/* HOW IT WORKS - Premium Cards */}
-        <section className="bg-surface-muted py-20 border-y border-border mt-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="font-heading font-extrabold text-3xl md:text-4xl text-on-background mb-4">Simple, Fast, and Secure</h2>
-            <p className="text-on-surface-variant max-w-2xl mx-auto mb-16 font-medium">Get the answers you need in three simple steps. Our platform ensures complete privacy and seamless connections.</p>
+        {/* TESTIMONIALS SECTION - Real people. Real reviews. */}
+        <section className="bg-surface-muted py-10 sm:py-14 border-y border-border">
+          <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              
+              {/* Left Column: Title, Rating & Pagination */}
+              <div className="lg:col-span-5 flex flex-col justify-center space-y-4 text-left">
+                <span className="text-secondary font-bold text-xs uppercase tracking-widest font-heading">
+                  TESTIMONIALS
+                </span>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 relative">
-              {/* Step 1 */}
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 rounded-full bg-background flex items-center justify-center border border-border group-hover:border-primary transition-all duration-300 mb-6 shadow-lg">
-                  <Search size={32} className="text-primary" />
+                <h2 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl text-on-background leading-[1.12] tracking-tight">
+                  Real people. <br />
+                  <span className="text-secondary-dark">Real reviews.</span>
+                </h2>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <span className="font-heading font-extrabold text-4xl sm:text-5xl text-secondary-dark leading-none">
+                    {testimonialStats.averageRating || '4.7'}
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-1 text-secondary">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} size={16} className="fill-secondary text-secondary" />
+                      ))}
+                    </div>
+                    <p className="text-xs text-on-surface-variant font-medium mt-1">
+                      Based on {formatStat(testimonialStats.totalReviews || 1900000)} reviews
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-xl text-on-background mb-2">1. Choose an Expert</h3>
-                <p className="font-body text-sm text-on-surface-variant leading-relaxed">Browse verified profiles, read user reviews, and find the perfect match for your specific needs.</p>
+
+                <p className="text-xs sm:text-sm text-on-surface-variant max-w-md font-medium leading-relaxed pt-1">
+                  Join millions of satisfied users who trust ExpertHub for accurate consultations and life guidance.
+                </p>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handlePrevTestimonial}
+                    className="w-10 h-10 rounded-full border border-border bg-surface-card hover:bg-surface-muted text-on-surface flex items-center justify-center transition-colors cursor-pointer shadow-xs active:scale-95"
+                    aria-label="Previous review"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <span className="font-heading font-bold text-xs sm:text-sm text-on-surface px-1">
+                    {currentTestimonialIndex + 1} / {testimonials.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleNextTestimonial}
+                    className="w-10 h-10 rounded-full border border-border bg-surface-card hover:bg-surface-muted text-on-surface flex items-center justify-center transition-colors cursor-pointer shadow-xs active:scale-95"
+                    aria-label="Next review"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 rounded-full bg-background flex items-center justify-center border border-border group-hover:border-secondary transition-all duration-300 mb-6 shadow-lg">
-                  <ShieldCheck size={32} className="text-secondary" />
-                </div>
-                <h3 className="font-heading font-bold text-xl text-on-background mb-2">2. Recharge Securely</h3>
-                <p className="font-body text-sm text-on-surface-variant leading-relaxed">Add balance to your wallet instantly using our encrypted and safe payment gateway.</p>
+              {/* Right Column: Review Card */}
+              <div className="lg:col-span-7">
+                {testimonials.length > 0 && (
+                  <div className="bg-surface-card rounded-3xl p-6 sm:p-8 md:p-10 border border-border shadow-lg relative flex flex-col justify-between min-h-[300px] sm:min-h-[320px] transition-all duration-300">
+                    <div>
+                      {/* Top rating stars & quote glyph */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-1 text-secondary">
+                          {[...Array(testimonials[currentTestimonialIndex]?.rating || 5)].map((_, i) => (
+                            <Star key={i} size={18} className="fill-secondary text-secondary" />
+                          ))}
+                        </div>
+                        <span className="text-5xl text-on-surface-variant/25 font-serif select-none leading-none -mt-2">“</span>
+                      </div>
+
+                      {/* Review text */}
+                      <p className="font-body text-sm sm:text-base md:text-lg text-on-background/95 leading-relaxed font-normal">
+                        "{testimonials[currentTestimonialIndex]?.feedback}"
+                      </p>
+                    </div>
+
+                    {/* Divider and Author Profile */}
+                    <div className="pt-6 mt-6 border-t border-border/60 flex items-center gap-3.5">
+                      <img
+                        src={testimonials[currentTestimonialIndex]?.userAvatar}
+                        alt={testimonials[currentTestimonialIndex]?.userName}
+                        className="w-12 h-12 rounded-full object-cover border border-border shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonials[currentTestimonialIndex]?.userName || 'User')}&background=F7C83C&color=000&bold=true`;
+                        }}
+                      />
+                      <div>
+                        <h4 className="font-heading font-bold text-sm sm:text-base text-on-background">
+                          {testimonials[currentTestimonialIndex]?.userName}
+                        </h4>
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          {testimonials[currentTestimonialIndex]?.userLocation || (testimonials[currentTestimonialIndex]?.expertConsulted ? `Consulted with ${testimonials[currentTestimonialIndex]?.expertConsulted}` : 'Verified Client')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Step 3 */}
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 rounded-full bg-background flex items-center justify-center border border-border group-hover:border-accent transition-all duration-300 mb-6 shadow-lg">
-                  <Video size={32} className="text-accent" />
-                </div>
-                <h3 className="font-heading font-bold text-xl text-on-background mb-2">3. Connect Live</h3>
-                <p className="font-body text-sm text-on-surface-variant leading-relaxed">Start your consultation immediately via high-quality video, audio, or instant chat.</p>
-              </div>
             </div>
+          </div>
+        </section>
+
+        {/* SEO & INFORMATIONAL EDITORIAL SECTION (Wakefit / Astrotalk Marketplace Style) */}
+        <section className="border-t border-border bg-surface-card/30 dark:bg-surface-card/20 py-10 sm:py-14">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+            
+            {/* Section 1: Intro */}
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
+                ExpertHub – Empowering Every Critical Decision in India
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                At ExpertHub, we believe that timely, verified guidance can fundamentally transform lives. From seeking clarity during career crossroads and emotional turbulence to consulting experienced advocates for high-stakes business decisions, everyday life presents challenges that require seasoned perspectives. ExpertHub bridges this gap by connecting seekers with India's top 1% verified experts across diverse domains including astrology, medicine, law, career coaching, mental wellness, and technology.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Step into a trusted ecosystem built on transparency, strict multi-step vetting, and instant digital connectivity. Whether you prefer an encrypted 1-on-1 <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">chat consultation</span>, an instant <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">audio call</span>, or an in-depth <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">video appointment</span>, ExpertHub brings India's finest minds directly to your screen—accessible 24/7 across 500+ Indian cities and global communities.
+              </p>
+            </div>
+
+            {/* Section 2: Astrology & Vedic Wisdom */}
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
+                Online Astrology & Horoscope Consultations – Ancient Wisdom for Modern Life
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Astrology has been India’s guiding compass for millennia, illuminating path-defining choices in marriage, family, health, and finance. That is why ExpertHub brings together renowned <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Vedic astrologers</span>, intuitive <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Tarot card readers</span>, certified <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Numerologists</span>, and expert <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Vastu shastra consultants</span> on one unified digital platform.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Whether you are seeking detailed <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Kundli analysis</span>, authentic <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Kundali matching (horoscope Milan)</span> for marriage, or personalized remedies for planetary phases like <span className="font-semibold text-primary">Shani Sade Sati</span>, <span className="font-semibold text-primary">Mangal Dosha</span>, and <span className="font-semibold text-primary">Kaal Sarp Dosha</span>, our consultants provide grounded, mathematical calculations rooted in traditional Parashari and KP astrology systems.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Our platform also features daily personalized horoscopes, birth chart interpretations, gemstone recommendations, and auspicious timing (Shubh Muhurat) guidance for weddings, housewarming ceremonies, and new business ventures.
+              </p>
+            </div>
+
+            {/* Section 3: Healthcare & Mental Wellness */}
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
+                Certified Doctors & Mental Health Therapy – Trusted Wellness Anytime, Anywhere
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Reliable medical advice should never be delayed by distance or crowded clinics. ExpertHub offers 24/7 access to licensed <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">general physicians</span>, certified <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">clinical nutritionists & dietitians</span>, <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">dermatologists</span>, and experienced <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">ayurvedic doctors</span> for instant second opinions, symptom evaluations, and preventive lifestyle management.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Emotional and psychological health is equally central to your vitality. Our empathetic <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">mental health psychologists</span> and certified <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">mindfulness coaches</span> provide safe, strictly confidential spaces to navigate corporate burnout, anxiety, relationship distress, and personal grief. Receive tailored cognitive behavioral techniques and actionable mental coping routines right from the comfort and privacy of your home.
+              </p>
+            </div>
+
+            {/* Section 4: Legal & Corporate Advisory */}
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
+                Legal Advisory & Corporate Counsel – Strategic Clarity for Peace of Mind
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Navigating complex regulatory environments and personal disputes requires experienced legal acumen. ExpertHub connects individuals, startups, and established enterprises with practicing <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">high court advocates</span>, seasoned <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">corporate lawyers</span>, and accredited <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">intellectual property attorneys</span> across India.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                From drafting and vetting <span className="font-semibold text-primary">founder agreements</span>, employment contracts, and trademark applications to resolving property title verifications, consumer disputes, and matrimonial legal inquiries, our advocates deliver transparent, actionable counsel that safeguards your rights, assets, and business longevity.
+              </p>
+            </div>
+
+            {/* Section 5: Tech Mentorship & Career Coaching */}
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
+                Career Mentorship & Technology Guidance – Accelerate Your Professional Trajectory
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Navigating the evolving corporate landscape requires mentorship from those who have walked the path. Connect 1-on-1 with senior engineering managers, product leads, and executive career coaches hailing from unicorn startups and global tech giants.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Gain competitive advantages with rigorous <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">software architecture reviews</span>, hands-on <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">mock technical interviews</span>, resume teardowns, and strategic salary negotiation tactics. Whether transitioning into Artificial Intelligence, scaling engineering teams, or aiming for CXO positions, our mentors provide actionable, personalized roadmaps tailored to your ambitions.
+              </p>
+            </div>
+
+            {/* Section 6: Why Millions Choose ExpertHub */}
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
+                Why Millions Choose ExpertHub – Transparency, Privacy & 24/7 Accessibility
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Trust is the cornerstone of every consultation. At ExpertHub, every expert undergoes an exhaustive 5-step background vetting process, including educational credentials validation, professional license verification, and rigorous interview checks before onboarding.
+              </p>
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
+                Enjoy seamless micro-billing with transparent pay-per-minute rates, instant wallet top-ups through UPI, net banking, and debit/credit cards, and end-to-end encrypted communication that guarantees 100% data privacy. With experts fluent in over <span className="font-semibold text-primary">13+ Indian regional languages</span> including Hindi, English, Tamil, Telugu, Kannada, Bengali, and Marathi, ExpertHub delivers authentic expertise whenever and wherever you need it most.
+              </p>
+            </div>
+
           </div>
         </section>
 

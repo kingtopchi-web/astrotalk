@@ -115,54 +115,52 @@ function Profile() {
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-end mb-8">
-            <div>
-            </div>
-              {!editing && (
-                <button 
-                  onClick={() => setEditing(true)}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary-light text-background px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-                >
-                  <Edit2 size={16} />
-                  Edit Profile
-                </button>
-              )}
-            </div>
-
-            {error && (
-               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm flex items-start gap-2 shadow-sm">
-                <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
+          <div className="flex items-center justify-end mb-4">
+            {!editing && (
+              <button 
+                onClick={() => setEditing(true)}
+                className="flex items-center gap-2 bg-primary hover:bg-primary-light text-background px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm"
+              >
+                <Edit2 size={15} />
+                Edit Profile
+              </button>
             )}
-            
-            {success && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6 text-sm flex items-start gap-2 shadow-sm">
-                <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
-                <span>{success}</span>
-              </div>
-            )}
+          </div>
 
-            <div className="bg-surface rounded-2xl border border-border-color shadow-sm overflow-hidden">
-              <div className="p-6 md:p-8">
-                <div className="flex flex-col md:flex-row gap-8">
-                  
-                  {/* Left Column - Avatar */}
-                  <div className="flex flex-col items-center space-y-4 shrink-0">
-                    <div 
-                      className={`relative group ${editing ? 'cursor-pointer' : ''}`}
-                      onClick={() => editing && document.getElementById('imageUpload').click()}
-                    >
-                      <img
-                        src={displayImage}
-                        alt="Profile"
-                        className="w-32 h-32 rounded-full shadow-md border-4 border-white object-cover"
-                      />
-                      {editing && (
-                        <div className="absolute inset-0 bg-slate-900/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Edit2 size={24} className="text-background" />
-                        </div>
-                      )}
+          {error && (
+             <div className="bg-red-50 border border-red-200 text-red-600 px-3.5 py-2.5 rounded-xl mb-4 text-xs sm:text-sm flex items-start gap-2 shadow-sm">
+              <AlertCircle size={17} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-3.5 py-2.5 rounded-xl mb-4 text-xs sm:text-sm flex items-start gap-2 shadow-sm">
+              <CheckCircle2 size={17} className="shrink-0 mt-0.5" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          <div className="bg-surface rounded-xl border border-border-color shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-6 md:p-7">
+              <div className="flex flex-col md:flex-row gap-5 sm:gap-6">
+                
+                {/* Left Column - Avatar */}
+                <div className="flex flex-col items-center space-y-3 shrink-0">
+                  <div 
+                    className={`relative group ${editing ? 'cursor-pointer' : ''}`}
+                    onClick={() => editing && document.getElementById('imageUpload').click()}
+                  >
+                    <img
+                      src={displayImage}
+                      alt="Profile"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full shadow-md border-3 border-white object-cover"
+                    />
+                    {editing && (
+                      <div className="absolute inset-0 bg-slate-900/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Edit2 size={20} className="text-background" />
+                      </div>
+                    )}
                       <input 
                         type="file" 
                         id="imageUpload" 

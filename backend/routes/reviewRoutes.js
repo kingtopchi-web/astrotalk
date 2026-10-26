@@ -3,7 +3,8 @@ const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
-// Public route to fetch reviews for an expert
+// Public route to fetch reviews for an expert and top platform reviews
+router.get('/top-reviews', reviewController.getTopReviews);
 router.get('/expert/:expertId', reviewController.getExpertReviews);
 
 // Protected routes for users

@@ -100,42 +100,42 @@ function Bookings() {
   return (
     <UserLayout title="My Bookings" subtitle="View and manage your consultation sessions.">
       {/* Top Header Controls: Tabs & Find New Expert */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3 w-full min-w-0">
-        <div className="flex bg-slate-200/60 rounded-xl p-1 w-full sm:w-auto sm:min-w-[260px] max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-5 gap-3 w-full min-w-0">
+        <div className="flex bg-slate-200/60 rounded-xl p-1 w-full sm:w-auto sm:min-w-[240px] max-w-sm">
           <button 
-            className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-colors ${activeTab === 'upcoming' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface/60 hover:text-on-surface'}`}
+            className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-colors ${activeTab === 'upcoming' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface/60 hover:text-on-surface'}`}
             onClick={() => setActiveTab('upcoming')}
           >
             Upcoming
           </button>
           <button 
-            className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-colors ${activeTab === 'past' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface/60 hover:text-on-surface'}`}
+            className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-colors ${activeTab === 'past' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface/60 hover:text-on-surface'}`}
             onClick={() => setActiveTab('past')}
           >
             Past
           </button>
         </div>
 
-        <Link to="/experts" className="bg-primary hover:bg-primary-light text-background px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm inline-flex items-center justify-center shrink-0 w-full sm:w-auto">
+        <Link to="/experts" className="bg-primary hover:bg-primary-light text-background px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm inline-flex items-center justify-center shrink-0 w-full sm:w-auto">
           Find New Expert
         </Link>
       </div>
 
       {/* Bookings List */}
-      <div className="flex flex-col gap-3.5 sm:gap-4 w-full min-w-0">
+      <div className="flex flex-col gap-3 sm:gap-3.5 w-full min-w-0">
         {bookings.length === 0 ? (
-          <div className="bg-surface rounded-2xl border border-border-color p-8 sm:p-12 text-center shadow-sm w-full">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-surface-light rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar size={28} className="text-on-surface/50 sm:text-3xl" />
+          <div className="bg-surface rounded-xl border border-border-color p-6 sm:p-8 text-center shadow-sm w-full">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-surface-light rounded-full flex items-center justify-center mx-auto mb-3">
+              <Calendar size={24} className="text-on-surface/50 sm:text-2xl" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-on-surface">No {activeTab} bookings</h3>
-            <p className="text-xs sm:text-sm text-on-surface/60 mt-1 max-w-sm mx-auto">
+            <h3 className="text-sm sm:text-base font-bold text-on-surface">No {activeTab} bookings</h3>
+            <p className="text-xs text-on-surface/60 mt-1 max-w-sm mx-auto">
               You don't have any {activeTab} consultation sessions at the moment.
             </p>
           </div>
         ) : (
           bookings.map(booking => (
-            <div key={booking.id} className="bg-surface rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-border-color hover:border-blue-200 transition-colors w-full min-w-0">
+            <div key={booking.id} className="bg-surface rounded-xl p-4 sm:p-5 shadow-sm border border-border-color hover:border-blue-200 transition-colors w-full min-w-0">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 w-full min-w-0">
                 
                 {/* Left/Top Part: Avatar, Name, Date/Time, and Mobile Status Badge */}

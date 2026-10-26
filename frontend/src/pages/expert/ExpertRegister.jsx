@@ -67,7 +67,7 @@ const ExpertRegister = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden pt-16 md:pt-20">
+    <div className="min-h-screen flex flex-col bg-white pt-16 md:pt-20">
       <Header />
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left side - Branding/Image */}
@@ -100,46 +100,46 @@ const ExpertRegister = () => {
         </div>
 
       {/* Right side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 bg-white relative">
-        <div className="w-full max-w-md relative z-10 py-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 lg:p-10 bg-white relative">
+        <div className="w-full max-w-[440px] relative z-10 py-4 sm:py-6">
           
-          <div className="flex justify-center mb-10">
+          <div className="flex justify-center mb-4 sm:mb-5">
             <Link to="/" className="flex items-center gap-2.5 group">
                <img 
                  src="/logo.png" 
                  alt="ExpertHub Logo" 
-                 className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
+                 className="w-8 h-8 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
                />
-               <span className="font-heading font-extrabold text-2xl tracking-tight text-on-background">
+               <span className="font-heading font-extrabold text-xl sm:text-2xl tracking-tight text-on-background">
                  ExpertHub
                </span>
             </Link>
           </div>
 
-          <div className="mb-6 text-center">
-            <h2 className="font-heading font-bold text-3xl text-on-background">Expert Application</h2>
-            <p className="font-body text-on-surface-variant mt-2 text-sm">Fill in your details to join our platform.</p>
+          <div className="mb-3 sm:mb-4 text-center">
+            <h2 className="font-heading font-bold text-2xl sm:text-3xl text-on-background">Expert Application</h2>
+            <p className="font-body text-on-surface-variant mt-1 text-sm">Fill in your details to join our platform.</p>
           </div>
 
-          <div className="flex p-1 bg-surface-muted border border-border rounded-lg mb-8">
+          <div className="flex p-1 bg-surface-muted border border-border rounded-lg mb-4 sm:mb-5">
              <button onClick={() => navigate('/register')} className="flex-1 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:text-on-background transition-colors">User</button>
              <button className="flex-1 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm border border-border/50 text-on-background">Expert</button>
           </div>
 
           {error && (
-             <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg mb-6 text-sm flex items-start gap-2">
+             <div className="bg-error/10 border border-error/20 text-error px-3.5 py-2 rounded-lg mb-4 text-sm flex items-start gap-2">
                <span className="material-symbols-outlined text-[18px] mt-0.5">error</span>
                <span>{error}</span>
              </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Full Name</label>
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Full Name</label>
               <input
                 name="name"
                 type="text"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={formData.name}
                 onChange={handleChange}
                 required
@@ -147,12 +147,12 @@ const ExpertRegister = () => {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Email Address</label>
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Email Address</label>
               <input
                 name="email"
                 type="email"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -160,12 +160,12 @@ const ExpertRegister = () => {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Mobile Number</label>
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Mobile Number</label>
               <input
                 name="mobile"
                 type="tel"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={formData.mobile}
                 onChange={handleChange}
                 required
@@ -173,13 +173,13 @@ const ExpertRegister = () => {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Category</label>
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Category</label>
               <select
                 name="categoryId"
                 value={formData.categoryId}
                 onChange={e => handleCategoryChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm appearance-none"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm appearance-none"
               >
                 <option value="">Select a category</option>
                 {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
@@ -187,13 +187,13 @@ const ExpertRegister = () => {
             </div>
 
             {subCategories.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-on-background">Sub-category</label>
+              <div className="space-y-1">
+                <label className="block text-xs sm:text-sm font-semibold text-on-background">Sub-category</label>
                 <select
                   name="subCategoryId"
                   value={formData.subCategoryId}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm appearance-none"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm appearance-none"
                 >
                   <option value="">Select a sub-category</option>
                   {subCategories.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
@@ -201,12 +201,12 @@ const ExpertRegister = () => {
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Specialty</label>
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Specialty</label>
               <input
                 name="specialty"
                 type="text"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={formData.specialty}
                 onChange={handleChange}
                 required
@@ -214,12 +214,12 @@ const ExpertRegister = () => {
               />
             </div>
             
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Password</label>
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Password</label>
               <input
                 name="password"
                 type="password"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -228,7 +228,7 @@ const ExpertRegister = () => {
               />
             </div>
 
-            <div className="flex items-start gap-2 pt-2 pb-2">
+            <div className="flex items-start gap-2 pt-1 pb-1">
                <input type="checkbox" id="terms" required className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20" />
                <label htmlFor="terms" className="text-xs text-on-surface-variant">
                  I agree to the <a href="#" className="text-primary hover:underline">Terms & Conditions</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
@@ -238,15 +238,13 @@ const ExpertRegister = () => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-lg font-body font-semibold text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-2"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-body font-semibold text-sm sm:text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-1"
             >
               {loading ? 'Submitting...' : 'Apply as Expert'}
             </button>
           </form>
 
-          <div className="mt-8 text-center space-y-6 font-body">
-
-
+          <div className="mt-4 sm:mt-5 text-center space-y-3 font-body">
             <p className="text-on-surface-variant text-sm">
               Already have an account?{' '}
               <Link to="/expert/login" className="text-primary font-bold hover:underline">Sign in</Link>

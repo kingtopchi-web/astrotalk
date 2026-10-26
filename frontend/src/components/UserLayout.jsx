@@ -61,7 +61,7 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
   const displayName = user?.name || 'User';
 
   return (
-    <div className="light-theme min-h-screen bg-background flex font-sans w-full max-w-full overflow-x-hidden">
+    <div className="light-theme min-h-screen bg-background flex font-sans w-full max-w-full">
 
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
@@ -125,7 +125,7 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden">
+      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full min-w-0 max-w-full">
 
         {/* Mobile Header */}
         <header className="md:hidden bg-surface border-b border-border-color p-4 sticky top-0 z-20">
@@ -221,7 +221,7 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
         )}
 
         {/* Desktop Topbar */}
-        <header className="hidden md:flex bg-background p-6 justify-between items-center sticky top-0 z-30">
+        <header className="hidden md:flex bg-background px-6 py-3.5 justify-between items-center sticky top-0 z-30 border-b border-border-color/60 backdrop-blur-md bg-background/95">
           <UserSearchBar />
           <div className="flex items-center gap-4">
             <NotificationDropdown role="USER" viewAllPath="/notifications" />
@@ -340,10 +340,10 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-2.5 sm:p-5 md:p-8 w-full max-w-full min-w-0">
-          <div className="max-w-6xl mx-auto">
+        <div className="flex-1 p-3.5 sm:p-5 md:p-6 w-full max-w-full min-w-0">
+          <div className="max-w-7xl mx-auto">
             {title && (
-              <div className={`mb-2.5 sm:mb-4 md:mb-6 ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
+              <div className={`mb-3 sm:mb-4 md:mb-5 ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>
                 {subtitle && <p className="text-xs sm:text-sm text-on-surface/60 mt-0.5 md:mt-1">{subtitle}</p>}
               </div>

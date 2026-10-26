@@ -391,63 +391,63 @@ function BookConsultation() {
   const totalAmount = basePrice + platformFee;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans pt-16 md:pt-20 pb-20">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans pt-16 pb-10 sm:pb-12">
       <Header />
       
-      <main className="flex-1 max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-5 sm:py-6">
         
         {/* Back Link & Title */}
-        <div className="mb-8">
+        <div className="mb-5 sm:mb-6">
           <button 
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors mb-6"
+            className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors mb-3 sm:mb-4"
           >
             <ArrowLeft size={16} /> Back to Expert Profile
           </button>
           
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mb-1.5">
                 {service ? `Book ${service.name}` : 'Book a Consultation'}
               </h1>
-              <p className="text-slate-500 font-medium text-base">
+              <p className="text-slate-500 font-medium text-xs sm:text-sm">
                 {service ? service.description : `Choose your preferred date, time and consultation type to connect with ${expert.name}.`}
               </p>
             </div>
             
             {/* Stepper */}
-            <div className="flex items-center gap-4 text-sm font-bold shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">1</div>
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-bold shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm text-xs sm:text-sm">1</div>
                 <div>
-                  <p className="text-blue-600">Select Date & Time</p>
-                  <p className="text-xs text-slate-400 font-medium">Choose your preferred slot</p>
+                  <p className="text-blue-600">Date & Time</p>
+                  <p className="text-[11px] text-slate-400 font-medium hidden sm:block">Choose slot</p>
                 </div>
               </div>
-              <div className="w-8 h-px bg-slate-200"></div>
-              <div className="flex items-center gap-3 opacity-50">
-                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">2</div>
+              <div className="w-6 sm:w-8 h-px bg-slate-200"></div>
+              <div className="flex items-center gap-2.5 opacity-50">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs sm:text-sm">2</div>
                 <div>
-                  <p className="text-slate-700">Consultation Details</p>
-                  <p className="text-xs text-slate-400 font-medium">Add notes and requirements</p>
+                  <p className="text-slate-700">Details</p>
+                  <p className="text-[11px] text-slate-400 font-medium hidden sm:block">Notes & info</p>
                 </div>
               </div>
-              <div className="w-8 h-px bg-slate-200"></div>
-              <div className="flex items-center gap-3 opacity-50">
-                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">3</div>
+              <div className="w-6 sm:w-8 h-px bg-slate-200"></div>
+              <div className="flex items-center gap-2.5 opacity-50">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs sm:text-sm">3</div>
                 <div>
                   <p className="text-slate-700">Payment</p>
-                  <p className="text-xs text-slate-400 font-medium">Complete your booking</p>
+                  <p className="text-[11px] text-slate-400 font-medium hidden sm:block">Checkout</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-5 sm:gap-6 items-start">
           
           {/* Left Column (Forms) */}
-          <div className="w-full lg:flex-1 space-y-8">
+          <div className="w-full lg:flex-1 space-y-5 sm:space-y-6">
             
             {/* Expert Info Card */}
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center md:items-start justify-between gap-6">

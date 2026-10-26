@@ -66,7 +66,7 @@ const ExpertLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden pt-16 md:pt-20">
+    <div className="min-h-screen flex flex-col bg-white pt-16 md:pt-20">
       <Header />
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left side - Branding/Image */}
@@ -99,10 +99,10 @@ const ExpertLogin = () => {
         </div>
 
         {/* Right side - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 bg-white relative overflow-y-auto">
-          <div className="w-full max-w-md relative z-10 py-8 mx-auto my-auto">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center p-6 sm:p-8 lg:p-10 bg-white relative overflow-y-auto">
+          <div className="w-full max-w-[420px] relative z-10 py-4 sm:py-6 mx-auto my-auto">
           
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4 sm:mb-5">
             <Link 
               to="/" 
               className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-muted border border-border text-xs font-bold text-on-surface hover:text-primary transition-all shadow-sm"
@@ -112,8 +112,8 @@ const ExpertLogin = () => {
               <span>Home</span>
             </Link>
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white border border-slate-200/90 shadow-md flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/50 transition-all duration-300">
-                <div className="w-full h-full overflow-hidden rounded-xl flex items-center justify-center bg-slate-50/50">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-md group-hover:border-amber-400/50 transition-all duration-300">
+                <div className="w-full h-full overflow-hidden rounded-lg flex items-center justify-center bg-slate-50/50">
                   <img 
                     src="/logo.png" 
                     alt="ExpertHub Logo" 
@@ -132,29 +132,29 @@ const ExpertLogin = () => {
             </Link>
           </div>
 
-          <div className="mb-6 text-center">
-            <h2 className="font-heading font-bold text-3xl text-on-background">Expert Portal</h2>
-            <p className="font-body text-on-surface-variant mt-2 text-sm">Sign in to manage your consultations.</p>
+          <div className="mb-3 sm:mb-4 text-center">
+            <h2 className="font-heading font-bold text-2xl sm:text-3xl text-on-background">Expert Portal</h2>
+            <p className="font-body text-on-surface-variant mt-1 text-sm">Sign in to manage your consultations.</p>
           </div>
 
-          <div className="flex p-1 bg-surface-muted border border-border rounded-lg mb-8">
+          <div className="flex p-1 bg-surface-muted border border-border rounded-lg mb-4 sm:mb-5">
              <button onClick={() => navigate('/login')} className="flex-1 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:text-on-background transition-colors">User</button>
              <button className="flex-1 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm border border-border/50 text-on-background">Expert</button>
           </div>
 
           {error && (
-             <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg mb-6 text-sm flex items-start gap-2">
+             <div className="bg-error/10 border border-error/20 text-error px-3.5 py-2 rounded-lg mb-4 text-sm flex items-start gap-2">
                <span className="material-symbols-outlined text-[18px] mt-0.5">error</span>
                <span>{error}</span>
              </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Email Address</label>
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Email Address</label>
               <input
                 type="email"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -162,14 +162,14 @@ const ExpertLogin = () => {
               />
             </div>
             
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-semibold text-on-background">Password</label>
-                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline transition-colors">Forgot password?</Link>
+                <label className="block text-xs sm:text-sm font-semibold text-on-background">Password</label>
+                <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline transition-colors">Forgot password?</Link>
               </div>
               <input
                 type="password"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -180,15 +180,13 @@ const ExpertLogin = () => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-lg font-body font-semibold text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-4"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-body font-semibold text-sm sm:text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-2"
             >
               {loading ? 'Signing in...' : 'Sign In as Expert'}
             </button>
           </form>
 
-          <div className="mt-8 text-center space-y-6 font-body">
-
-
+          <div className="mt-4 sm:mt-5 text-center space-y-3 font-body">
             <p className="text-on-surface-variant text-sm">
               Don't have an expert account?{' '}
               <Link to="/expert/register" className="text-primary font-bold hover:underline">Apply here</Link>

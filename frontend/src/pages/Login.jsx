@@ -66,7 +66,7 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden pt-16 md:pt-20">
+    <div className="min-h-screen flex flex-col bg-white pt-16 md:pt-20">
       <Header />
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left side - Branding/Image */}
@@ -99,13 +99,13 @@ function Login() {
         </div>
 
         {/* Right side - Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 bg-white relative">
-          <div className="w-full max-w-md relative z-10 py-8">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 lg:p-10 bg-white relative">
+          <div className="w-full max-w-[420px] relative z-10 py-4 sm:py-6">
           
-          <div className="flex justify-center mb-8">
-            <Link to="/" className="flex items-center gap-3.5 group">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-slate-200/90 shadow-md flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/50 transition-all duration-300">
-                <div className="w-full h-full overflow-hidden rounded-xl flex items-center justify-center bg-slate-50/50">
+          <div className="flex justify-center mb-4 sm:mb-5">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-md group-hover:border-amber-400/50 transition-all duration-300">
+                <div className="w-full h-full overflow-hidden rounded-lg flex items-center justify-center bg-slate-50/50">
                   <img 
                     src="/logo.png" 
                     alt="ExpertHub Logo" 
@@ -114,34 +114,34 @@ function Login() {
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="font-heading font-black text-2xl sm:text-3xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
+                <span className="font-heading font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
                   Expert<span className="text-amber-500">Hub</span>
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-1.5">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">
                   Real Experts • Real Guidance
                 </span>
               </div>
             </Link>
           </div>
 
-          <div className="mb-8 text-center">
-            <h2 className="font-heading font-bold text-3xl text-on-background">Welcome Back!</h2>
-            <p className="font-body text-on-surface-variant mt-2 text-sm">Login to your account to continue</p>
+          <div className="mb-4 sm:mb-5 text-center">
+            <h2 className="font-heading font-bold text-2xl sm:text-3xl text-on-background">Welcome Back!</h2>
+            <p className="font-body text-on-surface-variant mt-1 text-sm">Login to your account to continue</p>
           </div>
 
           {error && (
-             <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg mb-6 text-sm flex items-start gap-2">
+             <div className="bg-error/10 border border-error/20 text-error px-3.5 py-2.5 rounded-lg mb-4 text-sm flex items-start gap-2">
                <span className="material-symbols-outlined text-[18px] mt-0.5">error</span>
                <span>{error}</span>
              </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Email Address</label>
+          <form onSubmit={handleLogin} className="space-y-3.5 sm:space-y-4">
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Email Address</label>
               <input
                 type="email"
-                className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -149,39 +149,37 @@ function Login() {
               />
             </div>
             
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-on-background">Password</label>
+            <div className="space-y-1">
+              <label className="block text-xs sm:text-sm font-semibold text-on-background">Password</label>
               <div className="relative">
                 <input
                   type="password"
-                  className="w-full px-4 py-3 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm placeholder-on-surface-variant/50"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Enter your password"
                 />
-                <Link to="/forgot-password" className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary hover:text-primary-dark transition-colors">Forgot Password?</Link>
+                <Link to="/forgot-password" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary hover:text-primary-dark transition-colors">Forgot Password?</Link>
               </div>
             </div>
 
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-lg font-body font-semibold text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-2"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-body font-semibold text-sm sm:text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-1"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
-          <div className="mt-8 text-center space-y-6 font-body">
-
-
+          <div className="mt-4 sm:mt-5 text-center space-y-3 font-body">
             <p className="text-on-surface-variant text-sm">
               Don't have an account?{' '}
               <Link to="/register" className="text-primary font-bold hover:underline">Register</Link>
             </p>
             
-            <div className="pt-2">
+            <div>
                <Link to="/expert/login" className="text-xs text-on-surface-variant hover:text-primary transition-colors underline">
                  Login as an Expert instead
                </Link>
@@ -189,7 +187,7 @@ function Login() {
           </div>
         </div>
       </div>
-      </div>
+    </div>
 
       {/* Account Reactivation Modal Prompt */}
       {showReactivateModal && (
