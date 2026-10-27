@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
+import { getApiUrl } from '../utils/apiConfig';
 
 function Register() {
   const [name, setName] = useState('');
@@ -11,17 +12,24 @@ function Register() {
   const [mobile, setMobile] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  // Prevent logged in users from seeing register page via back/forward browser buttons
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'EXPERT' ? '/expert/dashboard' : '/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('https://experthub.nextgoodtechnologies.in/api/auth/user/register', { name, email, password, mobile });
+      const res = await axios.post(getApiUrl('/auth/user/register'), { name, email, password, mobile });
       login(res.data, res.data.token);
-      navigate('/');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

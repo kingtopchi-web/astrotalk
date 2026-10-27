@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { UserCheck, X, ArrowRight } from 'lucide-react';
@@ -14,8 +14,15 @@ const ExpertLogin = () => {
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [reactivating, setReactivating] = useState(false);
   
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  // Prevent logged in users from seeing login page via back/forward browser buttons
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'EXPERT' ? '/expert/dashboard' : '/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +32,7 @@ const ExpertLogin = () => {
     try {
       const res = await axios.post(getApiUrl('/auth/expert/login'), { email, password });
       login(res.data, res.data.token);
-      navigate('/expert/dashboard');
+      navigate('/expert/dashboard', { replace: true });
     } catch (err) {
       const data = err.response?.data;
       if (
@@ -55,7 +62,7 @@ const ExpertLogin = () => {
       if (res && res.data) {
         setShowReactivateModal(false);
         login(res.data, res.data.token);
-        navigate('/expert/dashboard');
+        navigate('/expert/dashboard', { replace: true });
       }
     } catch (err) {
       setShowReactivateModal(false);

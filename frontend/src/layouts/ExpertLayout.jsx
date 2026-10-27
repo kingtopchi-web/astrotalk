@@ -48,7 +48,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         });
         setExpert(res.data);
       } catch (err) {
-        if (err.response?.status === 401) navigate('/expert/login');
+        if (err.response?.status === 401) navigate('/expert/login', { replace: true });
       } finally {
         setLoading(false);
       }
@@ -75,7 +75,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
     } catch (e) {}
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/expert/login');
+    navigate('/expert/login', { replace: true });
   };
   const navItems = [
     { name: 'Home', path: '/expert/dashboard', icon: <LayoutDashboard size={20} /> },

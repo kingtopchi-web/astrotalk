@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import { UserCheck, X, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -13,8 +13,18 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [reactivating, setReactivating] = useState(false);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTarget = new URLSearchParams(location.search).get('redirect') || location.state?.from || (user?.role === 'EXPERT' ? '/expert/dashboard' : '/dashboard');
+
+  // Prevent logged in users from seeing login page via back/forward browser buttons
+  useEffect(() => {
+    if (user) {
+      navigate(redirectTarget, { replace: true });
+    }
+  }, [user, navigate, redirectTarget]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,7 +33,7 @@ function Login() {
     try {
       const res = await axios.post(getApiUrl('/auth/user/login'), { email, password });
       login(res.data, res.data.token);
-      navigate('/dashboard');
+      navigate(redirectTarget, { replace: true });
     } catch (err) {
       const data = err.response?.data;
       // If user account is deactivated (status 403 and isDeactivated flag or deactivated message)
@@ -55,7 +65,7 @@ function Login() {
       if (res && res.data) {
         setShowReactivateModal(false);
         login(res.data, res.data.token);
-        navigate('/dashboard');
+        navigate(redirectTarget, { replace: true });
       }
     } catch (err) {
       setShowReactivateModal(false);

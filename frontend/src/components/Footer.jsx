@@ -98,8 +98,8 @@ function Footer() {
           </div>
         </div>
 
-        {/* Horizontal Row: Social Icons on Left, 100% Secure Payments on Right */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col lg:flex-row items-center justify-between gap-5">
+        {/* Horizontal Row: Social Icons on Left, 100% Secure Payments on Right border-t border-slate-800/80 */}
+        <div className="mt-8 pt-6  flex flex-col lg:flex-row items-center justify-between gap-5">
           {/* Left: Social Icons */}
           <div className="flex items-center gap-3">
             <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold mr-1">Follow Us:</span>

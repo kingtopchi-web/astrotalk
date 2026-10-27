@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PlatformSettingsProvider } from './context/PlatformSettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import GuestRoute from './components/GuestRoute';
 import ScrollToTop from './components/ScrollToTop';
 
 // Public/User Pages
@@ -89,18 +90,20 @@ function App() {
           <ThemeManager />
           <IncomingConsultationAlert />
         <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/expert/login" element={<ExpertLogin />} />
-          <Route path="/expert/register" element={<ExpertRegister />} />
+          {/* Guest-Only Auth Routes (Logged-in users automatically redirected to dashboard) */}
+          <Route element={<GuestRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/expert/login" element={<ExpertLogin />} />
+            <Route path="/expert/register" element={<ExpertRegister />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+          </Route>
 
           {/* Semi-Public / Public Pages */}
           <Route path="/" element={<Home />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/resetpassword/:token" element={<ResetPassword />} />
           <Route path="/how-it-works" element={<HowItWorks />} />

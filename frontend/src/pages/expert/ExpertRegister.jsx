@@ -13,8 +13,15 @@ const ExpertRegister = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  // Prevent logged in users from seeing register page via back/forward browser buttons
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'EXPERT' ? '/expert/dashboard' : '/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     fetch('https://experthub.nextgoodtechnologies.in/api/categories')
@@ -55,7 +62,7 @@ const ExpertRegister = () => {
       const data = await response.json();
       if (response.ok) {
         login(data, data.token);
-        navigate('/expert/dashboard');
+        navigate('/expert/dashboard', { replace: true });
       } else {
         setError(data.message || 'Registration failed');
       }

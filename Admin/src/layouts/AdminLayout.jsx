@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   LayoutDashboard, BarChart3, Users, UserCheck, ClipboardList, Tags,
@@ -323,6 +323,12 @@ const SidebarContent = ({
 function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const token = localStorage.getItem('adminToken');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -354,7 +360,7 @@ function AdminLayout() {
     setShowLogoutModal(false);
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   // Toggle specific dropdown

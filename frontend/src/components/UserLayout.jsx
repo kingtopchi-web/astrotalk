@@ -44,7 +44,7 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
   const confirmLogout = () => {
     setShowLogoutModal(false);
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const navItems = [
