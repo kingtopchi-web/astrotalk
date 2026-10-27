@@ -6,15 +6,15 @@ function Footer() {
   const { platformName, supportEmail, contactPhone, address } = usePlatformSettings();
 
   return (
-    <footer className="bg-black text-slate-300 relative pt-10 sm:pt-12">
+    <footer className="bg-black text-slate-300 relative pt-10 sm:pt-12 pb-24 md:pb-0">
       {/* Top subtle gradient line */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
       
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-5 gap-8 lg:gap-6">
           
-          {/* Brand & Contact Info - takes up 2 columns on large screens */}
-          <div className="lg:col-span-2 flex flex-col gap-4">
+          {/* Brand & Contact Info - takes up 2 columns on large screens, 5 on tablet */}
+          <div className="md:col-span-5 lg:col-span-2 flex flex-col gap-4">
             <Link to="/" className="flex items-center gap-3 group mb-1">
               <img 
                 src="/logo.png" 
@@ -26,24 +26,24 @@ function Footer() {
               </span>
             </Link>
             
-            <p className="text-sm leading-relaxed text-slate-400 max-w-sm">
+            <p className="text-xs sm:text-sm leading-relaxed text-slate-400 max-w-sm">
               Connecting individuals across India with verified, affordable, and reliable expert consultation solutions. Join our community of trusted professionals today.
             </p>
             
             <div className="flex flex-col gap-2.5 mt-1">
               <div className="flex items-start gap-2.5">
-                <span className="material-symbols-outlined text-error text-[18px] mt-0.5">location_on</span>
-                <span className="text-sm text-slate-300">{address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India'}</span>
+                <span className="material-symbols-outlined text-error text-[18px] mt-0.5 shrink-0">location_on</span>
+                <span className="text-xs sm:text-sm text-slate-300">{address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India'}</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-error text-[18px]">call</span>
-                <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="text-sm text-slate-300 hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-error text-[18px] shrink-0">call</span>
+                <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="text-xs sm:text-sm text-slate-300 hover:text-white transition-colors">
                   {contactPhone || '+91 98765 43210'}
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-error text-[18px]">mail</span>
-                <a href={`mailto:${supportEmail || 'support@stitchplatform.com'}`} className="text-sm text-slate-300 hover:text-white transition-colors break-all">
+                <span className="material-symbols-outlined text-error text-[18px] shrink-0">mail</span>
+                <a href={`mailto:${supportEmail || 'support@stitchplatform.com'}`} className="text-xs sm:text-sm text-slate-300 hover:text-white transition-colors break-all">
                   {supportEmail || 'support@stitchplatform.com'}
                 </a>
               </div>
@@ -51,51 +51,55 @@ function Footer() {
             
           </div>
           
-          {/* Links - Product */}
-          <div className="flex flex-col gap-3">
-            <h3 className="font-heading font-semibold text-white text-base flex items-center gap-1">
-              Product <span className="material-symbols-outlined text-[15px] text-slate-500">arrow_outward</span>
-            </h3>
-            <ul className="flex flex-col gap-2.5">
-              <li><Link to="/experts" className="text-sm text-slate-400 hover:text-white transition-colors">Find Experts</Link></li>
-              <li><Link to="/expert/register" className="text-sm text-slate-400 hover:text-white transition-colors">Offer Expertise</Link></li>
-              <li><Link to="/how-it-works" className="text-sm text-slate-400 hover:text-white transition-colors">How It Works</Link></li>
-              <li><Link to="/trust-and-safety" className="text-sm text-slate-400 hover:text-white transition-colors">Trust & Safety</Link></li>
-            </ul>
-          </div>
-          
-          {/* Links - Company */}
-          <div className="flex flex-col gap-3">
-            <h3 className="font-heading font-semibold text-white text-base flex items-center gap-1">
-              Company <span className="material-symbols-outlined text-[15px] text-slate-500">arrow_outward</span>
-            </h3>
-            <ul className="flex flex-col gap-2.5">
-              <li><Link to="/about" className="text-sm text-slate-400 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link to="/careers" className="text-sm text-slate-400 hover:text-white transition-colors">Careers</Link></li>
-              <li><Link to="/press" className="text-sm text-slate-400 hover:text-white transition-colors">Press</Link></li>
-              <li><Link to="/blog" className="text-sm text-slate-400 hover:text-white transition-colors">Blog</Link></li>
-              <li><Link to="/partners" className="text-sm text-slate-400 hover:text-white transition-colors">Partners</Link></li>
-            </ul>
-          </div>
-          
-          {/* Links - Support */}
-          <div className="flex flex-col gap-3">
-            <h3 className="font-heading font-semibold text-white text-base flex items-center gap-1">
-              Support <span className="material-symbols-outlined text-[15px] text-slate-500">arrow_outward</span>
-            </h3>
-            <ul className="flex flex-col gap-2.5">
-              <li><Link to="/help-center" className="text-sm text-slate-400 hover:text-white transition-colors">Help Center</Link></li>
-              <li><Link to="/community" className="text-sm text-slate-400 hover:text-white transition-colors">Community</Link></li>
-              <li><Link to="/contact" className="text-sm text-slate-400 hover:text-white transition-colors">Contact Us</Link></li>
-              <li><Link to="/privacy-policy" className="text-sm text-slate-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" className="text-sm text-slate-400 hover:text-white transition-colors">Terms of Service</Link></li>
-            </ul>
-          </div>
+          {/* Quick Links: 3 columns on mobile and tablet to perfectly utilize the right space */}
+          <div className="md:col-span-7 lg:contents grid grid-cols-3 gap-3 sm:gap-6">
+            
+            {/* Links - Product */}
+            <div className="flex flex-col gap-2.5 sm:gap-3">
+              <h3 className="font-heading font-semibold text-white text-xs sm:text-base flex items-center gap-1">
+                Product <span className="material-symbols-outlined text-[13px] text-slate-500 hidden sm:inline-block">arrow_outward</span>
+              </h3>
+              <ul className="flex flex-col gap-2 sm:gap-2.5">
+                <li><Link to="/experts" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Find Experts</Link></li>
+                <li><Link to="/expert/register" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Offer Expertise</Link></li>
+                <li><Link to="/how-it-works" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">How It Works</Link></li>
+                <li><Link to="/trust-and-safety" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Trust & Safety</Link></li>
+              </ul>
+            </div>
+            
+            {/* Links - Company */}
+            <div className="flex flex-col gap-2.5 sm:gap-3">
+              <h3 className="font-heading font-semibold text-white text-xs sm:text-base flex items-center gap-1">
+                Company <span className="material-symbols-outlined text-[13px] text-slate-500 hidden sm:inline-block">arrow_outward</span>
+              </h3>
+              <ul className="flex flex-col gap-2 sm:gap-2.5">
+                <li><Link to="/about" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">About Us</Link></li>
+                <li><Link to="/careers" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Careers</Link></li>
+                <li><Link to="/press" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Press</Link></li>
+                <li><Link to="/blog" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Blog</Link></li>
+                <li><Link to="/partners" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Partners</Link></li>
+              </ul>
+            </div>
+            
+            {/* Links - Support */}
+            <div className="flex flex-col gap-2.5 sm:gap-3">
+              <h3 className="font-heading font-semibold text-white text-xs sm:text-base flex items-center gap-1">
+                Support <span className="material-symbols-outlined text-[13px] text-slate-500 hidden sm:inline-block">arrow_outward</span>
+              </h3>
+              <ul className="flex flex-col gap-2 sm:gap-2.5">
+                <li><Link to="/help-center" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Help Center</Link></li>
+                <li><Link to="/community" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Community</Link></li>
+                <li><Link to="/contact" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Contact Us</Link></li>
+                <li><Link to="/privacy-policy" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors leading-snug">Terms of Service</Link></li>
+              </ul>
+            </div>
 
+          </div>
         </div>
 
-        {/* Horizontal Row: Social Icons on Left, 100% Secure Payments on Right border-t border-slate-800/80*/}
-        <div className="mt-8 pt-6  flex flex-col lg:flex-row items-center justify-between gap-5">
+        {/* Horizontal Row: Social Icons on Left, 100% Secure Payments on Right */}
+        <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col lg:flex-row items-center justify-between gap-5">
           {/* Left: Social Icons */}
           <div className="flex items-center gap-3">
             <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold mr-1">Follow Us:</span>
@@ -177,7 +181,7 @@ function Footer() {
       
       {/* Bottom Bar */}
       <div className="bg-black py-4 border-t border-slate-800">
-        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 text-center md:text-left text-sm">
           <div className="text-slate-400 text-xs sm:text-sm">
             © 2026 <span className="text-error font-medium">{platformName || 'ExpertHub'}.com</span> all rights reserved
           </div>

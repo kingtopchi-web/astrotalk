@@ -392,21 +392,28 @@ function Messages() {
     const trimmed = text.trim();
     if (!trimmed) return { isValid: false, error: 'Message cannot be empty.' };
 
-    if (/\d/.test(trimmed)) {
-      return { isValid: false, error: 'Numbers/digits are not allowed in messages. Please type text using alphabets only.' };
-    }
-
-    if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(trimmed) || /@/.test(trimmed)) {
-      return { isValid: false, error: 'Sharing email addresses or contact information is not allowed.' };
-    }
-
-    if (/(https?:\/\/|www\.|\.com|\.in|\.org|\.net|\.io|\.co)/i.test(trimmed)) {
+    // 1. Disallow links, URLs and website addresses
+    const urlRegex = /(https?:\/\/|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|in|org|net|io|co|me|ai|app|xyz|info|biz|tv)\b)/i;
+    if (urlRegex.test(trimmed)) {
       return { isValid: false, error: 'Sharing links, URLs or websites is not allowed.' };
     }
 
-    const allowedRegex = /^[\p{L}\s.,!?'"\-()]+$/u;
-    if (!allowedRegex.test(trimmed)) {
-      return { isValid: false, error: 'Only alphabets and basic punctuation are allowed. Numbers, symbols, and special characters cannot be sent.' };
+    // 2. Disallow 10-digit phone numbers only (other numbers/digits are permitted)
+    if (/\b\d{10,}\b/.test(trimmed)) {
+      return { isValid: false, error: 'Sharing 10-digit phone numbers is not allowed.' };
+    }
+
+    const spacedPhoneRegex = /(?:(?:\+|0{0,2})91[\s.-]*)?(?:\d[\s.-]*){10}/g;
+    const matches = trimmed.match(spacedPhoneRegex);
+    if (matches) {
+      for (const match of matches) {
+        const digitsOnly = match.replace(/\D/g, '');
+        if (digitsOnly.length === 10 || 
+           (digitsOnly.length === 11 && digitsOnly.startsWith('0')) || 
+           (digitsOnly.length === 12 && digitsOnly.startsWith('91'))) {
+          return { isValid: false, error: 'Sharing 10-digit phone numbers is not allowed.' };
+        }
+      }
     }
 
     return { isValid: true };
@@ -866,17 +873,18 @@ function Messages() {
                             msg.status === 'DELIVERED' ? <CheckCheck size={13} className="text-slate-600" /> :
                             <Check size={13} className="text-slate-600" />
                           )}
-                          {/* Single message delete action button on hover */}
+                          {/* Single message delete action button */}
                           {!selectionMode && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setDeleteConfirmModal({ type: 'single', id: msg._id });
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-red-500 transition-all cursor-pointer ml-1"
+                              className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-0.5 text-slate-400 hover:text-red-500 active:text-red-600 transition-all cursor-pointer ml-1 touch-manipulation inline-flex items-center justify-center rounded"
                               title="Delete Message"
+                              aria-label="Delete Message"
                             >
-                              <Trash2 size={12} />
+                              <Trash2 size={13} />
                             </button>
                           )}
                         </div>

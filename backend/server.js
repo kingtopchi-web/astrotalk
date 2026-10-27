@@ -152,27 +152,8 @@ io.on('connection', (socket) => {
       const text = typeof data.text === 'string' ? data.text.trim() : '';
       if (!text) return;
 
-      // 2. Disallow numbers/digits (na koi phone number ya digits)
-      if (/\d/.test(text)) {
-        socket.emit('chat_error', {
-          message: 'Numbers/digits are not allowed in messages. Please type text using alphabets only.',
-          code: 'DIGITS_NOT_ALLOWED'
-        });
-        return;
-      }
-
-      // 3. Disallow email addresses
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-      if (emailRegex.test(text) || /@/.test(text)) {
-        socket.emit('chat_error', {
-          message: 'Sharing email addresses or contact details is not allowed.',
-          code: 'EMAIL_NOT_ALLOWED'
-        });
-        return;
-      }
-
-      // 4. Disallow links, URLs and website addresses
-      const urlRegex = /(https?:\/\/|www\.|\.com|\.in|\.org|\.net|\.io|\.co)/i;
+      // 2. Disallow links, URLs and website addresses
+      const urlRegex = /(https?:\/\/|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|in|org|net|io|co|me|ai|app|xyz|info|biz|tv)\b)/i;
       if (urlRegex.test(text)) {
         socket.emit('chat_error', {
           message: 'Sharing links, URLs or websites is not allowed.',
@@ -181,12 +162,30 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // 5. Must only contain alphabets (English/Hindi characters), spaces, and standard sentence punctuation (. , ! ? ' " -)
-      const allowedCharsRegex = /^[\p{L}\s.,!?'"\-()]+$/u;
-      if (!allowedCharsRegex.test(text)) {
+      // 3. Disallow 10-digit phone numbers only (other numbers/digits are permitted)
+      const isPhoneBlocked = () => {
+        // Continuous 10 or more digits
+        if (/\b\d{10,}\b/.test(text)) return true;
+        // 10 digits separated by spaces, dots, dashes (e.g. 98765 43210 or +91 9876543210)
+        const spacedPhoneRegex = /(?:(?:\+|0{0,2})91[\s.-]*)?(?:\d[\s.-]*){10}/g;
+        const matches = text.match(spacedPhoneRegex);
+        if (matches) {
+          for (const match of matches) {
+            const digitsOnly = match.replace(/\D/g, '');
+            if (digitsOnly.length === 10 || 
+               (digitsOnly.length === 11 && digitsOnly.startsWith('0')) || 
+               (digitsOnly.length === 12 && digitsOnly.startsWith('91'))) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      if (isPhoneBlocked()) {
         socket.emit('chat_error', {
-          message: 'Only alphabets and basic punctuation are allowed. Numbers, symbols, and special characters cannot be sent.',
-          code: 'INVALID_CHARACTERS'
+          message: 'Sharing 10-digit phone numbers is not allowed. Other numbers and digits are permitted.',
+          code: 'PHONE_NOT_ALLOWED'
         });
         return;
       }

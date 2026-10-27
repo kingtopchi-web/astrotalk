@@ -16,7 +16,8 @@ import {
   UserCheck, 
   AlertTriangle, 
   FileText,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 import { 
   fetchNotifications, 
@@ -87,7 +88,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
     };
   }, [role]);
 
-  // Close when clicking outside
+  // Close when clicking or tapping outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -96,8 +97,12 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [isOpen]);
 
   const handleMarkAsRead = async (id, e) => {
@@ -195,9 +200,21 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
         )}
       </button>
 
+      {/* Mobile Backdrop to tap outside anywhere to hide */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-40 sm:hidden transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Dropdown Popover */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col text-on-background animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed left-3 right-3 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-surface-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col text-on-background animate-in fade-in zoom-in-95 duration-150 max-h-[82vh] sm:max-h-[520px]">
           
           {/* Header */}
           <div className="px-4 py-3.5 border-b border-border flex items-center justify-between bg-surface-muted/50">
@@ -210,7 +227,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
               )}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   type="button"
@@ -231,6 +248,16 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
                   <Trash2 size={13} /> Clear all
                 </button>
               )}
+              {/* Close Button on Mobile & Desktop */}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-lg text-on-surface-variant hover:text-on-background hover:bg-surface-muted transition-colors cursor-pointer ml-1"
+                title="Close notifications"
+                aria-label="Close notifications"
+              >
+                <X size={18} />
+              </button>
             </div>
           </div>
 
@@ -261,7 +288,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-border/60 hide-scrollbar">
+          <div className="flex-1 max-h-[60vh] sm:max-h-[380px] overflow-y-auto divide-y divide-border/60 hide-scrollbar">
             {filteredNotifications.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center justify-center text-on-surface-variant">
                 <span className="material-symbols-outlined text-4xl mb-2 text-primary opacity-60">

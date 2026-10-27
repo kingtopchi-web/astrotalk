@@ -13,7 +13,8 @@ import {
   Wallet,
   CreditCard,
   RefreshCw,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 import { 
   fetchNotifications, 
@@ -61,8 +62,12 @@ export default function AdminNotificationDropdown({ buttonClassName = '', contai
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [isOpen]);
 
   const handleMarkAsRead = async (id, e) => {
@@ -156,9 +161,21 @@ export default function AdminNotificationDropdown({ buttonClassName = '', contai
         )}
       </button>
 
+      {/* Mobile Backdrop to tap outside anywhere to hide */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-40 sm:hidden transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Popover */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col text-slate-800">
+        <div className="fixed left-3 right-3 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col text-slate-800 max-h-[82vh] sm:max-h-[520px]">
           
           {/* Header */}
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -171,7 +188,7 @@ export default function AdminNotificationDropdown({ buttonClassName = '', contai
               )}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   type="button"
@@ -192,6 +209,16 @@ export default function AdminNotificationDropdown({ buttonClassName = '', contai
                   <Trash2 size={13} /> Delete all
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer ml-1"
+                title="Close alerts"
+                aria-label="Close alerts"
+              >
+                <X size={16} />
+              </button>
             </div>
           </div>
 

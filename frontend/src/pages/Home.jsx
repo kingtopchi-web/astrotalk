@@ -5,11 +5,86 @@ import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { usePlatformSettings } from '../context/PlatformSettingsContext';
 import { Search, Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X } from 'lucide-react';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 
 function Home() {
   const { user } = useAuth();
+  const { platformName } = usePlatformSettings();
+  const brandName = platformName || 'ExpertHub';
+  const [selectedDomain, setSelectedDomain] = useState('astrology');
+
+  const domainData = {
+    astrology: {
+      tag: 'ANCIENT WISDOM FOR MODERN LIFE',
+      title: 'Online Astrology & Horoscope Consultations',
+      description: `Astrology has been India's guiding compass for millennia, illuminating path-defining choices in marriage, family, health, and finance. That is why ${brandName} brings together renowned Vedic astrologers, intuitive Tarot card readers, certified Numerologists, and expert Vastu shastra consultants on one trusted platform.`,
+      items: [
+        { icon: '🪐', title: 'Vedic Astrologers', subtitle: 'Kundali & Dasha' },
+        { icon: '🎴', title: 'Tarot Readers', subtitle: 'Intuitive Clarity' },
+        { icon: '🔢', title: 'Numerologists', subtitle: 'Name & Fate Numbers' },
+        { icon: '🏛️', title: 'Vastu Shastra', subtitle: 'Space & Harmony' }
+      ]
+    },
+    medicine: {
+      tag: 'TRUSTED MEDICAL & WELLNESS CARE',
+      title: 'Certified Doctors & Preventive Healthcare',
+      description: `Reliable medical advice should never be delayed by distance or crowded clinics. ${brandName} offers 24/7 access to licensed general physicians, certified clinical nutritionists, dietitians, and experienced ayurvedic doctors for second opinions and preventive care.`,
+      items: [
+        { icon: '🩺', title: 'General Physicians', subtitle: 'Instant 2nd Opinion' },
+        { icon: '🥗', title: 'Diet & Nutrition', subtitle: 'Tailored Meal Plans' },
+        { icon: '🌿', title: 'Ayurvedic Doctors', subtitle: 'Holistic Healing' },
+        { icon: '🔬', title: 'Specialist MDs', subtitle: 'Report Evaluations' }
+      ]
+    },
+    legal: {
+      tag: 'STRATEGIC LEGAL CLARITY & COUNSEL',
+      title: 'Legal Advisory & Corporate Counsel',
+      description: 'Navigating complex regulations requires experienced legal acumen. Connect with practicing high court advocates, seasoned corporate lawyers, and intellectual property attorneys for contracts, property title checks, and corporate advice.',
+      items: [
+        { icon: '⚖️', title: 'High Court Advocates', subtitle: 'Civil & Property Law' },
+        { icon: '📜', title: 'Corporate Lawyers', subtitle: 'Contracts & Founder Equity' },
+        { icon: '💡', title: 'IP & Trademark', subtitle: 'Brand Protection' },
+        { icon: '🤝', title: 'Family Legal Counsel', subtitle: 'Confidential Guidance' }
+      ]
+    },
+    career: {
+      tag: 'EXECUTIVE CAREER ACCELERATION',
+      title: 'Career Mentorship & Leadership Coaching',
+      description: 'Accelerate your professional trajectory with 1-on-1 mentorship from senior directors, tech leads, and executive coaches hailing from unicorn startups and global tech giants for architecture reviews and mock interviews.',
+      items: [
+        { icon: '🎯', title: 'Executive Coaching', subtitle: 'Promotion & Leadership' },
+        { icon: '💼', title: 'Resume & Interviews', subtitle: 'Mock Rounds & Pitching' },
+        { icon: '📈', title: 'Salary Negotiation', subtitle: 'Strategic Benchmarking' },
+        { icon: '🚀', title: 'Startup Mentors', subtitle: 'Fundraising Guidance' }
+      ]
+    },
+    'mental-health': {
+      tag: 'SAFE & CONFIDENTIAL SPACE',
+      title: 'Mental Wellness & Empathetic Therapy',
+      description: 'Navigate corporate burnout, anxiety, relationship distress, and personal grief. Connect with empathetic mental health psychologists and mindfulness coaches in a strictly confidential digital sanctuary.',
+      items: [
+        { icon: '🧠', title: 'CBT Therapists', subtitle: 'Anxiety & Stress' },
+        { icon: '🧘', title: 'Mindfulness Coaches', subtitle: 'Work-Life Balance' },
+        { icon: '❤️', title: 'Relationship Guides', subtitle: 'Family & Couples' },
+        { icon: '🌿', title: 'Emotional Healing', subtitle: 'Personal Coping' }
+      ]
+    },
+    tech: {
+      tag: 'INDUSTRY TECH ARCHITECTURE',
+      title: 'Software Architecture & AI Mentorship',
+      description: 'Gain competitive advantages with rigorous software architecture teardowns, cloud scalability roadmaps, and AI engineering guidance from seasoned tech managers and principal engineers.',
+      items: [
+        { icon: '💻', title: 'System Architecture', subtitle: 'High-Scale Systems' },
+        { icon: '🤖', title: 'AI & Data Science', subtitle: 'LLMs & ML Pipelines' },
+        { icon: '☁️', title: 'Cloud & DevOps', subtitle: 'AWS, GCP & Kubernetes' },
+        { icon: '🔐', title: 'Cybersecurity', subtitle: 'Vulnerability Vetting' }
+      ]
+    }
+  };
+
+  const currentDomainData = domainData[selectedDomain] || domainData.astrology;
   const [activeCategory, setActiveCategory] = useState('all');
   const [experts, setExperts] = useState([]);
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
@@ -134,10 +209,41 @@ function Home() {
     setCurrentTestimonialIndex((prev) => (prev < testimonials.length - 1 ? prev + 1 : 0));
   };
 
+  const [testimonialTouchStart, setTestimonialTouchStart] = useState(null);
+  const [testimonialTouchEnd, setTestimonialTouchEnd] = useState(null);
+
+  const handleTouchStart = (e) => setTestimonialTouchStart(e.targetTouches[0].clientX);
+  const handleTouchMove = (e) => setTestimonialTouchEnd(e.targetTouches[0].clientX);
+  const handleTouchEnd = () => {
+    if (!testimonialTouchStart || !testimonialTouchEnd) return;
+    const distance = testimonialTouchStart - testimonialTouchEnd;
+    if (distance > 45) handleNextTestimonial();
+    if (distance < -45) handlePrevTestimonial();
+    setTestimonialTouchStart(null);
+    setTestimonialTouchEnd(null);
+  };
+
+  const [activeExpertIndex, setActiveExpertIndex] = useState(0);
+
+  const handleExpertScroll = () => {
+    if (expertScrollRef.current) {
+      const container = expertScrollRef.current;
+      const card = container.querySelector('.snap-center, .snap-start');
+      const cardWidth = card ? card.offsetWidth : 300;
+      const gap = 16;
+      const newIndex = Math.round(container.scrollLeft / (cardWidth + gap));
+      setActiveExpertIndex(Math.max(0, Math.min(newIndex, experts.length - 1)));
+    }
+  };
+
   const scrollExperts = (direction) => {
     if (expertScrollRef.current) {
-      const scrollAmount = 300;
-      expertScrollRef.current.scrollBy({
+      const container = expertScrollRef.current;
+      const card = container.querySelector('.snap-center, .snap-start');
+      const cardWidth = card ? card.offsetWidth : 300;
+      const gap = 16;
+      const scrollAmount = cardWidth + gap;
+      container.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
@@ -488,7 +594,7 @@ function Home() {
                 <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Top-rated professionals ready to help you.</p>
               </div>
               <div className="flex items-center gap-2">
-                {experts.length > 2 && (
+                {experts.length > 1 && (
                   <div className="flex items-center gap-1.5 mr-1 sm:mr-2">
                     <button
                       type="button"
@@ -519,7 +625,7 @@ function Home() {
             {loading ? (
               <div className="flex items-stretch gap-4 sm:gap-5 overflow-x-hidden pb-4">
                 {[1, 2, 3, 4].map(n => (
-                  <div key={n} className="w-[260px] sm:w-[280px] shrink-0 bg-surface-muted rounded-2xl p-5 border border-border shadow-xs animate-pulse">
+                  <div key={n} className="w-[calc(100vw-2.5rem)] max-w-[360px] sm:w-[280px] shrink-0 bg-surface-muted rounded-2xl p-5 border border-border shadow-xs animate-pulse">
                     <div className="w-20 h-20 bg-surface-card rounded-full mx-auto mb-3"></div>
                     <div className="h-4 bg-surface-card rounded w-2/3 mx-auto mb-2"></div>
                     <div className="h-3 bg-surface-card rounded w-1/2 mx-auto mb-4"></div>
@@ -533,146 +639,189 @@ function Home() {
                 <p className="text-sm">No experts available at the moment. Please check back later.</p>
               </div>
             ) : (
-              <div 
-                ref={expertScrollRef}
-                className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0"
-                style={{ scrollbarWidth: 'thin' }}
-              >
-                {experts.map((expert) => (
-                  <div 
-                    key={expert._id} 
-                    onClick={() => navigate(`/expert/${expert._id}`)} 
-                    className="w-[260px] sm:w-[280px] shrink-0 snap-start bg-surface-muted rounded-2xl border border-border shadow-xs hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group flex flex-col overflow-hidden relative"
-                  >
-
-                    {/* Heart Save Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleSave(expert._id, e)}
-                      aria-label="Save expert"
-                      title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
-                      className={`absolute top-3.5 left-3.5 w-7 h-7 rounded-full flex items-center justify-center transition-all z-10 border ${
-                        savedExpertIds.has(expert._id)
-                          ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-xs'
-                          : 'bg-background/90 backdrop-blur border-border text-on-surface/50 hover:text-rose-500 hover:bg-rose-50'
-                      }`}
+              <>
+                <div 
+                  ref={expertScrollRef}
+                  onScroll={handleExpertScroll}
+                  className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory px-1 sm:px-0 hide-scrollbar"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {experts.map((expert) => (
+                    <div 
+                      key={expert._id} 
+                      onClick={() => navigate(`/expert/${expert._id}`)} 
+                      className="w-[calc(100vw-2.5rem)] max-w-[360px] sm:w-[280px] shrink-0 snap-center sm:snap-start bg-surface-muted rounded-2xl border border-border shadow-xs hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group flex flex-col overflow-hidden relative mx-auto sm:mx-0"
                     >
-                      <Heart
-                        size={14}
-                        className={`transition-colors ${
-                          savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
+
+                      {/* Heart Save Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleSave(expert._id, e)}
+                        aria-label="Save expert"
+                        title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
+                        className={`absolute top-3.5 left-3.5 w-7 h-7 rounded-full flex items-center justify-center transition-all z-10 border ${
+                          savedExpertIds.has(expert._id)
+                            ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-xs'
+                            : 'bg-background/90 backdrop-blur border-border text-on-surface/50 hover:text-rose-500 hover:bg-rose-50'
                         }`}
-                      />
-                    </button>
-
-                    {/* Status Badge */}
-                    <div className="absolute top-3.5 right-3.5 bg-background/90 backdrop-blur px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 border border-border">
-                      <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
-                      <span className="text-[9px] font-bold text-on-background uppercase tracking-wider">Online</span>
-                    </div>
-
-                    <div className="p-5 flex flex-col items-center text-center relative flex-1">
-                      <div className="relative mt-1">
-                        <img
-                          className="w-20 h-20 rounded-full object-cover border-2 border-primary shadow-sm relative z-10"
-                          alt={expert.name}
-                          src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`;
-                          }}
+                      >
+                        <Heart
+                          size={14}
+                          className={`transition-colors ${
+                            savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
+                          }`}
                         />
-                        {expert.isVerified && (
-                          <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 z-20 shadow-xs text-primary">
-                            <ShieldCheck size={16} className="fill-primary text-background" />
+                      </button>
+
+                      {/* Status Badge */}
+                      <div className="absolute top-3.5 right-3.5 bg-background/90 backdrop-blur px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 border border-border">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
+                        <span className="text-[9px] font-bold text-on-background uppercase tracking-wider">Online</span>
+                      </div>
+
+                      <div className="p-5 flex flex-col items-center text-center relative flex-1">
+                        <div className="relative mt-1">
+                          <img
+                            className="w-20 h-20 rounded-full object-cover border-2 border-primary shadow-sm relative z-10"
+                            alt={expert.name}
+                            src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`;
+                            }}
+                          />
+                          {expert.isVerified && (
+                            <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 z-20 shadow-xs text-primary">
+                              <ShieldCheck size={16} className="fill-primary text-background" />
+                            </div>
+                          )}
+                        </div>
+
+                        <h3 className="font-heading font-bold text-base text-on-background mt-3 group-hover:text-primary transition-colors truncate max-w-full text-center">
+                          {expert.name}
+                        </h3>
+
+                        <p className="font-body text-xs font-semibold text-primary mt-0.5 truncate max-w-full text-center h-4.5 flex items-center justify-center">
+                          {expert.category?.name || expert.specialty || 'Professional Consultant'}
+                        </p>
+
+                        <div className="h-4.5 flex items-center justify-center mt-1 mb-2">
+                          {expert.experience ? (
+                            <p className="text-[11px] font-medium text-on-surface-variant">
+                              {expert.experience} Years Exp.
+                            </p>
+                          ) : (
+                            <p className="text-[11px] font-medium text-on-surface-variant/70">
+                              Verified Expert
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-center gap-1.5 text-xs mb-3.5 w-full">
+                          <div className="flex items-center gap-1 bg-warning/15 text-warning px-2.5 py-0.5 rounded-full font-bold">
+                            <Star size={11} className="fill-warning text-warning" />
+                            <span className="text-xs">{expert.rating || '4.9'}</span>
                           </div>
-                        )}
+                          <span className="text-on-surface-variant text-[11px] font-medium">
+                            ({expert.reviewsCount || 0} reviews)
+                          </span>
+                        </div>
+
+                        {/* Dynamic Consultation Rates */}
+                        <div className="grid grid-cols-3 gap-1 w-full mb-4 py-2 px-1 bg-surface-card rounded-xl border border-border/70 text-center">
+                          <div className="flex flex-col items-center justify-center py-0.5">
+                            <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
+                              <MessageCircle size={10} className="text-primary shrink-0" /> Chat
+                            </span>
+                            <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
+                              ₹{expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10)}
+                              <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center py-0.5 border-x border-border/60">
+                            <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
+                              <Phone size={10} className="text-success shrink-0" /> Audio
+                            </span>
+                            <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
+                              ₹{expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 15)}
+                              <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center py-0.5">
+                            <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
+                              <Video size={10} className="text-warning shrink-0" /> Video
+                            </span>
+                            <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
+                              ₹{expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20)}
+                              <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="mt-auto w-full grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/expert/${expert._id}?action=chat`);
+                            }}
+                            className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                          >
+                            <MessageCircle size={14} className="text-primary" /> Chat
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/expert/${expert._id}?action=audio`);
+                            }}
+                            className="flex items-center justify-center gap-1.5 py-2.5 bg-success/15 border border-success/30 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                          >
+                            <Phone size={14} /> Call
+                          </button>
+                        </div>
                       </div>
+                    </div>
+                  ))}
+                </div>
 
-                      <h3 className="font-heading font-bold text-base text-on-background mt-3 group-hover:text-primary transition-colors truncate max-w-full">
-                        {expert.name}
-                      </h3>
-
-                      <p className="font-body text-xs font-medium text-primary mt-0.5 mb-1 truncate max-w-full">
-                        {expert.category?.name || expert.specialty || 'Professional Consultant'}
-                      </p>
-
-                      {expert.experience && (
-                        <p className="text-[11px] text-on-surface-variant mb-2">{expert.experience} Years Exp.</p>
-                      )}
-
-                      <div className="flex items-center justify-center gap-1.5 text-xs mb-3 w-full">
-                        <div className="flex items-center gap-1 bg-warning/10 text-warning px-2 py-0.5 rounded-md">
-                          <Star size={11} className="fill-warning text-warning" />
-                          <span className="font-bold text-xs">{expert.rating || '4.9'}</span>
-                        </div>
-                        <span className="text-on-surface-variant text-[11px]">
-                          ({expert.reviewsCount || 0} reviews)
-                        </span>
-                      </div>
-
-                      {/* Dynamic Consultation Rates */}
-                      <div className="grid grid-cols-3 gap-1 w-full mb-4 py-1.5 px-1 bg-surface-card rounded-xl border border-border/70 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
-                            <MessageCircle size={9} className="text-primary" /> Chat
-                          </span>
-                          <span className="text-xs font-bold text-on-background mt-0.5">
-                            ₹{expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10)}
-                            <span className="text-[8px] font-normal text-on-surface-variant">/m</span>
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center border-x border-border/60">
-                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
-                            <Phone size={9} className="text-success" /> Audio
-                          </span>
-                          <span className="text-xs font-bold text-on-background mt-0.5">
-                            ₹{expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 15)}
-                            <span className="text-[8px] font-normal text-on-surface-variant">/m</span>
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
-                            <Video size={9} className="text-warning" /> Video
-                          </span>
-                          <span className="text-xs font-bold text-on-background mt-0.5">
-                            ₹{expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20)}
-                            <span className="text-[8px] font-normal text-on-surface-variant">/m</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="mt-auto w-full grid grid-cols-2 gap-2">
+                {/* Mobile Carousel Indicators */}
+                {experts.length > 1 && (
+                  <div className="flex sm:hidden items-center justify-between mt-2 px-1">
+                    <span className="text-[11px] font-medium text-on-surface-variant">
+                      {activeExpertIndex + 1} of {experts.length} recommended experts
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {experts.map((_, idx) => (
                         <button
+                          key={idx}
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/expert/${expert._id}?action=chat`);
+                          onClick={() => {
+                            if (expertScrollRef.current) {
+                              const container = expertScrollRef.current;
+                              const card = container.querySelector('.snap-center, .snap-start');
+                              const cardWidth = card ? card.offsetWidth : 300;
+                              container.scrollTo({
+                                left: idx * (cardWidth + 16),
+                                behavior: 'smooth'
+                              });
+                            }
                           }}
-                          className="flex items-center justify-center gap-1 py-2 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors"
-                        >
-                          <MessageCircle size={13} /> Chat
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/expert/${expert._id}?action=audio`);
-                          }}
-                          className="flex items-center justify-center gap-1 py-2 bg-success/20 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors"
-                        >
-                          <Phone size={13} /> Call
-                        </button>
-                      </div>
+                          aria-label={`Go to expert ${idx + 1}`}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            activeExpertIndex === idx ? 'w-5 bg-primary' : 'w-1.5 bg-border hover:bg-on-surface-variant/40'
+                          }`}
+                        />
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
 
-            <div className="mt-6 text-center md:hidden">
-              <button onClick={() => navigate('/experts')} className="px-5 py-2 bg-background border border-border text-on-background rounded-full font-semibold text-xs sm:text-sm transition-colors w-full">
+            <div className="mt-5 text-center md:hidden">
+              <button onClick={() => navigate('/experts')} className="px-5 py-2.5 bg-background border border-border text-on-background rounded-full font-semibold text-xs sm:text-sm hover:border-primary transition-colors w-full shadow-xs">
                 View All Experts
               </button>
             </div>
@@ -1042,38 +1191,45 @@ function Home() {
         )}
 
         {/* TESTIMONIALS SECTION - Real people. Real reviews. */}
-        <section className="bg-surface-muted py-10 sm:py-14 border-y border-border">
-          <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <section className="bg-surface-muted py-8 sm:py-12 md:py-14 border-y border-border">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
               
               {/* Left Column: Title, Rating & Pagination */}
-              <div className="lg:col-span-5 flex flex-col justify-center space-y-4 text-left">
+              <div className="lg:col-span-5 flex flex-col justify-center space-y-3.5 sm:space-y-4 text-left">
                 <span className="text-secondary font-bold text-xs uppercase tracking-widest font-heading">
                   TESTIMONIALS
                 </span>
 
-                <h2 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl text-on-background leading-[1.12] tracking-tight">
+                <h2 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl text-on-background leading-[1.15] tracking-tight">
                   Real people. <br />
-                  <span className="text-secondary-dark">Real reviews.</span>
+                  <span className="text-secondary">Real reviews.</span>
                 </h2>
 
-                <div className="flex items-center gap-3 pt-1">
-                  <span className="font-heading font-extrabold text-4xl sm:text-5xl text-secondary-dark leading-none">
-                    {testimonialStats.averageRating || '4.7'}
+                <div className="flex items-center gap-3.5 pt-1">
+                  <span className="font-heading font-extrabold text-5xl sm:text-6xl text-secondary leading-none">
+                    {testimonialStats.averageRating || '4'}
                   </span>
-                  <div>
-                    <div className="flex items-center gap-1 text-secondary">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} size={16} className="fill-secondary text-secondary" />
-                      ))}
+                  <div className="flex flex-col justify-center">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => {
+                        const isFilled = s <= Math.round(Number(testimonialStats.averageRating) || 4);
+                        return (
+                          <Star
+                            key={s}
+                            size={16}
+                            className={isFilled ? 'fill-secondary text-secondary' : 'fill-slate-200 text-slate-200 dark:fill-slate-700 dark:text-slate-700'}
+                          />
+                        );
+                      })}
                     </div>
                     <p className="text-xs text-on-surface-variant font-medium mt-1">
-                      Based on {formatStat(testimonialStats.totalReviews || 1900000)} reviews
+                      Based on {formatStat(testimonialStats.totalReviews || 6)} reviews
                     </p>
                   </div>
                 </div>
 
-                <p className="text-xs sm:text-sm text-on-surface-variant max-w-md font-medium leading-relaxed pt-1">
+                <p className="text-xs sm:text-sm text-on-surface-variant max-w-md font-normal leading-relaxed pt-1">
                   Join millions of satisfied users who trust ExpertHub for accurate consultations and life guidance.
                 </p>
 
@@ -1082,7 +1238,7 @@ function Home() {
                   <button
                     type="button"
                     onClick={handlePrevTestimonial}
-                    className="w-10 h-10 rounded-full border border-border bg-surface-card hover:bg-surface-muted text-on-surface flex items-center justify-center transition-colors cursor-pointer shadow-xs active:scale-95"
+                    className="w-10 h-10 rounded-full border border-border bg-white dark:bg-surface-card hover:bg-surface-muted text-on-surface flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-95"
                     aria-label="Previous review"
                   >
                     <ChevronLeft size={18} />
@@ -1093,7 +1249,7 @@ function Home() {
                   <button
                     type="button"
                     onClick={handleNextTestimonial}
-                    className="w-10 h-10 rounded-full border border-border bg-surface-card hover:bg-surface-muted text-on-surface flex items-center justify-center transition-colors cursor-pointer shadow-xs active:scale-95"
+                    className="w-10 h-10 rounded-full border border-border bg-white dark:bg-surface-card hover:bg-surface-muted text-on-surface flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-95"
                     aria-label="Next review"
                   >
                     <ChevronRight size={18} />
@@ -1104,30 +1260,35 @@ function Home() {
               {/* Right Column: Review Card */}
               <div className="lg:col-span-7">
                 {testimonials.length > 0 && (
-                  <div className="bg-surface-card rounded-3xl p-6 sm:p-8 md:p-10 border border-border shadow-lg relative flex flex-col justify-between min-h-[300px] sm:min-h-[320px] transition-all duration-300">
+                  <div 
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className="bg-white dark:bg-surface-card rounded-3xl p-6 sm:p-8 md:p-10 border border-border/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] relative flex flex-col justify-between transition-all duration-300 w-full"
+                  >
                     <div>
                       {/* Top rating stars & quote glyph */}
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-3.5">
                         <div className="flex items-center gap-1 text-secondary">
                           {[...Array(testimonials[currentTestimonialIndex]?.rating || 5)].map((_, i) => (
-                            <Star key={i} size={18} className="fill-secondary text-secondary" />
+                            <Star key={i} size={17} className="fill-secondary text-secondary" />
                           ))}
                         </div>
-                        <span className="text-5xl text-on-surface-variant/25 font-serif select-none leading-none -mt-2">“</span>
+                        <span className="text-4xl sm:text-5xl text-slate-300/80 dark:text-slate-600 font-serif select-none leading-none -mt-2">“</span>
                       </div>
 
                       {/* Review text */}
-                      <p className="font-body text-sm sm:text-base md:text-lg text-on-background/95 leading-relaxed font-normal">
+                      <p className="font-body text-sm sm:text-base md:text-lg text-on-background/95 leading-relaxed font-medium">
                         "{testimonials[currentTestimonialIndex]?.feedback}"
                       </p>
                     </div>
 
                     {/* Divider and Author Profile */}
-                    <div className="pt-6 mt-6 border-t border-border/60 flex items-center gap-3.5">
+                    <div className="pt-5 mt-5 border-t border-border/70 flex items-center gap-3.5">
                       <img
                         src={testimonials[currentTestimonialIndex]?.userAvatar}
                         alt={testimonials[currentTestimonialIndex]?.userName}
-                        className="w-12 h-12 rounded-full object-cover border border-border shrink-0"
+                        className="w-12 h-12 rounded-full object-cover border border-border/80 shrink-0 shadow-xs"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonials[currentTestimonialIndex]?.userName || 'User')}&background=F7C83C&color=000&bold=true`;
@@ -1150,89 +1311,275 @@ function Home() {
           </div>
         </section>
 
-        {/* SEO & INFORMATIONAL EDITORIAL SECTION (Wakefit / Astrotalk Marketplace Style) */}
-        <section className="border-t border-border bg-surface-card/30 dark:bg-surface-card/20 py-10 sm:py-14">
+        {/* SEO & INFORMATIONAL EDITORIAL SECTION (Responsive Cards Concept) */}
+        <section className="border-t border-border bg-surface-muted/40 dark:bg-background py-8 sm:py-12 md:py-14">
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
             
-            {/* Section 1: Intro */}
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
-                ExpertHub – Empowering Every Critical Decision in India
-              </h3>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                At ExpertHub, we believe that timely, verified guidance can fundamentally transform lives. From seeking clarity during career crossroads and emotional turbulence to consulting experienced advocates for high-stakes business decisions, everyday life presents challenges that require seasoned perspectives. ExpertHub bridges this gap by connecting seekers with India's top 1% verified experts across diverse domains including astrology, medicine, law, career coaching, mental wellness, and technology.
+            {/* SECTION 1: HEADER & INSTANT MODES OF CONSULTATION */}
+            <div className="space-y-4">
+              {/* Title */}
+              <h2 className="font-heading font-extrabold text-2xl sm:text-3xl md:text-4xl text-on-background leading-tight tracking-tight">
+                {brandName} – Empowering Every Critical Decision in India
+              </h2>
+
+              {/* Description */}
+              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                At <strong className="font-semibold text-on-background">{brandName}</strong>, we believe that timely, verified guidance can fundamentally transform lives. From seeking clarity during career crossroads and emotional turbulence to consulting experienced advocates for high-stakes business decisions, everyday life presents challenges that require seasoned perspectives. {brandName} bridges this gap by connecting seekers with India's top 1% verified experts across diverse domains.
               </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Step into a trusted ecosystem built on transparency, strict multi-step vetting, and instant digital connectivity. Whether you prefer an encrypted 1-on-1 <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">chat consultation</span>, an instant <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">audio call</span>, or an in-depth <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">video appointment</span>, ExpertHub brings India's finest minds directly to your screen—accessible 24/7 across 500+ Indian cities and global communities.
-              </p>
+
+              {/* Vetted Expertise In */}
+              <div className="space-y-2 pt-1">
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
+                  VETTED EXPERTISE IN:
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDomain('astrology')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedDomain === 'astrology'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
+                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
+                    }`}
+                  >
+                    <span>🪐</span> Astrology
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDomain('medicine')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedDomain === 'medicine'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
+                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
+                    }`}
+                  >
+                    <span>🩺</span> Medicine
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDomain('legal')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedDomain === 'legal'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
+                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
+                    }`}
+                  >
+                    <span>⚖️</span> Law
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDomain('career')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedDomain === 'career'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
+                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
+                    }`}
+                  >
+                    <span>🎯</span> Career
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDomain('mental-health')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedDomain === 'mental-health'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
+                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
+                    }`}
+                  >
+                    <span>🧠</span> Mental Wellness
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDomain('tech')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedDomain === 'tech'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
+                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
+                    }`}
+                  >
+                    <span>💻</span> Tech Mentorship
+                  </button>
+                </div>
+              </div>
+
+              {/* Modes of Consultation Subheader */}
+              <div className="flex items-center justify-between pt-2">
+                <h3 className="font-heading font-bold text-xs sm:text-sm uppercase tracking-wider text-on-surface-variant">
+                  INSTANT MODES OF CONSULTATION
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  Available 24/7
+                </span>
+              </div>
+
+              {/* 3 Interactive Consultation Cards */}
+              <div className="space-y-3">
+                {/* 1-on-1 Chat */}
+                <div
+                  onClick={() => navigate('/experts?mode=chat')}
+                  className="bg-white dark:bg-surface-card rounded-2xl p-4 sm:p-4.5 border border-border shadow-xs hover:border-primary/60 hover:shadow-sm transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 border border-amber-200/50 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <MessageCircle size={20} className="fill-amber-500/20 text-amber-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-heading font-bold text-sm sm:text-base text-on-background truncate">
+                          1-on-1 Chat Consultation
+                        </h4>
+                        <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200/60">
+                          Encrypted
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
+                        Private messaging with instant document & chart sharing
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                </div>
+
+                {/* Instant Audio Call */}
+                <div
+                  onClick={() => navigate('/experts?mode=audio')}
+                  className="bg-white dark:bg-surface-card rounded-2xl p-4 sm:p-4.5 border border-border shadow-xs hover:border-primary/60 hover:shadow-sm transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 border border-orange-200/50 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Phone size={20} className="fill-orange-500/20 text-orange-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-heading font-bold text-sm sm:text-base text-on-background truncate">
+                          Instant Audio Call
+                        </h4>
+                        <span className="bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-200/60">
+                          Direct
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
+                        Quick confidential voice clarity within minutes
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                </div>
+
+                {/* In-Depth Video Appointment */}
+                <div
+                  onClick={() => navigate('/experts?mode=video')}
+                  className="bg-white dark:bg-surface-card rounded-2xl p-4 sm:p-4.5 border border-border shadow-xs hover:border-primary/60 hover:shadow-sm transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 border border-amber-200/50 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Video size={20} className="fill-amber-500/20 text-amber-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-heading font-bold text-sm sm:text-base text-on-background truncate">
+                          In-Depth Video Appointment
+                        </h4>
+                        <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200/60">
+                          Face-to-Face
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
+                        Comprehensive deep dive for complex strategic decisions
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                </div>
+              </div>
+
+              {/* Bottom Trust Strip */}
+              <div className="bg-white dark:bg-surface-card rounded-2xl p-3 border border-border shadow-xs flex items-center justify-center gap-2.5 sm:gap-4 text-xs font-semibold text-on-surface-variant text-center flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  500+ Indian Cities & Global
+                </span>
+                <span className="text-border">|</span>
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-primary" />
+                  Strict Multi-Step Vetted
+                </span>
+              </div>
             </div>
 
-            {/* Section 2: Astrology & Vedic Wisdom */}
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
-                Online Astrology & Horoscope Consultations – Ancient Wisdom for Modern Life
-              </h3>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Astrology has been India’s guiding compass for millennia, illuminating path-defining choices in marriage, family, health, and finance. That is why ExpertHub brings together renowned <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Vedic astrologers</span>, intuitive <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Tarot card readers</span>, certified <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Numerologists</span>, and expert <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Vastu shastra consultants</span> on one unified digital platform.
-              </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Whether you are seeking detailed <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Kundli analysis</span>, authentic <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">Kundali matching (horoscope Milan)</span> for marriage, or personalized remedies for planetary phases like <span className="font-semibold text-primary">Shani Sade Sati</span>, <span className="font-semibold text-primary">Mangal Dosha</span>, and <span className="font-semibold text-primary">Kaal Sarp Dosha</span>, our consultants provide grounded, mathematical calculations rooted in traditional Parashari and KP astrology systems.
-              </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Our platform also features daily personalized horoscopes, birth chart interpretations, gemstone recommendations, and auspicious timing (Shubh Muhurat) guidance for weddings, housewarming ceremonies, and new business ventures.
-              </p>
-            </div>
+            {/* SECTION 2: CATEGORY SPOTLIGHT & CTA CARD */}
+            <div className="space-y-4">
+              {/* Featured Domain Card */}
+              <div className="bg-white dark:bg-surface-card rounded-3xl p-6 sm:p-8 border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-4">
+                {/* Category Pill Tag */}
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-300 border border-orange-200/60 font-heading">
+                  {currentDomainData.tag}
+                </span>
 
-            {/* Section 3: Healthcare & Mental Wellness */}
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
-                Certified Doctors & Mental Health Therapy – Trusted Wellness Anytime, Anywhere
-              </h3>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Reliable medical advice should never be delayed by distance or crowded clinics. ExpertHub offers 24/7 access to licensed <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">general physicians</span>, certified <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">clinical nutritionists & dietitians</span>, <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">dermatologists</span>, and experienced <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">ayurvedic doctors</span> for instant second opinions, symptom evaluations, and preventive lifestyle management.
-              </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Emotional and psychological health is equally central to your vitality. Our empathetic <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">mental health psychologists</span> and certified <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">mindfulness coaches</span> provide safe, strictly confidential spaces to navigate corporate burnout, anxiety, relationship distress, and personal grief. Receive tailored cognitive behavioral techniques and actionable mental coping routines right from the comfort and privacy of your home.
-              </p>
-            </div>
+                {/* Heading */}
+                <h3 className="font-heading font-extrabold text-xl sm:text-2xl md:text-3xl text-on-background leading-snug">
+                  {currentDomainData.title}
+                </h3>
 
-            {/* Section 4: Legal & Corporate Advisory */}
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
-                Legal Advisory & Corporate Counsel – Strategic Clarity for Peace of Mind
-              </h3>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Navigating complex regulatory environments and personal disputes requires experienced legal acumen. ExpertHub connects individuals, startups, and established enterprises with practicing <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">high court advocates</span>, seasoned <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">corporate lawyers</span>, and accredited <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">intellectual property attorneys</span> across India.
-              </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                From drafting and vetting <span className="font-semibold text-primary">founder agreements</span>, employment contracts, and trademark applications to resolving property title verifications, consumer disputes, and matrimonial legal inquiries, our advocates deliver transparent, actionable counsel that safeguards your rights, assets, and business longevity.
-              </p>
-            </div>
+                {/* Description */}
+                <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                  {currentDomainData.description}
+                </p>
 
-            {/* Section 5: Tech Mentorship & Career Coaching */}
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
-                Career Mentorship & Technology Guidance – Accelerate Your Professional Trajectory
-              </h3>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Navigating the evolving corporate landscape requires mentorship from those who have walked the path. Connect 1-on-1 with senior engineering managers, product leads, and executive career coaches hailing from unicorn startups and global tech giants.
-              </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Gain competitive advantages with rigorous <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">software architecture reviews</span>, hands-on <span onClick={() => navigate('/experts')} className="font-semibold text-primary hover:underline cursor-pointer">mock technical interviews</span>, resume teardowns, and strategic salary negotiation tactics. Whether transitioning into Artificial Intelligence, scaling engineering teams, or aiming for CXO positions, our mentors provide actionable, personalized roadmaps tailored to your ambitions.
-              </p>
-            </div>
+                {/* 2x2 Subcategory Grid */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                  {currentDomainData.items.map((sub, i) => (
+                    <div
+                      key={i}
+                      onClick={() => navigate('/experts')}
+                      className="bg-surface-muted/60 dark:bg-background/50 hover:bg-surface-muted rounded-2xl p-3 border border-border/80 flex items-center gap-2.5 cursor-pointer transition-all group"
+                    >
+                      <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{sub.icon}</span>
+                      <div className="min-w-0">
+                        <p className="font-heading font-bold text-xs text-on-background truncate group-hover:text-primary transition-colors">
+                          {sub.title}
+                        </p>
+                        <p className="text-[10px] text-on-surface-variant truncate">
+                          {sub.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-            {/* Section 6: Why Millions Choose ExpertHub */}
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-base sm:text-lg md:text-xl text-on-background/95 tracking-tight">
-                Why Millions Choose ExpertHub – Transparency, Privacy & 24/7 Accessibility
-              </h3>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Trust is the cornerstone of every consultation. At ExpertHub, every expert undergoes an exhaustive 5-step background vetting process, including educational credentials validation, professional license verification, and rigorous interview checks before onboarding.
-              </p>
-              <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed sm:leading-7">
-                Enjoy seamless micro-billing with transparent pay-per-minute rates, instant wallet top-ups through UPI, net banking, and debit/credit cards, and end-to-end encrypted communication that guarantees 100% data privacy. With experts fluent in over <span className="font-semibold text-primary">13+ Indian regional languages</span> including Hindi, English, Tamil, Telugu, Kannada, Bengali, and Marathi, ExpertHub delivers authentic expertise whenever and wherever you need it most.
-              </p>
+                {/* Big Gradient Button */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/experts')}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white font-heading font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:shadow-orange-500/25 active:scale-[0.99] transition-all cursor-pointer"
+                >
+                  Consult an Expert Now →
+                </button>
+
+                {/* Trust Note */}
+                <div className="flex items-center justify-center gap-1.5 text-xs text-on-surface-variant/80 font-medium pt-0.5">
+                  <span className="material-symbols-outlined text-[15px] text-emerald-600">lock</span>
+                  <span>100% Confidential & Secure Consultation</span>
+                </div>
+              </div>
+
+              {/* 3-Column Stats Card */}
+              <div className="bg-white dark:bg-surface-card rounded-2xl p-4 sm:p-5 border border-border shadow-xs grid grid-cols-3 divide-x divide-border text-center">
+                <div>
+                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background">100k+</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">Consultations</p>
+                </div>
+                <div>
+                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background flex items-center justify-center gap-1">
+                    4.9 <Star size={13} className="fill-amber-500 text-amber-500 inline" />
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">Avg. Rating</p>
+                </div>
+                <div>
+                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background">Top 1%</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">Vetted Minds</p>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -1241,9 +1588,7 @@ function Home() {
       </main>
 
       {/* Footer */}
-      <div className="hidden md:block">
-        <Footer />
-      </div>
+      <Footer />
 
       {/* Mobile Bottom Nav */}
       <div className="md:hidden">
