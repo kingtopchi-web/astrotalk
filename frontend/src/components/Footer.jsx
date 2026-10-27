@@ -1,16 +1,22 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
 
 function Footer() {
   const { platformName, supportEmail, contactPhone, address } = usePlatformSettings();
+  const location = useLocation();
+
+  // Pages where fixed mobile BottomNav is present require clearance; other pages do not
+  const hasBottomNav = ['/', '/categories'].includes(location.pathname) || 
+    location.pathname.startsWith('/expert/') || 
+    location.pathname.startsWith('/experts');
 
   return (
-    <footer className="bg-black text-slate-300 relative pt-10 sm:pt-12 pb-24 md:pb-0">
+    <footer className={`bg-black text-slate-300 relative pt-8 sm:pt-12 ${hasBottomNav ? 'pb-16 md:pb-0' : 'pb-0'}`}>
       {/* Top subtle gradient line */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
       
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pb-8">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pb-4 sm:pb-8">
         <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-5 gap-8 lg:gap-6">
           
           {/* Brand & Contact Info - takes up 2 columns on large screens, 5 on tablet */}
@@ -98,8 +104,8 @@ function Footer() {
           </div>
         </div>
 
-        {/* Horizontal Row: Social Icons on Left, 100% Secure Payments on Right border-t border-slate-800/80 */}
-        <div className="mt-8 pt-6  flex flex-col lg:flex-row items-center justify-between gap-5">
+        {/* Horizontal Row: Social Icons on Left, 100% Secure Payments on Right */}
+        <div className="mt-5 sm:mt-8 pt-4 sm:pt-6 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-5">
           {/* Left: Social Icons */}
           <div className="flex items-center gap-3">
             <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold mr-1">Follow Us:</span>
@@ -180,8 +186,8 @@ function Footer() {
       </div>
       
       {/* Bottom Bar */}
-      <div className="bg-black py-4 border-t border-slate-800">
-        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 text-center md:text-left text-sm">
+      <div className="bg-black py-2.5 sm:py-4 border-t border-slate-800">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 flex flex-col md:flex-row items-center justify-between gap-1.5 sm:gap-4 text-center md:text-left text-sm">
           <div className="text-slate-400 text-xs sm:text-sm">
             © 2026 <span className="text-error font-medium">{platformName || 'ExpertHub'}.com</span> all rights reserved
           </div>
