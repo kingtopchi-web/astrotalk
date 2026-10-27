@@ -24,10 +24,16 @@ import UserLayout from '../components/UserLayout';
 import { compressAvatar, saveAvatarToDB } from '../utils/avatarStorage';
 import { getApiUrl } from '../utils/apiConfig';
 
-function Profile() {
+function Profile({ autoEdit = false }) {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isEditRoute = autoEdit || 
+    location.search.includes('edit=true') || 
+    location.pathname === '/settings/edit-profile' || 
+    location.pathname === '/profile/edit';
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -112,9 +118,22 @@ function Profile() {
     }
   };
 
+  const handleCloseModal = () => {
+    setEditing(false);
+    if (location.pathname === '/settings/edit-profile' || location.pathname === '/profile/edit') {
+      navigate('/profile', { replace: true });
+    }
+  };
+
   useEffect(() => { 
     fetchProfile(); 
-  }, []);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (isEditRoute) {
+      setEditing(true);
+    }
+  }, [isEditRoute]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -140,6 +159,9 @@ function Profile() {
       }
       setSuccess('Profile updated successfully!');
       setEditing(false);
+      if (location.pathname === '/settings/edit-profile' || location.pathname === '/profile/edit') {
+        navigate('/profile', { replace: true });
+      }
       setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save profile');
@@ -518,7 +540,7 @@ function Profile() {
                 Edit Profile
               </h3>
               <button 
-                onClick={() => setEditing(false)}
+                onClick={handleCloseModal}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X size={16} />
@@ -600,7 +622,7 @@ function Profile() {
               <div className="flex items-center gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setEditing(false)}
+                  onClick={handleCloseModal}
                   className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs sm:text-sm hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   Cancel

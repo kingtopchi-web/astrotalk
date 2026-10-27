@@ -131,6 +131,8 @@ function App() {
             <Route path="/wallet" element={<WalletRecharge />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/edit" element={<Profile autoEdit={true} />} />
+            <Route path="/settings/edit-profile" element={<Profile autoEdit={true} />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/support" element={<Support />} />
             <Route path="/messages" element={<Messages />} />

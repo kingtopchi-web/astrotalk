@@ -271,7 +271,7 @@ function Header() {
                          <Link to="/profile" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
                            <span className="material-symbols-outlined text-[18px] text-primary">person</span> My Profile
                          </Link>
-                         <Link to="/settings/edit-profile" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
+                         <Link to="/profile?edit=true" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
                            <span className="material-symbols-outlined text-[18px] text-primary">edit</span> Edit Profile
                          </Link>
                          <Link to="/bookings" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
@@ -396,7 +396,7 @@ function Header() {
                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="font-body font-medium text-lg text-on-surface py-2 flex items-center gap-3">
                      <span className="material-symbols-outlined text-[20px] text-primary">person</span> My Profile
                    </Link>
-                   <Link to="/settings/edit-profile" onClick={() => setIsMobileMenuOpen(false)} className="font-body font-medium text-lg text-on-surface py-2 flex items-center gap-3">
+                   <Link to="/profile?edit=true" onClick={() => setIsMobileMenuOpen(false)} className="font-body font-medium text-lg text-on-surface py-2 flex items-center gap-3">
                      <span className="material-symbols-outlined text-[20px] text-primary">edit</span> Edit Profile
                    </Link>
                    <Link to="/bookings" onClick={() => setIsMobileMenuOpen(false)} className="font-body font-medium text-lg text-on-surface py-2 flex items-center gap-3">
