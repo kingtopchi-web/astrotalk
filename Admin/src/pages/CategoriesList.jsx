@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, Trash2, Columns, Filter, Download, Search as SearchIcon, X } from 'lucide-react';
+import { ADMIN_API_URL } from '../utils/apiConfig';
 
 function CategoriesList() {
   const [categories, setCategories] = useState([]);
@@ -19,7 +20,7 @@ function CategoriesList() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/categories', {
+      const res = await axios.get(`${ADMIN_API_URL}/categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(res.data);
@@ -75,11 +76,11 @@ function CategoriesList() {
       }
 
       if (isEditing) {
-        await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/categories/${currentCategory._id}`, payload, {
+        await axios.patch(`${ADMIN_API_URL}/categories/${currentCategory._id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('https://astrotalk-hlg2.onrender.com/api/admin/categories', payload, {
+        await axios.post(`${ADMIN_API_URL}/categories`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -94,7 +95,7 @@ function CategoriesList() {
     if (!window.confirm(`Are you sure you want to delete category "${category.name}"?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/admin/categories/${category._id}`, {
+      await axios.delete(`${ADMIN_API_URL}/categories/${category._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchCategories();

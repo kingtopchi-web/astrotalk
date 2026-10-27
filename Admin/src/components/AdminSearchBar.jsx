@@ -8,7 +8,9 @@ import {
   ExternalLink, CheckCircle, Clock, AlertTriangle
 } from 'lucide-react';
 
-const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
+import { ADMIN_API_URL } from '../utils/apiConfig';
+
+const API = ADMIN_API_URL;
 
 const ADMIN_PAGES = [
   { title: 'Dashboard', path: '/', icon: BarChart2, category: 'Overview', desc: 'KPIs, real-time metrics & charts' },

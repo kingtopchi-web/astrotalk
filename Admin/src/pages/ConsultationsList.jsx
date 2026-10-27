@@ -6,7 +6,9 @@ import {
   Award, X
 } from 'lucide-react';
 
-const API = 'https://astrotalk-hlg2.onrender.com/api/admin';
+import { ADMIN_API_URL } from '../utils/apiConfig';
+
+const API = ADMIN_API_URL;
 
 const STATUS_COLORS = {
   scheduled: 'bg-blue-50 text-blue-700 border-blue-200',

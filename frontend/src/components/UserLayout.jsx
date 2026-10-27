@@ -80,11 +80,11 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${Number(
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
                     isActive
                       ? 'bg-primary/10 text-primary'
                       : 'text-on-surface/60 hover:bg-surface-light hover:text-on-surface'
-                  ).toFixed(2)}`}
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={isActive ? 'text-primary' : 'text-on-surface/50'}>
@@ -185,11 +185,11 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
                         key={item.name}
                         to={item.path}
                         onClick={() => setIsSidebarOpen(false)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${Number(
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
                           isActive
                             ? 'bg-primary/10 text-primary'
                             : 'text-on-surface/60 hover:bg-surface-light hover:text-on-surface'
-                        ).toFixed(2)}`}
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <span className={isActive ? 'text-primary' : 'text-on-surface/50'}>

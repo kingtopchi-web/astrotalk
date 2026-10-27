@@ -25,6 +25,17 @@ import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
 
 function App() {
+  React.useEffect(() => {
+    let iconLink = document.querySelector("link[rel*='icon']");
+    if (!iconLink) {
+      iconLink = document.createElement('link');
+      iconLink.rel = 'shortcut icon';
+      document.head.appendChild(iconLink);
+    }
+    iconLink.type = 'image/png';
+    iconLink.href = `/logo.png?v=${Date.now()}`;
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

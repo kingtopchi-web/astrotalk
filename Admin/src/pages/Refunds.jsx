@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Download, Filter, CheckCircle2, XCircle, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ADMIN_API_URL } from '../utils/apiConfig';
 
 function Refunds() {
   const [transactions, setTransactions] = useState([]);
@@ -13,7 +14,7 @@ function Refunds() {
   const fetchTransactions = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/transactions?type=REFUND', {
+      const response = await axios.get(`${ADMIN_API_URL}/transactions?type=REFUND`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTransactions(response.data.data || []);

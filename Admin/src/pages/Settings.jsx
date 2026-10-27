@@ -4,6 +4,7 @@ import {
   Save, CheckCircle, RefreshCw, Mail, Phone,
   Percent, Clock, AlertCircle
 } from 'lucide-react';
+import { LOCAL_API_URL, PROD_API_URL, isLocalhost } from '../utils/apiConfig';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
@@ -45,16 +46,10 @@ export default function Settings() {
     fetchSettings();
   }, []);
 
-  const isLocalhost = Boolean(
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' ||
-     window.location.hostname === '127.0.0.1')
-  );
-
   const getAdminApiUrls = () => {
     return isLocalhost
-      ? ['http://localhost:5000/api/admin/settings', 'https://astrotalk-hlg2.onrender.com/api/admin/settings']
-      : ['https://astrotalk-hlg2.onrender.com/api/admin/settings', 'http://localhost:5000/api/admin/settings'];
+      ? [`${LOCAL_API_URL}/admin/settings`, `${PROD_API_URL}/admin/settings`]
+      : [`${PROD_API_URL}/admin/settings`, `${LOCAL_API_URL}/admin/settings`];
   };
 
   const fetchSettings = async () => {

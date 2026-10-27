@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MessageSquare, AlertCircle, Clock, CheckCircle2, Search, X, Send } from 'lucide-react';
+import { API_BASE_URL } from '../utils/apiConfig';
 
-const API = 'https://astrotalk-hlg2.onrender.com/api';
+const API = API_BASE_URL;
 
 export default function SupportTickets() {
   const [tickets, setTickets] = useState([]);

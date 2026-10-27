@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { Calendar, Settings, ChevronRight, Wand2 } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
+import { ADMIN_API_URL } from '../utils/apiConfig';
 
 // Sparkbar component
 const SparkBar = () => (
@@ -37,8 +38,8 @@ function AdminDashboard() {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [statsRes, expertsRes] = await Promise.all([
-          axios.get('https://astrotalk-hlg2.onrender.com/api/admin/dashboard/stats', { headers }),
-          axios.get('https://astrotalk-hlg2.onrender.com/api/admin/experts?limit=5', { headers })
+          axios.get(`${ADMIN_API_URL}/dashboard/stats`, { headers }),
+          axios.get(`${ADMIN_API_URL}/experts?limit=5`, { headers })
         ]);
 
         setStats(statsRes.data);

@@ -200,10 +200,10 @@ function Settings() {
 
   return (
     <UserLayout title="Settings" subtitle="Manage your account settings and preferences">
-      <div className="flex flex-col md:flex-row gap-4 sm:gap-5 max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-5 w-full">
         
         {/* Sidebar */}
-        <div className="w-full md:w-60 shrink-0">
+        <div className="w-full md:w-60 shrink-0 space-y-4">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-3.5 border-b border-slate-100 bg-slate-50">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -223,10 +223,24 @@ function Settings() {
               ))}
             </div>
           </div>
+
+          {/* Danger Zone moved to left sidebar under Settings Menu */}
+          <div className="bg-red-50/90 rounded-xl border border-red-200/80 p-4 shadow-2xs">
+            <h4 className="text-sm font-bold text-red-700 mb-1">Danger Zone</h4>
+            <p className="text-red-600 text-xs mb-3 leading-relaxed">
+              Once you deactivate your account, there is no going back. Please be certain.
+            </p>
+            <button 
+              onClick={handleDeactivate} 
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer shadow-2xs text-center active:scale-98"
+            >
+              Deactivate Account
+            </button>
+          </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1">
+        <div className="flex-1 w-full min-w-0">
           {message.text && (
             <div className={`mb-4 p-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 ${message.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
               {message.text}
@@ -235,24 +249,26 @@ function Settings() {
 
           {/* Security Tab */}
           {activeTab === 'security' && (
-            <div className="space-y-4 sm:space-y-5">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="space-y-4 sm:space-y-5 w-full">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
                 <div className="p-4 sm:p-5 border-b border-slate-100">
                   <h3 className="text-base sm:text-lg font-bold text-slate-800">Change Password</h3>
                   <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Ensure your account is using a long, random password to stay secure.</p>
                 </div>
-                <form onSubmit={handlePasswordSave} className="p-4 sm:p-5 space-y-3.5 sm:space-y-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">Current Password</label>
-                    <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">New Password</label>
-                    <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">Confirm New Password</label>
-                    <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
+                <form onSubmit={handlePasswordSave} className="p-4 sm:p-5 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">Current Password</label>
+                      <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">New Password</label>
+                      <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">Confirm New Password</label>
+                      <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-500" required />
+                    </div>
                   </div>
                   <div className="pt-2 flex justify-end">
                     <button type="submit" disabled={saving} className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-xl text-xs sm:text-sm transition-all disabled:opacity-50">
@@ -262,19 +278,12 @@ function Settings() {
                 </form>
               </div>
 
-              <div className="bg-red-50 rounded-xl border border-red-100 p-4 sm:p-5">
-                <h3 className="text-base font-bold text-red-700 mb-1">Danger Zone</h3>
-                <p className="text-red-600 text-xs sm:text-sm mb-3">Once you deactivate your account, there is no going back. Please be certain.</p>
-                <button onClick={handleDeactivate} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-xl text-xs sm:text-sm transition-colors">
-                  Deactivate Account
-                </button>
-              </div>
             </div>
           )}
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
               <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-slate-800">Notification Preferences</h3>
@@ -284,13 +293,13 @@ function Settings() {
                   {saving ? 'Saving...' : 'Save Preferences'}
                 </button>
               </div>
-              <div className="p-4 sm:p-5">
-                <div className="mb-5 sm:mb-6">
+              <div className="p-4 sm:p-5 space-y-6">
+                <div>
                   <h4 className="font-bold text-slate-800 mb-1 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-blue-600">notifications_active</span> In-App / Push Notifications
                   </h4>
                   <p className="text-xs text-slate-500 mb-4">Control notifications in your header bell icon and live screen popups.</p>
-                  <div className="space-y-4 divide-y divide-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {Object.keys(notifications.push).map(key => {
                       const labels = {
                         consultation: { title: 'Consultation & Bookings', desc: 'Alerts when booking is confirmed, expert joins, or call starts' },
@@ -302,7 +311,7 @@ function Settings() {
                       const item = labels[key] || { title: `${key} Alerts`, desc: `Enable or disable ${key} notifications` };
 
                       return (
-                        <div key={`push-${key}`} className="pt-3 first:pt-0 flex items-center justify-between">
+                        <div key={`push-${key}`} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-white transition-all flex items-center justify-between">
                           <div className="pr-4">
                             <span className="text-slate-800 font-semibold text-sm block">{item.title}</span>
                             <span className="text-slate-500 text-xs">{item.desc}</span>
@@ -327,7 +336,7 @@ function Settings() {
                     <span className="material-symbols-outlined text-[18px] text-blue-600">mail</span> Email Notifications
                   </h4>
                   <p className="text-xs text-slate-500 mb-4">Emails sent directly to your registered inbox.</p>
-                  <div className="space-y-4 divide-y divide-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {Object.keys(notifications.email).map(key => {
                       const labels = {
                         consultation: { title: 'Consultation & Appointments', desc: 'Email reminders before consultations and summary after completion' },
@@ -340,7 +349,7 @@ function Settings() {
                       const item = labels[key] || { title: `${key} Updates`, desc: `Enable or disable ${key} emails` };
 
                       return (
-                        <div key={`email-${key}`} className="pt-3 first:pt-0 flex items-center justify-between">
+                        <div key={`email-${key}`} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-white transition-all flex items-center justify-between">
                           <div className="pr-4">
                             <span className="text-slate-800 font-semibold text-sm block">{item.title}</span>
                             <span className="text-slate-500 text-xs">{item.desc}</span>
@@ -357,28 +366,6 @@ function Settings() {
                         </div>
                       );
                     })}
-                  </div>
-
-                  {/* Test Email Button Box */}
-                  <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50/70 p-4 rounded-xl border border-blue-100">
-                    <div>
-                      <span className="text-slate-800 font-semibold text-sm flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[18px] text-blue-600">mark_email_read</span>
-                        Test Email Delivery
-                      </span>
-                      <span className="text-slate-500 text-xs mt-0.5 block">
-                        Send a live test notification to <strong>{userData?.email || 'your registered email'}</strong> to verify delivery.
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSendTestEmail}
-                      disabled={sendingTestEmail}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60 active:scale-95"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">{sendingTestEmail ? 'hourglass_top' : 'send'}</span>
-                      {sendingTestEmail ? 'Sending...' : 'Send Test Email'}
-                    </button>
                   </div>
                 </div>
               </div>

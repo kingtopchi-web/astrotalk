@@ -144,19 +144,18 @@ async function seedOnlineExperts() {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB Atlas');
 
-    const hashedPassword = await bcrypt.hash('Expert@123', 10);
-
     for (const data of expertsData) {
       let expert = await Expert.findOne({ email: data.email });
       if (!expert) {
         expert = new Expert({
           ...data,
-          password: hashedPassword
+          password: 'Expert@123'
         });
         await expert.save();
         console.log(`Created online expert: ${expert.name}`);
       } else {
         Object.assign(expert, data);
+        expert.password = 'Expert@123';
         expert.onlineStatus = 'online';
         expert.verificationStatus = 'APPROVED';
         expert.status = 'ACTIVE';

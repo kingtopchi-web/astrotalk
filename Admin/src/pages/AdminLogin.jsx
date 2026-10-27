@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
+import { API_BASE_URL } from '../utils/apiConfig';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ const AdminLogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://astrotalk-hlg2.onrender.com/api/auth/admin/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -67,7 +68,7 @@ const AdminLogin = () => {
                   type="email"
                   required
                   className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 px-3 border outline-none"
-                  placeholder="admin@auraexpert.com"
+                  placeholder="admin@experthub.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />

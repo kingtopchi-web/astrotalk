@@ -141,18 +141,21 @@ exports.getRevenue = async (req, res) => {
 // Dashboard Stats
 exports.getDashboardStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalExperts = await Expert.countDocuments();
-    const pendingExperts = await Expert.countDocuments({ verificationStatus: 'PENDING' });
-    const approvedExperts = await Expert.countDocuments({ verificationStatus: 'APPROVED' });
-    const rejectedExperts = await Expert.countDocuments({ verificationStatus: 'REJECTED' });
-    const activeExperts = await Expert.countDocuments({ status: 'ACTIVE' });
-    const suspendedExperts = await Expert.countDocuments({ status: 'SUSPENDED' });
-    const totalCategories = await Category.countDocuments();
-    const totalSubCategories = await SubCategory.countDocuments();
+    // 1. Fetch summary counts in parallel
+    const summaryPromise = Promise.all([
+      User.countDocuments(),
+      Expert.countDocuments(),
+      Expert.countDocuments({ verificationStatus: 'PENDING' }),
+      Expert.countDocuments({ verificationStatus: 'APPROVED' }),
+      Expert.countDocuments({ verificationStatus: 'REJECTED' }),
+      Expert.countDocuments({ status: 'ACTIVE' }),
+      Expert.countDocuments({ status: 'SUSPENDED' }),
+      Category.countDocuments(),
+      SubCategory.countDocuments()
+    ]);
 
-    // Generate last 7 days data for AreaChart (Daily Registrations)
-    const last7Days = [];
+    // 2. Build last 7 days parallel promises
+    const daysPromises = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -160,19 +163,21 @@ exports.getDashboardStats = async (req, res) => {
       const nextD = new Date(d);
       nextD.setDate(nextD.getDate() + 1);
 
-      const userCount = await User.countDocuments({ createdAt: { $gte: d, $lt: nextD } });
-      const expertCount = await Expert.countDocuments({ createdAt: { $gte: d, $lt: nextD } });
-
-      last7Days.push({
-        name: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        users: userCount,
-        experts: expertCount,
-        total: userCount + expertCount
-      });
+      daysPromises.push(
+        Promise.all([
+          User.countDocuments({ createdAt: { $gte: d, $lt: nextD } }),
+          Expert.countDocuments({ createdAt: { $gte: d, $lt: nextD } })
+        ]).then(([userCount, expertCount]) => ({
+          name: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          users: userCount,
+          experts: expertCount,
+          total: userCount + expertCount
+        }))
+      );
     }
 
-    // Generate last 6 months data for BarChart (Monthly Growth)
-    const last6Months = [];
+    // 3. Build last 6 months parallel promises
+    const monthsPromises = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
@@ -181,15 +186,38 @@ exports.getDashboardStats = async (req, res) => {
       const nextMonth = new Date(d);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-      const userCount = await User.countDocuments({ createdAt: { $gte: d, $lt: nextMonth } });
-      const expertCount = await Expert.countDocuments({ createdAt: { $gte: d, $lt: nextMonth } });
-
-      last6Months.push({
-        name: d.toLocaleDateString('en-US', { month: 'short' }),
-        users: userCount,
-        experts: expertCount,
-      });
+      monthsPromises.push(
+        Promise.all([
+          User.countDocuments({ createdAt: { $gte: d, $lt: nextMonth } }),
+          Expert.countDocuments({ createdAt: { $gte: d, $lt: nextMonth } })
+        ]).then(([userCount, expertCount]) => ({
+          name: d.toLocaleDateString('en-US', { month: 'short' }),
+          users: userCount,
+          experts: expertCount,
+        }))
+      );
     }
+
+    // Run all tasks in parallel
+    const [
+      [
+        totalUsers,
+        totalExperts,
+        pendingExperts,
+        approvedExperts,
+        rejectedExperts,
+        activeExperts,
+        suspendedExperts,
+        totalCategories,
+        totalSubCategories
+      ],
+      last7Days,
+      last6Months
+    ] = await Promise.all([
+      summaryPromise,
+      Promise.all(daysPromises),
+      Promise.all(monthsPromises)
+    ]);
 
     res.json({
       totalUsers,
@@ -560,11 +588,19 @@ exports.updateAdminProfile = async (req, res) => {
 // --- Sidebar Stats (lightweight) ---
 exports.getSidebarStats = async (req, res) => {
   try {
-    const pendingExperts = await Expert.countDocuments({ verificationStatus: 'PENDING' });
-    const totalConsultations = await Consultation.countDocuments();
-    const pendingConsultations = await Consultation.countDocuments({ status: 'scheduled' });
-    const totalUsers = await User.countDocuments();
-    const totalExperts = await Expert.countDocuments();
+    const [
+      pendingExperts,
+      totalConsultations,
+      pendingConsultations,
+      totalUsers,
+      totalExperts
+    ] = await Promise.all([
+      Expert.countDocuments({ verificationStatus: 'PENDING' }),
+      Consultation.countDocuments(),
+      Consultation.countDocuments({ status: 'scheduled' }),
+      User.countDocuments(),
+      Expert.countDocuments()
+    ]);
 
     res.json({ pendingExperts, totalConsultations, pendingConsultations, totalUsers, totalExperts });
   } catch (error) {

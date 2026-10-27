@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiConfig';
 import { 
   saveAvatarToDB, 
   getAvatarFromDB, 
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
         // Fetch fresh profile in background so profileImage and updates stay synced
         if (parsedUser.role === 'USER') {
-          axios.get('https://experthub.nextgoodtechnologies.in/api/user/profile', {
+          axios.get(getApiUrl('/user/profile'), {
             headers: { Authorization: `Bearer ${token}` }
           }).then((res) => {
             if (res.data) {
@@ -60,7 +61,7 @@ export const AuthProvider = ({ children }) => {
             }
           }).catch(() => {});
         } else if (parsedUser.role === 'EXPERT') {
-          axios.get('https://experthub.nextgoodtechnologies.in/api/expert/profile', {
+          axios.get(getApiUrl('/expert/profile'), {
             headers: { Authorization: `Bearer ${token}` }
           }).then((res) => {
             if (res.data) {

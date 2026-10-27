@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from './apiConfig';
 
-const API_BASE = 'https://astrotalk-hlg2.onrender.com/api';
+const API_BASE = API_BASE_URL;
 
 // Filter out irrelevant or user-specific notifications (like rate consultation, user bookings, etc.)
 export const filterAdminNotifications = (list = []) => {

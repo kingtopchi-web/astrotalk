@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
+import { ADMIN_API_URL } from '../utils/apiConfig';
 
 function AdminProfile() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ function AdminProfile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/profile', {
+      const res = await axios.get(`${ADMIN_API_URL}/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data);
@@ -55,7 +56,7 @@ function AdminProfile() {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.patch('https://astrotalk-hlg2.onrender.com/api/admin/profile', form, {
+      const res = await axios.patch(`${ADMIN_API_URL}/profile`, form, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data.user);

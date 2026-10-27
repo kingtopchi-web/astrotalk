@@ -319,7 +319,7 @@ function ExpertPublicProfile() {
     <div className="min-h-screen bg-[#fafaf9] flex flex-col font-sans pt-16 md:pt-20">
       <Header />
       
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-4 md:py-8 pb-24 md:pb-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-24 md:pb-8">
         
         {/* Mobile Back to Home Navigation Bar */}
         <div className="flex items-center justify-between mb-3.5 md:hidden">
@@ -471,7 +471,7 @@ function ExpertPublicProfile() {
             
             {/* Tabs */}
             <div className="flex items-center gap-6 border-b border-slate-200 mb-6 overflow-x-auto pb-1">
-              {['Services', 'About', `Reviews (${reviewsCount})`, 'Availability', 'Sessions'].map(tab => (
+              {['Services', 'About', 'Availability', 'Sessions', `Reviews & Ratings (${reviewsCount})`].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -577,7 +577,7 @@ function ExpertPublicProfile() {
               </div>
             )}
             
-            {activeTab.startsWith('Reviews') && (
+            {(activeTab.startsWith('Reviews') || activeTab.startsWith('Ratings')) && (
               <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-8">
                 {/* Reviews Header & Distribution Summary */}
                 <div className="flex flex-col md:flex-row items-center gap-8 pb-8 border-b border-slate-100">
@@ -611,7 +611,14 @@ function ExpertPublicProfile() {
 
                 {/* Reviews List */}
                 <div className="space-y-6">
-                  <h3 className="text-lg font-bold text-slate-900">Client Feedback</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-slate-900">Recent Client Feedback</h3>
+                    {reviewsData.reviews.length > 0 && (
+                      <span className="text-xs text-slate-500 font-medium">
+                        Showing recent {Math.min(3, reviewsData.reviews.length)} of {reviewsCount} reviews
+                      </span>
+                    )}
+                  </div>
                   {loadingReviews ? (
                     <div className="py-12 text-center text-slate-400 text-sm font-medium">Loading reviews...</div>
                   ) : reviewsData.reviews.length === 0 ? (
@@ -619,7 +626,10 @@ function ExpertPublicProfile() {
                       No published reviews for this expert yet. Complete a consultation to be the first!
                     </div>
                   ) : (
-                    reviewsData.reviews.map((rev) => (
+                    [...reviewsData.reviews]
+                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                      .slice(0, 3)
+                      .map((rev) => (
                       <div key={rev._id} className="p-5 rounded-2xl bg-slate-50 border border-slate-100/80 space-y-2.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -653,7 +663,7 @@ function ExpertPublicProfile() {
               </div>
             )}
             
-            {activeTab !== 'About' && activeTab !== 'Services' && !activeTab.startsWith('Reviews') && (
+            {activeTab !== 'About' && activeTab !== 'Services' && !activeTab.startsWith('Reviews') && !activeTab.startsWith('Ratings') && (
               <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm text-center py-20">
                 <p className="text-slate-500 font-medium text-lg">No data available for {activeTab.toLowerCase()} yet.</p>
               </div>
@@ -701,40 +711,6 @@ function ExpertPublicProfile() {
               </ul>
             </div>
 
-            {/* Ratings & Reviews Widget */}
-            {(Number(rating) > 0 || reviewsCount > 0) && (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-6">Ratings & Reviews</h3>
-                
-                <div className="flex items-center gap-6 mb-8">
-                  <div>
-                    <div className="text-5xl font-extrabold text-slate-900 mb-2">{rating}</div>
-                    <div className="flex text-amber-400 gap-1 mb-1">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} size={14} className={s <= Math.round(Number(rating)) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'} />
-                      ))}
-                    </div>
-                    <p className="text-xs font-medium text-slate-500">Based on {reviewsCount} reviews</p>
-                  </div>
-                  
-                  <div className="flex-1 space-y-2 text-xs font-bold text-slate-500">
-                    {[5, 4, 3, 2, 1].map((stars) => {
-                      const count = reviewsData.distribution[stars] || 0;
-                      const percent = reviewsCount > 0 ? Math.round((count / reviewsCount) * 100) : 0;
-                      return (
-                        <div key={stars} className="flex items-center gap-2">
-                          <span className="w-5 text-slate-600">{stars} ★</span>
-                          <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-400 rounded-full transition-all duration-300" style={{ width: `${percent}%` }}></div>
-                          </div>
-                          <span className="w-8 text-right text-slate-400">{percent}%</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

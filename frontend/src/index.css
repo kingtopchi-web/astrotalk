@@ -20,24 +20,7 @@
 }
 
 @layer base {
-  :root {
-    --color-primary: #F7C83C;
-    --color-primary-dark: #DCA714;
-    --color-primary-light: #FFF3B0;
-    --color-secondary: #FF7A00;
-    --color-secondary-dark: #CC6200;
-    --color-secondary-light: #FFEDD5;
-    --color-accent: #10B981;
-    --color-surface: #121212;
-    --color-surface-muted: #1A1A1A;
-    --color-surface-card: #18181B;
-    --color-background: #09090B;
-    --color-on-background: #FFFFFF;
-    --color-on-surface: #F4F4F5;
-    --color-on-surface-variant: #A1A1AA;
-    --color-border: #27272A;
-  }
-
+  :root,
   .light-theme {
     --color-primary: #F7C83C;
     --color-primary-dark: #DCA714;

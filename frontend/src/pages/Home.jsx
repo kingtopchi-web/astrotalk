@@ -386,11 +386,11 @@ function Home() {
       <main className="flex-1 w-full pt-[72px]">
 
         {/* HERO SECTION - Carousel Concept */}
-        <section className="relative overflow-hidden bg-background text-on-background pt-4 sm:pt-6 pb-4 sm:pb-6 px-3 sm:px-5 lg:px-6">
+        <section className="relative overflow-hidden bg-background text-on-background pt-2 sm:pt-4 pb-0 sm:pb-1 px-3 sm:px-5 lg:px-6">
           <div className="relative max-w-screen-2xl mx-auto z-10">
-            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 py-3 sm:py-5 md:py-6 px-1 sm:px-2">
+            <div className="flex flex-col md:flex-row items-center gap-5 md:gap-8 pt-1 sm:pt-2 pb-2 sm:pb-3 px-1 sm:px-2">
               {/* Left Content */}
-              <div className="flex-1 space-y-4 text-center md:text-left">
+              <div className="flex-1 space-y-3.5 text-center md:text-left">
                 <h1 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.15] text-on-background">
                   India's most accurate <br />
                   <span className="text-primary">
@@ -398,7 +398,7 @@ function Home() {
                   </span>
                 </h1>
 
-                <div className="space-y-1.5 text-xs sm:text-sm text-on-surface-variant font-medium pt-1">
+                <div className="space-y-1 text-xs sm:text-sm text-on-surface-variant font-medium pt-0.5">
                   <div className="flex items-center gap-2 justify-center md:justify-start">
                     <div className="w-4 h-4 rounded-full bg-primary text-background flex items-center justify-center text-[11px] shrink-0"><span className="material-symbols-outlined text-[12px]">check</span></div>
                     <span>Get Free initial consultation</span>
@@ -409,17 +409,17 @@ function Home() {
                   </div>
                 </div>
 
-                <div className="pt-3 sm:pt-4">
+                <div className="pt-2 sm:pt-3">
                   <button 
                     onClick={handleStartFreeChatClick}
-                    className="px-7 py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
+                    className="px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
                   >
                     Start Free Chat <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
                 </div>
 
                 {/* Statistics */}
-                <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 pt-5 sm:pt-7">
+                <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 pt-3 sm:pt-4">
                   <div className="text-left">
                     <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
                       {formatStat(platformStats.usersCount)}
@@ -454,17 +454,17 @@ function Home() {
               </div>
 
               {/* Right Image area */}
-              <div className="flex-1 relative w-full flex justify-center mt-6 md:mt-0">
-                <div className="relative w-full max-w-[500px] lg:max-w-[620px] h-[320px] sm:h-[380px] md:h-[430px] flex items-center justify-center">
+              <div className="flex-1 relative w-full flex justify-center mt-3 md:mt-0">
+                <div className="relative w-full max-w-[460px] lg:max-w-[540px] h-[240px] sm:h-[280px] md:h-[320px] flex items-center justify-center">
                   {heroImages.map((img, idx) => {
                     let positionClass = '';
 
                     if (idx === currentHeroImgIndex) {
-                      positionClass = 'w-48 h-66 sm:w-60 sm:h-82 md:w-68 md:h-94 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_14px_40px_rgba(247,200,60,0.35)] opacity-100 scale-100';
+                      positionClass = 'w-40 h-52 sm:w-48 sm:h-64 md:w-56 md:h-72 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_12px_32px_rgba(247,200,60,0.3)] opacity-100 scale-100';
                     } else if (idx === (currentHeroImgIndex + 1) % heroImages.length) {
-                      positionClass = 'w-38 h-52 sm:w-48 sm:h-68 md:w-56 md:h-80 z-10 translate-x-26 sm:translate-x-36 md:translate-x-44 border-2 border-primary/35 shadow-xl opacity-90 scale-95';
+                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 translate-x-20 sm:translate-x-28 md:translate-x-32 border-2 border-primary/35 shadow-lg opacity-85 scale-95';
                     } else {
-                      positionClass = 'w-38 h-52 sm:w-48 sm:h-68 md:w-56 md:h-80 z-10 -translate-x-26 sm:-translate-x-36 md:-translate-x-44 border-2 border-primary/35 shadow-xl opacity-90 scale-95';
+                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 -translate-x-20 sm:-translate-x-28 md:-translate-x-32 border-2 border-primary/35 shadow-lg opacity-85 scale-95';
                     }
 
                     return (
@@ -481,8 +481,8 @@ function Home() {
 
         {/* POPULAR EXPERTS SECTION (RECOMMENDED EXPERTS) */}
         {user?.role !== 'EXPERT' && (
-          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 py-6 sm:py-8">
-            <div className="flex items-center justify-between mb-5">
+          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6">
+            <div className="flex items-center justify-between mb-3.5 sm:mb-4">
               <div>
                 <h2 className="font-heading font-bold text-xl sm:text-2xl md:text-3xl text-on-background">Recommended Experts</h2>
                 <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Top-rated professionals ready to help you.</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, Trash2, Columns, Filter, Download, Search as SearchIcon, X } from 'lucide-react';
+import { ADMIN_API_URL } from '../utils/apiConfig';
 
 function SubCategoriesList() {
   const [subCategories, setSubCategories] = useState([]);
@@ -20,8 +21,8 @@ function SubCategoriesList() {
     try {
       const token = localStorage.getItem('adminToken');
       const [subRes, catRes] = await Promise.all([
-        axios.get('https://astrotalk-hlg2.onrender.com/api/admin/sub-categories', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('https://astrotalk-hlg2.onrender.com/api/admin/categories', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${ADMIN_API_URL}/sub-categories`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${ADMIN_API_URL}/categories`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setSubCategories(subRes.data);
       setCategories(catRes.data);
@@ -86,11 +87,11 @@ function SubCategoriesList() {
       }
 
       if (isEditing) {
-        await axios.patch(`https://astrotalk-hlg2.onrender.com/api/admin/sub-categories/${currentSubCategory._id}`, payload, {
+        await axios.patch(`${ADMIN_API_URL}/sub-categories/${currentSubCategory._id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('https://astrotalk-hlg2.onrender.com/api/admin/sub-categories', payload, {
+        await axios.post(`${ADMIN_API_URL}/sub-categories`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -105,7 +106,7 @@ function SubCategoriesList() {
     if (!window.confirm(`Are you sure you want to delete sub-category "${subCategory.name}"?`)) return;
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`https://astrotalk-hlg2.onrender.com/api/admin/sub-categories/${subCategory._id}`, {
+      await axios.delete(`${ADMIN_API_URL}/sub-categories/${subCategory._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();

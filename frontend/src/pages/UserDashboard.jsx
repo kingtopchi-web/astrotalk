@@ -9,12 +9,16 @@ import {
   Search, 
   MessageSquare,
   ChevronRight,
-  Clock
+  Clock,
+  Edit2,
+  UserCheck,
+  Phone
 } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
+import { getApiUrl } from '../utils/apiConfig';
 
 function UserDashboard() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [savedExperts, setSavedExperts] = useState([]);
@@ -26,18 +30,26 @@ function UserDashboard() {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const [aptRes, savedRes] = await Promise.all([
-          axios.get('https://experthub.nextgoodtechnologies.in/api/bookings/my-bookings', {
+        const [aptRes, savedRes, profRes] = await Promise.allSettled([
+          axios.get(getApiUrl('/bookings/my-bookings'), {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get('https://experthub.nextgoodtechnologies.in/api/user/saved-experts', {
+          axios.get(getApiUrl('/user/saved-experts'), {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(getApiUrl('/user/profile'), {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
-        setAppointments(aptRes.data || []); 
-        const savedList = Array.isArray(savedRes.data) ? savedRes.data : [];
-        setSavedExperts(savedList);
-        setSavedExpertsCount(savedList.length);
+        if (aptRes.status === 'fulfilled') setAppointments(aptRes.value.data || []); 
+        if (savedRes.status === 'fulfilled') {
+          const savedList = Array.isArray(savedRes.value.data) ? savedRes.value.data : [];
+          setSavedExperts(savedList);
+          setSavedExpertsCount(savedList.length);
+        }
+        if (profRes.status === 'fulfilled' && profRes.value.data && updateUser) {
+          updateUser(profRes.value.data);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -55,7 +67,7 @@ function UserDashboard() {
     setSavedExpertsCount(prev => Math.max(0, prev - 1));
     try {
       await axios.post(
-        `https://experthub.nextgoodtechnologies.in/api/user/saved-experts/${expertId}`,
+        getApiUrl(`/user/saved-experts/${expertId}`),
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -65,6 +77,11 @@ function UserDashboard() {
   };
 
   const displayName = user?.name ? user.name.split(' ')[0] : 'User';
+  const fullName = user?.name || 'User';
+  const userAvatar = 
+    user?.profileImage || 
+    localStorage.getItem('user_avatar') || 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=2563EB&color=fff&size=150`;
   
   const upcomingCount = appointments.filter(a => ['scheduled', 'ongoing'].includes(a.status)).length;
   const totalSpent = appointments.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.cost || 0), 0);
@@ -75,15 +92,52 @@ function UserDashboard() {
       <div className="flex flex-col gap-5">
         
         {/* Welcome Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-1">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-on-surface flex items-center gap-2">
-              Good Morning, {displayName}! <span className="animate-wave inline-block origin-bottom-right">👋</span>
-            </h1>
-            <p className="text-on-surface/60 mt-1 font-medium text-xs sm:text-sm">Here's what's happening with your consultations.</p>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+            {/* Avatar with Edit Badge */}
+            <div className="relative group shrink-0">
+              <img
+                src={userAvatar}
+                alt={fullName}
+                className="w-20 h-20 md:w-24 md:h-24 rounded-full shadow-md border-3 border-white object-cover bg-slate-100"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=2563EB&color=fff&size=150`;
+                }}
+              />
+              <Link 
+                to="/profile"
+                title="Edit Profile"
+                className="absolute bottom-0 right-0 bg-blue-600 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 hover:scale-105 transition-all"
+              >
+                <Edit2 size={14} />
+              </Link>
+            </div>
+            
+            {/* User Details */}
+            <div className="text-center sm:text-left pt-1 flex-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Welcome back, {fullName}
+              </h1>
+              <p className="text-slate-500 font-medium text-xs sm:text-sm mt-0.5">
+                {user?.email || 'user@experthub.com'}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
+                 <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 font-bold px-2.5 py-0.5 rounded-full text-xs uppercase tracking-wider border border-green-100">
+                   <UserCheck size={13} />
+                   {user?.role === 'ADMIN' ? 'SUPER ADMIN' : 'VERIFIED CLIENT'}
+                 </span>
+                 {user?.mobile && (
+                   <span className="inline-flex items-center gap-1.5 bg-slate-50 text-slate-600 font-medium px-2.5 py-0.5 rounded-full text-xs border border-slate-200">
+                     <Phone size={12} className="text-slate-400" />
+                     {user.mobile}
+                   </span>
+                 )}
+              </div>
+            </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-4 bg-primary/10/50 p-3.5 rounded-xl border border-blue-100">
+          <div className="hidden lg:flex items-center gap-4 bg-primary/10/50 p-3.5 rounded-xl border border-blue-100 shrink-0">
             <div className="relative w-28 h-16">
               <div className="absolute inset-0 bg-blue-100 rounded-lg transform -rotate-3"></div>
               <div className="absolute inset-0 bg-surface rounded-lg shadow-sm border border-blue-50 flex items-center justify-center p-2">

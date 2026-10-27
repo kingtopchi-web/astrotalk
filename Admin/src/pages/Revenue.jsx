@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { IndianRupee, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { ADMIN_API_URL } from '../utils/apiConfig';
 
 function Revenue() {
   const [stats, setStats] = useState(null);
@@ -13,7 +14,7 @@ function Revenue() {
   const fetchRevenue = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get('https://astrotalk-hlg2.onrender.com/api/admin/revenue', {
+      const response = await axios.get(`${ADMIN_API_URL}/revenue`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(response.data);

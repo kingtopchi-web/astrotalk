@@ -60,36 +60,22 @@ import './index.css';
 import { useLocation } from 'react-router-dom';
 
 function ThemeManager() {
-  const location = useLocation();
-
   useEffect(() => {
-    // Only Home page ('/') can use the dark theme system.
-    // User dashboard and Expert portal must NEVER have a black background theme.
-    const isDashboardOrPortal = 
-      location.pathname.startsWith('/dashboard') ||
-      location.pathname.startsWith('/expert') ||
-      location.pathname.startsWith('/bookings') ||
-      location.pathname.startsWith('/wallet') ||
-      location.pathname.startsWith('/settings') ||
-      location.pathname.startsWith('/profile') ||
-      location.pathname.startsWith('/support') ||
-      location.pathname.startsWith('/messages') ||
-      location.pathname.startsWith('/free-services') ||
-      location.pathname.startsWith('/notifications');
+    document.documentElement.classList.add('light-theme');
+    localStorage.removeItem('home_theme');
+    localStorage.removeItem('app_theme');
 
-    if (isDashboardOrPortal) {
-      document.documentElement.classList.add('light-theme');
-    } else if (location.pathname === '/') {
-      const homeTheme = localStorage.getItem('home_theme');
-      if (homeTheme === 'dark') {
-        document.documentElement.classList.remove('light-theme');
-      } else {
-        document.documentElement.classList.add('light-theme');
-      }
-    } else {
-      document.documentElement.classList.add('light-theme');
+    // Enforce platform title & logo as tab favicon across all browsers
+    document.title = 'ExpertHub';
+    let iconLink = document.querySelector("link[rel*='icon']");
+    if (!iconLink) {
+      iconLink = document.createElement('link');
+      iconLink.rel = 'shortcut icon';
+      document.head.appendChild(iconLink);
     }
-  }, [location.pathname]);
+    iconLink.type = 'image/png';
+    iconLink.href = `/logo.png?v=${Date.now()}`;
+  }, []);
   
   return null;
 }

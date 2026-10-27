@@ -19,7 +19,9 @@ import {
   CheckSquare, 
   Square, 
   X,
-  AlertTriangle
+  AlertTriangle,
+  Paperclip,
+  User
 } from 'lucide-react';
 
 function Messages() {
@@ -500,20 +502,21 @@ function Messages() {
   });
 
   return (
-    <UserLayout title="Messages" subtitle="Chat with your experts" hideTitleOnMobile={!!activeConversation}>
-      <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex h-[calc(100dvh-125px)] sm:h-[calc(100dvh-135px)] md:h-[650px] min-h-[350px] md:min-h-[550px] relative w-full max-w-full">
+    <UserLayout hideTitleOnMobile={!!activeConversation}>
+      <div className="bg-white rounded-2xl md:rounded-3xl shadow-xs border border-slate-200/90 overflow-hidden flex h-[calc(100vh-100px)] min-h-[580px] relative w-full">
         
         {/* Conversations Sidebar (Full width on mobile when no chat open, hidden when chat open) */}
-        <div className={`w-full md:w-80 border-r border-slate-100 flex-col bg-slate-50 shrink-0 h-full ${activeConversation ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-3.5 sm:p-4 border-b border-slate-100 bg-white">
+        <div className={`w-full md:w-80 lg:w-[320px] border-r border-slate-150 flex-col bg-white shrink-0 h-full ${activeConversation ? 'hidden md:flex' : 'flex'}`}>
+          <div className="p-4 sm:p-5 pb-3 bg-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-3">Messages</h2>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type="text" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search conversations..." 
-                className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-slate-50 text-xs sm:text-sm"
+                className="w-full pl-9 pr-4 py-2.5 rounded-full bg-slate-100/80 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-400 focus:bg-white border border-transparent focus:border-amber-400 transition-all"
               />
             </div>
           </div>
@@ -535,29 +538,48 @@ function Messages() {
                     <div 
                       key={conv._id}
                       onClick={() => setActiveConversation(conv)}
-                      className={`p-3.5 sm:p-4 flex gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 border-l-4 border-blue-600' : 'hover:bg-slate-100 border-l-4 border-transparent'}`}
+                      className={`p-3.5 sm:p-4 flex items-center gap-3 cursor-pointer transition-colors ${
+                        isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/60'
+                      }`}
                     >
                       <div className="relative shrink-0">
-                        <img 
-                          src={other?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(other?.name || 'Expert')}&background=random`} 
-                          alt="avatar" 
-                          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm border border-slate-200"
-                        />
-                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        {other?.profileImage ? (
+                          <img 
+                            src={other.profileImage} 
+                            alt={other?.name} 
+                            className="w-11 h-11 rounded-full object-cover shadow-xs border border-slate-200/60"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`w-11 h-11 rounded-full flex items-center justify-center shadow-xs ${
+                            other?.role === 'EXPERT' || isSelected
+                              ? 'bg-[#FEF3C7] text-[#D97706]' 
+                              : 'bg-blue-50 text-blue-500'
+                          }`}
+                          style={{ display: other?.profileImage ? 'none' : 'flex' }}
+                        >
+                          <User size={20} />
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                          <h4 className="font-bold text-slate-800 text-xs sm:text-sm truncate">{other?.name || 'Expert User'}</h4>
-                          <span className="text-[10px] font-semibold text-slate-400 shrink-0">
-                            {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                        <div className="flex justify-between items-center mb-0.5">
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                            {other?.name || 'Expert User'}
+                          </h4>
+                          <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold border border-emerald-100 shrink-0">
+                            Online
                           </span>
                         </div>
-                        <p className={`text-xs truncate ${conv.unreadCounts && conv.unreadCounts[user?._id] ? 'font-bold text-slate-800' : 'text-slate-500'}`}>
+                        <p className={`text-xs truncate ${conv.unreadCounts && conv.unreadCounts[user?._id] ? 'font-bold text-slate-900' : 'text-slate-400'}`}>
                           {conv.lastMessage || 'Start the conversation'}
                         </p>
                       </div>
                       {conv.unreadCounts && conv.unreadCounts[user?._id] > 0 && (
-                        <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-2">
+                        <div className="w-5 h-5 rounded-full bg-[#F5B52E] flex items-center justify-center text-[10px] font-bold text-slate-900 shrink-0">
                           {conv.unreadCounts[user?._id]}
                         </div>
                       )}
@@ -573,8 +595,8 @@ function Messages() {
         {activeConversation ? (
           <div className="flex-1 flex flex-col bg-white w-full h-full min-w-0">
             {/* Chat Header */}
-            <div className="px-2.5 sm:px-6 py-2 sm:py-3.5 border-b border-slate-100 flex justify-between items-center bg-white z-10 gap-1.5 sm:gap-2 shrink-0">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="px-4 sm:px-6 py-3.5 border-b border-slate-100 flex justify-between items-center bg-white z-10 gap-2 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile Back Button */}
                 <button 
                   onClick={() => {
@@ -582,28 +604,39 @@ function Messages() {
                     setSelectionMode(false);
                     setSelectedMsgIds([]);
                   }}
-                  className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0"
+                  className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-amber-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0"
                   title="Back to conversations"
                 >
                   <ArrowLeft size={19} />
                 </button>
                 <div className="relative shrink-0">
-                  <img 
-                    src={getOtherParticipant(activeConversation)?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(getOtherParticipant(activeConversation)?.name || 'Expert')}&background=random`} 
-                    alt="avatar" 
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover shadow-sm"
-                  />
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
+                  {getOtherParticipant(activeConversation)?.profileImage ? (
+                    <img 
+                      src={getOtherParticipant(activeConversation)?.profileImage} 
+                      alt="avatar" 
+                      className="w-10 h-10 rounded-full object-cover shadow-xs border border-slate-200/60"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-10 h-10 rounded-full bg-[#FEF3C7] text-[#D97706] flex items-center justify-center shadow-xs"
+                    style={{ display: getOtherParticipant(activeConversation)?.profileImage ? 'none' : 'flex' }}
+                  >
+                    <User size={20} />
+                  </div>
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-slate-800 leading-tight text-xs sm:text-sm truncate max-w-[120px] sm:max-w-xs">
+                  <h3 className="font-bold text-slate-900 leading-tight text-sm sm:text-base truncate max-w-[140px] sm:max-w-xs">
                     {getOtherParticipant(activeConversation)?.name || 'Expert User'}
                   </h3>
-                  <p className="text-[10px] sm:text-xs text-green-500 font-medium">Online</p>
+                  <p className="text-xs text-emerald-600 font-medium">Online</p>
                 </div>
               </div>
 
-              {/* Active Session Badges (desktop) & Action Buttons */}
+              {/* Active Session Badges & Call Action Buttons */}
               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 {activeConsultation && (
                   <div className="hidden sm:flex items-center gap-1 sm:gap-1.5 bg-slate-50 px-2 sm:px-2.5 py-1 rounded-xl border border-slate-200">
@@ -629,7 +662,7 @@ function Messages() {
                           <span>{Math.floor(seconds / 60).toString().padStart(2, '0')}:{(seconds % 60).toString().padStart(2, '0')}</span>
                         </div>
                         {user?.role !== 'EXPERT' && (
-                          <div className={`hidden sm:flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${remainingSeconds < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                          <div className={`hidden sm:flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${remainingSeconds < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
                             <span>₹{remainingLiveBalance.toFixed(2)}</span>
                           </div>
                         )}
@@ -647,28 +680,28 @@ function Messages() {
 
                 {/* Audio & Video Call Shortcut Buttons */}
                 <button 
-                  onClick={() => handleStartCall('call')}
-                  className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer"
-                  title="Audio Call"
-                >
-                  <Phone size={17} />
-                </button>
-                <button 
                   onClick={() => handleStartCall('video')}
-                  className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer"
+                  className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
                   title="Video Call"
                 >
-                  <Video size={17} />
+                  <Video size={19} />
+                </button>
+                <button 
+                  onClick={() => handleStartCall('call')}
+                  className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
+                  title="Audio Call"
+                >
+                  <Phone size={19} />
                 </button>
 
                 {/* More Menu Dropdown for Deletion Options */}
                 <div className="relative" ref={moreMenuRef}>
                   <button 
                     onClick={() => setShowMoreMenu(!showMoreMenu)}
-                    className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                    className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
                     title="Chat Options"
                   >
-                    <MoreVertical size={17} />
+                    <MoreVertical size={19} />
                   </button>
 
                   {showMoreMenu && (
@@ -681,7 +714,7 @@ function Messages() {
                         }}
                         className="w-full px-4 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer transition-colors"
                       >
-                        <CheckSquare size={16} className="text-blue-600" />
+                        <CheckSquare size={16} className="text-amber-600" />
                         <span>Select Messages</span>
                       </button>
                       <button 
@@ -730,7 +763,7 @@ function Messages() {
                       <span>{Math.floor(seconds / 60).toString().padStart(2, '0')}:{(seconds % 60).toString().padStart(2, '0')}</span>
                     </span>
                     {user?.role !== 'EXPERT' && (
-                      <span className="text-blue-700 bg-blue-100/70 px-1.5 py-0.2 rounded font-semibold text-[10px]">
+                      <span className="text-amber-800 bg-amber-100/70 px-1.5 py-0.2 rounded font-semibold text-[10px]">
                         ₹{remainingLiveBalance.toFixed(2)}
                       </span>
                     )}
@@ -748,12 +781,12 @@ function Messages() {
 
             {/* Selection Mode Action Bar */}
             {selectionMode && (
-              <div className="bg-blue-50/90 border-b border-blue-200 px-3 sm:px-6 py-2 flex items-center justify-between text-xs sm:text-sm animate-in fade-in shrink-0">
+              <div className="bg-amber-50/90 border-b border-amber-200 px-3 sm:px-6 py-2 flex items-center justify-between text-xs sm:text-sm animate-in fade-in shrink-0">
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-blue-900">{selectedMsgIds.length} Selected</span>
+                  <span className="font-bold text-amber-900">{selectedMsgIds.length} Selected</span>
                   <button 
                     onClick={handleSelectAllMessages}
-                    className="text-blue-700 hover:text-blue-900 font-semibold underline text-xs cursor-pointer"
+                    className="text-amber-700 hover:text-amber-900 font-semibold underline text-xs cursor-pointer"
                   >
                     {selectedMsgIds.length === messages.length ? 'Deselect All' : 'Select All'}
                   </button>
@@ -772,7 +805,7 @@ function Messages() {
                       setSelectionMode(false);
                       setSelectedMsgIds([]);
                     }}
-                    className="p-1 text-slate-500 hover:text-slate-800 rounded-md hover:bg-blue-100 transition-colors cursor-pointer"
+                    className="p-1 text-slate-500 hover:text-slate-800 rounded-md hover:bg-amber-100 transition-colors cursor-pointer"
                     title="Cancel Selection"
                   >
                     <X size={17} />
@@ -782,7 +815,12 @@ function Messages() {
             )}
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 bg-slate-50" style={{ backgroundImage: 'radial-gradient(#e2e8f0 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 bg-white">
+              {/* Today Date Divider */}
+              <div className="text-center my-2">
+                <span className="text-xs font-medium text-slate-400">Today</span>
+              </div>
+
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 text-center p-6">
                   <MessageSquare size={36} className="mb-2 opacity-25" />
@@ -798,13 +836,13 @@ function Messages() {
                     <div 
                       key={msg._id || idx} 
                       onClick={() => selectionMode && handleToggleSelectMessage(msg._id)}
-                      className={`flex items-end gap-2 group transition-colors ${isMe ? 'justify-end' : 'justify-start'} ${selectionMode ? 'cursor-pointer hover:bg-blue-50/50 p-1 rounded-xl' : ''}`}
+                      className={`flex items-end gap-2 group transition-colors ${isMe ? 'justify-end' : 'justify-start'} ${selectionMode ? 'cursor-pointer hover:bg-amber-50/50 p-1 rounded-xl' : ''}`}
                     >
                       {/* Selection Checkbox */}
                       {selectionMode && (
                         <div className={`p-1 shrink-0 ${isMe ? 'order-2' : 'order-first'}`}>
                           {isSelected ? (
-                            <CheckSquare size={18} className="text-blue-600 fill-blue-100" />
+                            <CheckSquare size={18} className="text-amber-600 fill-amber-100" />
                           ) : (
                             <Square size={18} className="text-slate-400" />
                           )}
@@ -812,21 +850,21 @@ function Messages() {
                       )}
 
                       <div className={`max-w-[85%] sm:max-w-[70%] relative ${isMe ? 'order-1' : 'order-2'}`}>
-                        <div className={`px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-xs relative ${
+                        <div className={`px-4 py-2.5 rounded-2xl shadow-xs relative ${
                           isMe 
-                            ? 'bg-blue-600 text-white rounded-br-xs' 
-                            : 'bg-white border border-slate-200 text-slate-800 rounded-bl-xs'
-                        } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}>
+                            ? 'bg-[#F5B52E] text-slate-950 font-normal rounded-tr-sm' 
+                            : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-sm'
+                        } ${isSelected ? 'ring-2 ring-amber-500 ring-offset-1' : ''}`}>
                           <p className="text-xs sm:text-sm break-words whitespace-pre-wrap">{msg.text}</p>
                         </div>
                         <div className={`flex items-center gap-1.5 mt-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                          <span className="text-[10px] font-medium text-slate-400">
+                          <span className={`text-[10px] font-medium ${isMe ? 'text-slate-600' : 'text-slate-400'}`}>
                             {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                           </span>
                           {isMe && (
-                            msg.status === 'READ' ? <CheckCheck size={13} className="text-blue-500" /> :
-                            msg.status === 'DELIVERED' ? <CheckCheck size={13} className="text-slate-400" /> :
-                            <Check size={13} className="text-slate-400" />
+                            msg.status === 'READ' ? <CheckCheck size={13} className="text-emerald-700" /> :
+                            msg.status === 'DELIVERED' ? <CheckCheck size={13} className="text-slate-600" /> :
+                            <Check size={13} className="text-slate-600" />
                           )}
                           {/* Single message delete action button on hover */}
                           {!selectionMode && (
@@ -850,61 +888,69 @@ function Messages() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input or Session Inactive Warning */}
-            <div className="p-2 sm:p-3.5 bg-white border-t border-slate-100 shrink-0 w-full max-w-full">
+            {/* Chat Input Area */}
+            <div className="p-3 sm:p-4 bg-white border-t border-slate-100 shrink-0 w-full max-w-full">
               {!activeConsultation ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left mb-2">
                   <div className="flex items-center gap-2 text-slate-600 text-xs">
                     <span className="material-symbols-outlined text-amber-500 text-base sm:text-lg shrink-0">lock</span>
-                    <span className="text-[11px] sm:text-xs">Chat session is currently inactive. Book a session to chat.</span>
+                    <span className="text-[11px] sm:text-xs">Chat session is currently inactive. Book a session to chat live.</span>
                   </div>
                   <button
                     onClick={() => navigate('/experts')}
-                    className="w-full sm:w-auto px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-transform active:scale-95 shrink-0 cursor-pointer"
+                    className="w-full sm:w-auto px-4 py-1.5 bg-[#F5B52E] hover:bg-[#eab308] text-slate-900 rounded-full text-xs font-bold transition-transform active:scale-95 shrink-0 cursor-pointer shadow-xs"
                   >
                     Book New Chat
                   </button>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-1 w-full max-w-full">
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all w-full max-w-full">
-                    <textarea 
-                      value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      placeholder="Type a message (alphabets only)..." 
-                      className="flex-1 bg-transparent border-none outline-none resize-none max-h-20 sm:max-h-28 min-h-[36px] py-1.5 px-1 text-xs sm:text-sm text-slate-800 placeholder-slate-400"
-                      rows="1"
-                    />
-                    <button 
-                      onClick={handleSendMessage}
-                      disabled={!inputText.trim()}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all shrink-0 shadow-xs flex items-center justify-center cursor-pointer active:scale-95"
-                      title="Send Message"
-                    >
-                      <Send size={16} />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] text-slate-400 px-1 font-medium">
-                    <span className="material-symbols-outlined text-[12px] text-blue-500 shrink-0">info</span>
-                    <span className="truncate">Only alphabetic text allowed. Numbers, links, and documents restricted.</span>
-                  </div>
+              ) : null}
+
+              <div className="flex items-center gap-2 sm:gap-3 w-full">
+                {/* Attachment Paperclip Button */}
+                <button 
+                  type="button" 
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors cursor-pointer shrink-0" 
+                  title="Attach file"
+                >
+                  <Paperclip size={20} />
+                </button>
+
+                {/* Pill Text Input */}
+                <div className="flex-1 bg-slate-100/80 rounded-full px-4 sm:px-5 py-2.5 flex items-center focus-within:bg-white focus-within:ring-1 focus-within:ring-amber-400 focus-within:border-amber-400 border border-transparent transition-all">
+                  <input 
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="Type your message..." 
+                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm text-slate-800 placeholder-slate-400"
+                  />
                 </div>
-              )}
+
+                {/* Yellow Circle Send Button */}
+                <button 
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim()}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#F5B52E] hover:bg-[#eab308] disabled:opacity-40 text-slate-900 flex items-center justify-center shadow-xs transition-all active:scale-95 shrink-0 cursor-pointer"
+                  title="Send Message"
+                >
+                  <Send size={18} className="translate-x-0.5" />
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-slate-50">
-            <div className="w-20 h-20 bg-white rounded-full shadow-xs border border-slate-200 flex items-center justify-center mb-4">
-              <MessageSquare size={36} className="text-blue-600" />
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-white p-6">
+            <div className="w-16 h-16 rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center text-blue-500 mb-3 shadow-xs">
+              <MessageSquare size={28} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">Your Messages</h3>
-            <p className="text-slate-500 text-xs sm:text-sm mt-1.5 max-w-sm text-center px-4">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">Your Messages</h3>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-sm text-center mt-1">
               Select a conversation from the sidebar or book a new consultation to start chatting with experts.
             </p>
           </div>
