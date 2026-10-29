@@ -7,8 +7,8 @@ const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_SBFgUhpkJffWZY',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YKf15utu1cQxRP9WkcHWD5L8'
+  key_id: process.env.RAZORPAY_KEY_ID || '',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || ''
 });
 
 exports.getWallet = async (req, res) => {
@@ -106,7 +106,7 @@ exports.addMoney = async (req, res) => {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_SBFgUhpkJffWZY'
+      keyId: process.env.RAZORPAY_KEY_ID || ''
     });
   } catch (error) {
     console.error(error);
@@ -118,9 +118,18 @@ exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: 'Missing payment verification details' });
+    }
+
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(500).json({ message: 'Payment gateway configuration error' });
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YKf15utu1cQxRP9WkcHWD5L8')
+      .createHmac('sha256', secret)
       .update(body.toString())
       .digest('hex');
 
@@ -149,13 +158,15 @@ exports.verifyPayment = async (req, res) => {
     }
 
     // Atomic update
-    const user = await User.findById(transaction.user);
+    const user = await User.findOneAndUpdate(
+      { _id: transaction.user },
+      { $inc: { walletBalance: transaction.amount } },
+      { new: false }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     const balanceBefore = user.walletBalance;
     const balanceAfter = balanceBefore + transaction.amount;
-    
-    // Update user balance
-    user.walletBalance = balanceAfter;
-    await user.save();
 
     // Update transaction
     transaction.status = 'SUCCESS';
@@ -244,17 +255,18 @@ exports.payConsultation = async (req, res) => {
       return res.status(400).json({ message: 'Consultation is already paid' });
     }
 
-    const user = await User.findById(req.user._id);
-    if (user.walletBalance < consultation.cost) {
+    const user = await User.findOneAndUpdate(
+      { _id: req.user._id, walletBalance: { $gte: consultation.cost } },
+      { $inc: { walletBalance: -consultation.cost } },
+      { new: false }
+    );
+
+    if (!user) {
       return res.status(400).json({ message: 'Insufficient wallet balance' });
     }
 
     const balanceBefore = user.walletBalance;
     const balanceAfter = balanceBefore - consultation.cost;
-    
-    // Atomic update simulation (in prod use session/transactions if replica set)
-    user.walletBalance = balanceAfter;
-    await user.save();
 
     // Create wallet transaction
     const transaction = new WalletTransaction({
@@ -327,7 +339,7 @@ exports.createCallOrder = async (req, res) => {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_SBFgUhpkJffWZY',
+      keyId: process.env.RAZORPAY_KEY_ID || '',
       expertName: expert.name
     });
   } catch (error) {
@@ -340,9 +352,18 @@ exports.verifyCallPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, expertId, amount, type, minutes } = req.body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !expertId) {
+      return res.status(400).json({ message: 'Missing required call payment verification fields' });
+    }
+
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(500).json({ message: 'Payment gateway configuration error' });
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YKf15utu1cQxRP9WkcHWD5L8')
+      .createHmac('sha256', secret)
       .update(body.toString())
       .digest('hex');
 
@@ -353,9 +374,20 @@ exports.verifyCallPayment = async (req, res) => {
     const expert = await Expert.findById(expertId);
     if (!expert) return res.status(404).json({ message: 'Expert not found' });
 
+    let rate = 0;
+    if (type === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
+    else if (type === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
+    else if (type === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
+    else rate = expert.pricePerMinute || 50;
+
+    const validatedMinutes = Number(minutes) > 0 ? Number(minutes) : 10;
+    const expectedAmount = rate * validatedMinutes;
+    // Server-side authoritative amount
+    const actualAmount = (typeof amount === 'number' && amount >= expectedAmount) ? amount : expectedAmount;
+
     // Platform takes 20% fee, expert gets 80%
-    const expertEarning = amount * 0.8;
-    const platformFee = amount - expertEarning;
+    const expertEarning = actualAmount * 0.8;
+    const platformFee = actualAmount - expertEarning;
 
     // We do NOT credit the expert here. We wait until the consultation completes to calculate pro-rata.
 
@@ -363,7 +395,7 @@ exports.verifyCallPayment = async (req, res) => {
     const userTransaction = new WalletTransaction({
       user: req.user._id,
       type: 'DEBIT',
-      amount: amount,
+      amount: actualAmount,
       status: 'SUCCESS',
       balanceBefore: 0, // Since paid directly via gateway
       balanceAfter: 0,
@@ -374,9 +406,6 @@ exports.verifyCallPayment = async (req, res) => {
     });
     await userTransaction.save();
 
-    // Expert will be credited when the consultation is completed.
-
-
     // Create consultation
     const consultation = new Consultation({
       user: req.user._id,
@@ -385,8 +414,8 @@ exports.verifyCallPayment = async (req, res) => {
       status: 'scheduled',
       paymentStatus: 'paid',
       startTime: new Date(),
-      durationInMinutes: minutes || Number(amount / expert.pricePerMinute) || 10,
-      cost: amount,
+      durationInMinutes: validatedMinutes,
+      cost: actualAmount,
       expertEarning: expertEarning,
       platformFee: platformFee
     });
@@ -417,23 +446,27 @@ exports.payCallWithWallet = async (req, res) => {
 
     const totalCost = rate * minutes;
 
-    const user = await User.findById(req.user._id);
-    if (user.walletBalance < totalCost) {
+    // Atomic debit to prevent race conditions and double spending
+    const user = await User.findOneAndUpdate(
+      { _id: req.user._id, walletBalance: { $gte: totalCost } },
+      { $inc: { walletBalance: -totalCost } },
+      { new: false }
+    );
+
+    if (!user) {
+      const freshUser = await User.findById(req.user._id);
       return res.status(400).json({
         success: false,
         requiresRecharge: true,
         message: 'Insufficient wallet balance',
-        currentBalance: user.walletBalance,
+        currentBalance: freshUser ? freshUser.walletBalance : 0,
         requiredAmount: totalCost,
-        shortfall: totalCost - user.walletBalance
+        shortfall: totalCost - (freshUser ? freshUser.walletBalance : 0)
       });
     }
 
-    // Deduct from wallet
     const balanceBefore = user.walletBalance;
     const balanceAfter = balanceBefore - totalCost;
-    user.walletBalance = balanceAfter;
-    await user.save();
 
     // 80% to expert, 20% platform fee
     const expertEarning = totalCost * 0.8;

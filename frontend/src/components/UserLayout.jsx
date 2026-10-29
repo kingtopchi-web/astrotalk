@@ -65,10 +65,19 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
 
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        <div className="p-6">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0 shadow-sm" />
-            <span className="text-xl font-bold text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
+        <div className="p-5 border-b border-border-color/60">
+          <Link to="/" className="flex items-center gap-3 group select-none">
+            <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200">
+              <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-black text-on-surface tracking-tight leading-none">
+                {platformName || 'ExpertHub'}
+              </span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-primary mt-1 leading-none">
+                Client Portal
+              </span>
+            </div>
           </Link>
         </div>
 
@@ -139,9 +148,11 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
                 <span className="material-symbols-outlined text-[16px]">arrow_back</span>
                 <span>Home</span>
               </Link>
-              <Link to="/" className="flex items-center gap-2">
-                <img src="/logo.png" alt="ExpertHub" className="w-7 h-7 object-contain rounded-md shrink-0" />
-                <h1 className="text-lg font-bold text-on-surface">{platformName || 'ExpertHub'}</h1>
+              <Link to="/" className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+                  <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
+                </div>
+                <h1 className="text-base font-black text-on-surface leading-none">{platformName || 'ExpertHub'}</h1>
               </Link>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -172,8 +183,10 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
             <aside className="relative flex flex-col w-64 bg-surface-light text-on-surface h-screen shadow-2xl">
               <div className="p-4 border-b border-border-color">
                 <div className="flex items-center gap-2.5 px-2 py-1">
-                  <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
-                  <span className="text-xl font-bold text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
+                  <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+                    <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="text-lg font-black text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto px-4 py-2">

@@ -1,18 +1,68 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
+import { getApiUrl } from '../utils/apiConfig';
 
 export default function Contact() {
   const { supportEmail, contactPhone, address, platformName } = usePlatformSettings();
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [status, setStatus] = useState(null);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState(null); // { type: 'success' | 'error', text: '' }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus('Message sent successfully! We will get back to you soon.');
-    setFormData({ name: '', email: '', message: '' });
+    setStatus(null);
+    setIsSubmitting(true);
+
+    const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
+    if (!fullName) {
+      setStatus({ type: 'error', text: 'Please provide your name.' });
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post(getApiUrl('/public/contact'), {
+        name: fullName,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject.trim() || 'General Inquiry',
+        message: formData.message.trim()
+      });
+
+      setStatus({
+        type: 'success',
+        text: response.data?.message || 'Message sent successfully! We will get back to you soon.'
+      });
+
+      // Clear the form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      });
+    } catch (err) {
+      console.error('Contact submit error:', err);
+      const errorMsg =
+        err.response?.data?.message ||
+        'Unable to send message right now. Please check your connection or contact us directly via email.';
+      setStatus({ type: 'error', text: errorMsg });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,67 +136,114 @@ export default function Contact() {
 
             {/* Form Panel */}
             <div className="lg:w-3/5 p-10 md:p-12">
-              {status && (
-                <div className="mb-8 p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 flex items-center gap-3 animate-fade-in">
-                  <CheckCircle2 size={24} className="text-emerald-500" />
-                  <span className="font-medium text-lg">{status}</span>
+              {status && status.type === 'success' && (
+                <div className="mb-8 p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 flex items-start gap-3 animate-fade-in shadow-sm">
+                  <CheckCircle2 size={24} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-emerald-900">Message Received!</p>
+                    <p className="text-sm text-emerald-700 mt-0.5">{status.text}</p>
+                  </div>
+                </div>
+              )}
+
+              {status && status.type === 'error' && (
+                <div className="mb-8 p-4 bg-rose-50 text-rose-800 rounded-2xl border border-rose-200 flex items-start gap-3 animate-fade-in shadow-sm">
+                  <AlertCircle size={24} className="text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-rose-900">Submission Failed</p>
+                    <p className="text-sm text-rose-700 mt-0.5">{status.text}</p>
+                  </div>
                 </div>
               )}
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">First Name</label>
+                    <label className="text-sm font-semibold text-slate-700">First Name <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       required
                       className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all text-slate-900"
                       placeholder="John"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Last Name</label>
                     <input
                       type="text"
-                      required
                       className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all text-slate-900"
                       placeholder="Doe"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     />
                   </div>
                 </div>
                 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Email Address <span className="text-rose-500">*</span></label>
+                    <input
+                      type="email"
+                      required
+                      className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all text-slate-900"
+                      placeholder="john@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Phone Number (Optional)</label>
+                    <input
+                      type="tel"
+                      className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all text-slate-900"
+                      placeholder="+91 98765 43210"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Email Address</label>
+                  <label className="text-sm font-semibold text-slate-700">Subject</label>
                   <input
-                    type="email"
-                    required
+                    type="text"
                     className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all text-slate-900"
-                    placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    placeholder="General Inquiry / Question about consultation"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Message</label>
+                  <label className="text-sm font-semibold text-slate-700">Message <span className="text-rose-500">*</span></label>
                   <textarea
                     required
                     rows="5"
                     className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all resize-none text-slate-900"
                     placeholder="How can we help you?"
                     value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   ></textarea>
                 </div>
                 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-slate-900 text-white font-semibold rounded-2xl hover:bg-slate-800 transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2 group mt-4"
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-slate-900 text-white font-semibold rounded-2xl hover:bg-slate-800 disabled:bg-slate-700 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2 group mt-4 cursor-pointer"
                 >
-                  <span>Send Message</span>
-                  <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin text-blue-400" />
+                      <span>Sending Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send Message</span>
+                      <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </>
+                  )}
                 </button>
               </form>
             </div>

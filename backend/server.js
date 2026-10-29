@@ -7,10 +7,111 @@ const expertRoutes = require('./routes/expertRoutes');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
+
 const app = express();
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// Disable x-powered-by header
+app.disable('x-powered-by');
+
+// Security Headers via Helmet (CSP, X-Frame-Options, HSTS, X-Content-Type-Options)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://checkout.razorpay.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: [
+        "'self'",
+        "https://api.razorpay.com",
+        "https://lumberjack.razorpay.com",
+        "https://experthub.nextgoodtechnologies.in",
+        "wss://experthub.nextgoodtechnologies.in",
+        "http://localhost:5000",
+        "ws://localhost:5000",
+        "http://localhost:5173",
+        "ws://localhost:5173",
+        "http://localhost:5174",
+        "ws://localhost:5174"
+      ],
+      frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: []
+    }
+  },
+  xFrameOptions: { action: 'sameorigin' },
+  strictTransportSecurity: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  xContentTypeOptions: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  crossOriginEmbedderPolicy: false
+}));
+
+// Block malicious probes for common PHP/WordPress/Env attack vectors
+app.use((req, res, next) => {
+  const normalizedPath = (req.path || '').toLowerCase();
+  if (
+    normalizedPath.includes('.env') ||
+    normalizedPath.includes('.git') ||
+    normalizedPath.includes('/wp-admin') ||
+    normalizedPath.includes('/wp-login') ||
+    normalizedPath.includes('/phpmyadmin')
+  ) {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  next();
+});
+
+// CORS Configuration
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://experthub.nextgoodtechnologies.in,http://localhost:5173,http://localhost:5174,http://localhost:3000').split(',');
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
+
+// Rate Limiters
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { message: 'Too many requests from this IP, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { message: 'Too many authentication attempts, please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/auth/', authLimiter);
+
+// Parse JSON with raw body capture for webhook signature verification
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString('utf8');
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
@@ -99,20 +200,48 @@ const { Server } = require('socket.io');
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
 app.set('io', io);
+
+// Socket.IO Handshake Authentication Middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+  if (!token) {
+    // Flag as unauthenticated
+    socket.userId = null;
+    socket.userRole = 'ANONYMOUS';
+    return next();
+  }
+
+  try {
+    const cleanToken = token.startsWith('Bearer ') ? token.slice(7) : token;
+    const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    socket.userId = decoded.id;
+    socket.userRole = (decoded.role || 'USER').toUpperCase();
+    return next();
+  } catch (err) {
+    // If an invalid token was explicitly supplied, reject connection
+    return next(new Error('Authentication error: invalid or expired token'));
+  }
+});
 
 io.on('connection', (socket) => {
   console.log(`User connected to socket: ${socket.id}`);
   
   // Join a room specific to a user ID to receive direct notifications/messages
   socket.on('join_user', async (userId) => {
+    if (!userId) return;
+    if (socket.userId && socket.userId.toString() !== userId.toString() && socket.userRole !== 'ADMIN') {
+      console.warn(`Unauthorized join_user attempt by ${socket.id} for user ${userId}`);
+      return;
+    }
     socket.join(`user_${userId}`);
-    socket.userId = userId;
+    if (!socket.userId) socket.userId = userId;
     console.log(`Socket ${socket.id} joined user_${userId}`);
 
     // If an expert connects, ensure their status is marked online
@@ -124,14 +253,30 @@ io.on('connection', (socket) => {
 
   // Join a role-based room (for ADMIN/EXPERT alerts)
   socket.on('join_role', (role) => {
-    if (role) {
-      socket.join(`role_${role}`);
-      console.log(`Socket ${socket.id} joined role_${role}`);
+    if (!role) return;
+    const upperRole = role.toUpperCase();
+    if (socket.userRole && socket.userRole !== upperRole && socket.userRole !== 'ADMIN') {
+      console.warn(`Unauthorized join_role attempt by ${socket.id} for role ${role}`);
+      return;
     }
+    socket.join(`role_${upperRole}`);
+    console.log(`Socket ${socket.id} joined role_${upperRole}`);
   });
 
-  // Join a specific conversation room
-  socket.on('join_conversation', (conversationId) => {
+  // Join a specific conversation room (authorized participants only)
+  socket.on('join_conversation', async (conversationId) => {
+    if (!conversationId) return;
+    try {
+      const Conversation = require('./models/Conversation');
+      const conv = await Conversation.findById(conversationId);
+      if (conv && socket.userId) {
+        const isParticipant = conv.participants?.some(p => p.participantId?.toString() === socket.userId.toString());
+        if (!isParticipant && socket.userRole !== 'ADMIN') {
+          console.warn(`Unauthorized join_conversation attempt by ${socket.id} for ${conversationId}`);
+          return;
+        }
+      }
+    } catch (e) {}
     socket.join(`conversation_${conversationId}`);
     console.log(`Socket ${socket.id} joined conversation_${conversationId}`);
   });
@@ -139,6 +284,13 @@ io.on('connection', (socket) => {
   // Handle incoming message
   socket.on('send_message', async (data) => {
     // data = { conversationId, senderId, senderModel, text, fileUrl }
+    if (!socket.userId) {
+      socket.emit('chat_error', { message: 'Authentication required to send messages', code: 'UNAUTHORIZED' });
+      return;
+    }
+    // Enforce authenticated sender identity
+    data.senderId = socket.userId.toString();
+    data.senderModel = socket.userRole === 'EXPERT' ? 'Expert' : (socket.userRole === 'ADMIN' ? 'Admin' : 'User');
     try {
       // 1. Disallow any documents or images / attachments
       if (data.fileUrl) {
@@ -339,7 +491,21 @@ io.on('connection', (socket) => {
   app.set('io', io);
 
   // --- WebRTC Signaling ---
-  socket.on('join_call_room', (roomId) => {
+  socket.on('join_call_room', async (roomId) => {
+    if (!roomId) return;
+    try {
+      const Consultation = require('./models/Consultation');
+      const consultation = await Consultation.findById(roomId);
+      if (consultation && socket.userId) {
+        const uId = consultation.user?.toString();
+        const eId = consultation.expert?.toString();
+        const myId = socket.userId.toString();
+        if (myId !== uId && myId !== eId && socket.userRole !== 'ADMIN') {
+          console.warn(`Unauthorized join_call_room by ${socket.id} for room ${roomId}`);
+          return;
+        }
+      }
+    } catch (e) {}
     socket.join(`call_room_${roomId}`);
     console.log(`Socket ${socket.id} joined call room ${roomId}`);
     // Notify others in the room that a new user joined

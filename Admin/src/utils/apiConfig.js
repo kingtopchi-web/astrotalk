@@ -8,9 +8,8 @@ export const isLocalhost = Boolean(
     window.location.hostname.endsWith('.local'))
 );
 
-export const LOCAL_API_URL = 'http://localhost:5000/api';
-export const PROD_API_URL = 'https://experthub.nextgoodtechnologies.in/api';
-export const FALLBACK_RENDER_URL = 'https://astrotalk-hlg2.onrender.com/api';
+export const LOCAL_API_URL = import.meta.env.VITE_LOCAL_API_URL || 'http://localhost:5000/api';
+export const PROD_API_URL = import.meta.env.VITE_API_URL || 'https://experthub.nextgoodtechnologies.in/api';
 
 // Use local backend when developing on localhost; otherwise use production API
 export const API_BASE_URL = isLocalhost ? LOCAL_API_URL : PROD_API_URL;

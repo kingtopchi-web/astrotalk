@@ -71,7 +71,7 @@ function ExpertDiscovery() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/user/saved-experts', {
+        const res = await axios.get(getApiUrl('/user/saved-experts'), {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (Array.isArray(res.data)) {
@@ -102,7 +102,7 @@ function ExpertDiscovery() {
 
     try {
       const res = await axios.post(
-        `https://experthub.nextgoodtechnologies.in/api/user/saved-experts/${expertId}`,
+        getApiUrl(`/user/saved-experts/${expertId}`),
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -126,7 +126,7 @@ function ExpertDiscovery() {
     if (!token) return 0;
     try {
       setLoadingWallet(true);
-      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/wallet', {
+      const res = await axios.get(getApiUrl('/wallet'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const bal = Number(res.data?.balance || 0);
@@ -259,12 +259,12 @@ function ExpertDiscovery() {
   }, [catParam]);
 
   useEffect(() => {
-    axios.get('https://experthub.nextgoodtechnologies.in/api/public/categories').then(res => setCategories(res.data)).catch(() => {});
+    axios.get(getApiUrl('/public/categories')).then(res => setCategories(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (selectedCategory) {
-      axios.get(`https://experthub.nextgoodtechnologies.in/api/public/categories/${selectedCategory}/subcategories`)
+      axios.get(getApiUrl(`/public/categories/${selectedCategory}/subcategories`))
         .then(res => setSubCategories(res.data))
         .catch(() => setSubCategories([]));
     } else {
@@ -273,19 +273,23 @@ function ExpertDiscovery() {
     }
   }, [selectedCategory]);
 
-  const fetchExperts = async () => {
+  const fetchExperts = async (overrideSearch = null) => {
     setLoading(true);
     setError('');
     try {
-      const params = { page, limit: 12, onlineStatus: 'online' };
+      const activeSearch = overrideSearch !== null 
+        ? overrideSearch 
+        : (searchParam !== null && searchParam !== undefined ? searchParam : search);
+
+      const params = { page, limit: 12 };
       if (selectedCategory) params.categoryId = selectedCategory;
       if (selectedSubCategory) params.subCategoryId = selectedSubCategory;
-      if (search.trim()) params.search = search.trim();
+      if (activeSearch && activeSearch.trim()) params.search = activeSearch.trim();
 
       const res = await axios.get(getApiUrl('/public/experts'), {
         params
       });
-      const data = (res.data?.data || []).filter(e => e.onlineStatus === 'online');
+      const data = res.data?.data || res.data?.experts || [];
       setExperts(data);
       setTotalPages(res.data.totalPages || 1);
       setTotal(res.data.total ?? data.length);
@@ -303,12 +307,12 @@ function ExpertDiscovery() {
     }
   }, [searchParam]);
 
-  useEffect(() => { fetchExperts(); }, [page, selectedCategory, selectedSubCategory, searchParam]);
+  useEffect(() => { fetchExperts(searchParam); }, [page, selectedCategory, selectedSubCategory, searchParam]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
-    fetchExperts();
+    navigate(`/experts?search=${encodeURIComponent(search.trim())}`);
   };
 
   const exportToCSV = () => {

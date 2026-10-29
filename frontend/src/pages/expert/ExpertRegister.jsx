@@ -111,15 +111,22 @@ const ExpertRegister = () => {
         <div className="w-full max-w-[440px] relative z-10 py-4 sm:py-6">
           
           <div className="flex justify-center mb-4 sm:mb-5">
-            <Link to="/" className="flex items-center gap-2.5 group">
-               <img 
-                 src="/logo.png" 
-                 alt="ExpertHub Logo" 
-                 className="w-8 h-8 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
-               />
-               <span className="font-heading font-extrabold text-xl sm:text-2xl tracking-tight text-on-background">
-                 ExpertHub
-               </span>
+            <Link to="/" className="flex items-center gap-3 group select-none">
+              <div className="w-13 h-13 rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+                <img 
+                  src="/logo.png" 
+                  alt="ExpertHub Logo" 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-heading font-black text-xl sm:text-2xl tracking-tight text-on-background leading-none">
+                  Expert<span className="text-amber-500">Hub</span>
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mt-1 leading-none">
+                  Expert Registration
+                </span>
+              </div>
             </Link>
           </div>
 

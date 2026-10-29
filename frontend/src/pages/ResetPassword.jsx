@@ -91,22 +91,21 @@ export default function ResetPassword() {
 
             {/* Logo */}
             <div className="flex justify-center mb-8">
-              <Link to="/" className="flex items-center gap-3.5 group">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-slate-200/90 shadow-md flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/50 transition-all duration-300">
-                  <div className="w-full h-full overflow-hidden rounded-xl flex items-center justify-center bg-slate-50/50">
-                    <img 
-                      src="/logo.png" 
-                      alt="ExpertHub Logo" 
-                      className="w-full h-full object-cover object-[center_16%] scale-[1.55]" 
-                    />
-                  </div>
+              <Link to="/" className="flex items-center gap-3.5 group select-none">
+                <div className="w-14 h-14 sm:w-15 sm:h-15 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+                  <img 
+                    src="/logo.png" 
+                    alt="ExpertHub Logo" 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-heading font-black text-2xl sm:text-3xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
-                    Expert<span className="text-amber-500">Hub</span>
+                <div className="flex flex-col text-left">
+                  <span className="font-heading font-black text-2xl sm:text-3xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none flex items-center gap-1">
+                    <span>Expert</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700">Hub</span>
                   </span>
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-1.5">
-                    Real Experts • Real Guidance
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mt-1.5 leading-none">
+                    Real Guidance
                   </span>
                 </div>
               </Link>

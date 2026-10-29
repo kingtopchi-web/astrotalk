@@ -6,7 +6,7 @@ import {
   MessageSquare, Video, Bell, CreditCard, ArrowLeftRight, RefreshCw,
   TrendingUp, Star, Settings, User as UserIcon, LogOut, Menu, X,
   Search, ChevronDown, ChevronRight, CalendarClock, CheckCircle,
-  XCircle, Clock
+  XCircle, Clock, Mail
 } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 import AdminSearchBar from '../components/AdminSearchBar';
@@ -51,8 +51,11 @@ const buildNav = (stats = {}) => [
   {
     section: 'COMMUNICATION',
     icon: MessageSquare,
+    badge: stats.pendingInquiries > 0 ? stats.pendingInquiries : undefined,
+    badgeColor: 'orange',
     items: [
       { name: 'Support Tickets', path: '/messages', icon: MessageSquare },
+      { name: 'Contact Inquiries', path: '/contact-inquiries', icon: Mail, badge: stats.pendingInquiries, badgeColor: 'orange' },
       { name: 'Notifications', path: '/notifications', icon: Bell },
     ],
   },
@@ -253,11 +256,13 @@ const SidebarContent = ({
     <div className={`flex flex-col h-full ${collapsed ? 'w-[60px]' : 'w-64'} transition-all duration-300`}>
       {/* Logo */}
       <div className={`flex items-center gap-3 border-b border-slate-200 shrink-0 ${collapsed ? 'justify-center py-4 px-2' : 'px-5 py-4'}`}>
-        <img
-          src="/logo.png"
-          alt="ExpertHub Real Guidance"
-          className="w-8 h-8 object-contain rounded-lg shadow-sm shrink-0"
-        />
+        <div className="w-10 h-10 rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+          <img
+            src="/logo.png"
+            alt="ExpertHub Real Guidance"
+            className="w-full h-full object-cover"
+          />
+        </div>
         {!collapsed && (
           <div>
             <p className="text-base font-bold text-slate-900 leading-none tracking-tight">ExpertHub</p>

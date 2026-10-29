@@ -21,15 +21,29 @@ function Footer() {
           
           {/* Brand & Contact Info - takes up 2 columns on large screens, 5 on tablet */}
           <div className="md:col-span-5 lg:col-span-2 flex flex-col gap-4">
-            <Link to="/" className="flex items-center gap-3 group mb-1">
-              <img 
-                src="/logo.png" 
-                alt={`${platformName || 'ExpertHub'} Logo`} 
-                className="w-9 h-9 object-contain rounded-lg shrink-0" 
-              />
-              <span className="font-heading font-extrabold text-xl sm:text-2xl text-white tracking-tight">
-                {platformName || 'ExpertHub'}
-              </span>
+            <Link to="/" className="flex items-center gap-3.5 group mb-2 select-none">
+              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl overflow-hidden bg-white border border-white/20 shadow-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-all duration-300">
+                <img 
+                  src="/logo.png" 
+                  alt={`${platformName || 'ExpertHub'} Logo`} 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-heading font-black text-2xl sm:text-3xl text-white tracking-tight leading-none flex items-center gap-1">
+                  {platformName ? (
+                    platformName
+                  ) : (
+                    <>
+                      <span>Expert</span>
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Hub</span>
+                    </>
+                  )}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-1 leading-none">
+                  Real Guidance Platform
+                </span>
+              </div>
             </Link>
             
             <p className="text-xs sm:text-sm leading-relaxed text-slate-400 max-w-sm">
@@ -189,7 +203,7 @@ function Footer() {
       <div className="bg-black py-2.5 sm:py-4 border-t border-slate-800">
         <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 flex flex-col md:flex-row items-center justify-between gap-1.5 sm:gap-4 text-center md:text-left text-sm">
           <div className="text-slate-400 text-xs sm:text-sm">
-            © 2026 <span className="text-error font-medium">{platformName || 'ExpertHub'}.com</span> all rights reserved
+            © 2026 <Link to="/" className="text-error font-medium hover:underline transition-all">{platformName || 'ExpertHub'}</Link>. All rights reserved
           </div>
           <div className="text-slate-400 text-xs sm:text-sm">
             Designed & developed by <a href="https://nextgoodtechnologies.in/" target="_blank" rel="noreferrer" className="text-error font-medium hover:underline transition-all">NextGood Technologies Pvt Ltd.</a>

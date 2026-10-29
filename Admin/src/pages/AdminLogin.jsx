@@ -42,11 +42,13 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <img 
-          src="/logo.png" 
-          alt="ExpertHub Real Guidance" 
-          className="w-20 h-20 object-contain mx-auto rounded-2xl shadow-md border border-gray-100" 
-        />
+        <div className="w-20 h-20 mx-auto rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-xl flex items-center justify-center">
+          <img 
+            src="/logo.png" 
+            alt="ExpertHub Real Guidance" 
+            className="w-full h-full object-cover" 
+          />
+        </div>
         <h2 className="mt-4 text-center text-3xl font-extrabold text-secondary tracking-tight">
           ExpertHub <span className="text-primary">Admin</span>
         </h2>

@@ -493,6 +493,22 @@ router.post('/:id/reject', protect, authorizeRoles('EXPERT'), async (req, res) =
 // @access  Private (USER or EXPERT)
 router.post('/:id/end', protect, async (req, res) => {
   try {
+    // 0. Authorization check: Requester must be the user, expert, or admin
+    const targetConsultation = await Consultation.findById(req.params.id);
+    if (!targetConsultation) {
+      return res.status(404).json({ message: 'Consultation not found' });
+    }
+
+    const requesterId = req.user._id.toString();
+    const isParticipant = 
+      (targetConsultation.user && targetConsultation.user.toString() === requesterId) ||
+      (targetConsultation.expert && targetConsultation.expert.toString() === requesterId) ||
+      req.user.role === 'ADMIN';
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Not authorized to end this consultation' });
+    }
+
     // 1. ATOMIC LOCK: Only ONE request can ever change status from ongoing/pending/scheduled to completed
     const consultation = await Consultation.findOneAndUpdate(
       { _id: req.params.id, status: { $nin: ['completed', 'cancelled'] } },
@@ -513,8 +529,17 @@ router.post('/:id/end', protect, async (req, res) => {
     }
 
     let { actualDuration } = req.body;
-    actualDuration = Number(actualDuration) || 0.01;
-    if (actualDuration <= 0) actualDuration = 0.01;
+    let numericDuration = Number(actualDuration) || 0.01;
+    if (numericDuration <= 0) numericDuration = 0.01;
+
+    // Server-side bounds check: never allow client-manipulated duration to exceed elapsed time
+    let maxAllowedMinutes = consultation.durationInMinutes || 60;
+    if (consultation.startTime) {
+      const elapsedMs = Date.now() - new Date(consultation.startTime).getTime();
+      const elapsedMinutes = Math.max(0.1, elapsedMs / (60 * 1000));
+      maxAllowedMinutes = Math.min(maxAllowedMinutes, Math.ceil(elapsedMinutes + 2)); // 2 min buffer
+    }
+    actualDuration = Math.min(numericDuration, maxAllowedMinutes);
 
     const expert = consultation.expert;
     const user = consultation.user;
@@ -615,9 +640,13 @@ router.post('/:id/end', protect, async (req, res) => {
       });
 
       if (refundAmount > 0 && !existingRefund) {
-        const userBalanceBefore = user.walletBalance || 0;
-        user.walletBalance = Number((userBalanceBefore + refundAmount).toFixed(2));
-        await user.save();
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: user._id },
+          { $inc: { walletBalance: refundAmount } },
+          { new: false }
+        );
+        const userBalanceBefore = updatedUser ? (updatedUser.walletBalance || 0) : 0;
+        const userBalanceAfter = Number((userBalanceBefore + refundAmount).toFixed(2));
 
         const refundTx = new WalletTransaction({
           user: user._id,
@@ -625,7 +654,7 @@ router.post('/:id/end', protect, async (req, res) => {
           amount: refundAmount,
           status: 'SUCCESS',
           balanceBefore: userBalanceBefore,
-          balanceAfter: user.walletBalance,
+          balanceAfter: userBalanceAfter,
           description: `Refund for unused time in ${consultation.type} session`,
           consultation: consultation._id,
           completedAt: new Date()
@@ -640,9 +669,13 @@ router.post('/:id/end', protect, async (req, res) => {
       });
 
       if (!existingCredit) {
-        const expertBalanceBefore = expert.walletBalance || 0;
-        expert.walletBalance = Number((expertBalanceBefore + finalEarning).toFixed(2));
-        await expert.save();
+        const updatedExpert = await Expert.findOneAndUpdate(
+          { _id: expert._id },
+          { $inc: { walletBalance: finalEarning } },
+          { new: false }
+        );
+        const expertBalanceBefore = updatedExpert ? (updatedExpert.walletBalance || 0) : 0;
+        const expertBalanceAfter = Number((expertBalanceBefore + finalEarning).toFixed(2));
 
         const expertTx = new WalletTransaction({
           user: expert._id,
@@ -650,7 +683,7 @@ router.post('/:id/end', protect, async (req, res) => {
           amount: finalEarning,
           status: 'SUCCESS',
           balanceBefore: expertBalanceBefore,
-          balanceAfter: expert.walletBalance,
+          balanceAfter: expertBalanceAfter,
           description: `Earnings for ${actualDuration}m ${consultation.type} session`,
           consultation: consultation._id,
           completedAt: new Date()

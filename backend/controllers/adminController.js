@@ -7,6 +7,7 @@ const Consultation = require('../models/Consultation');
 const Payment = require('../models/Payment');
 const WalletTransaction = require('../models/WalletTransaction');
 const Setting = require('../models/Setting');
+const ContactInquiry = require('../models/ContactInquiry');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -593,16 +594,25 @@ exports.getSidebarStats = async (req, res) => {
       totalConsultations,
       pendingConsultations,
       totalUsers,
-      totalExperts
+      totalExperts,
+      pendingInquiries
     ] = await Promise.all([
       Expert.countDocuments({ verificationStatus: 'PENDING' }),
       Consultation.countDocuments(),
       Consultation.countDocuments({ status: 'scheduled' }),
       User.countDocuments(),
-      Expert.countDocuments()
+      Expert.countDocuments(),
+      ContactInquiry.countDocuments({ status: 'PENDING' })
     ]);
 
-    res.json({ pendingExperts, totalConsultations, pendingConsultations, totalUsers, totalExperts });
+    res.json({
+      pendingExperts,
+      totalConsultations,
+      pendingConsultations,
+      totalUsers,
+      totalExperts,
+      pendingInquiries
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching sidebar stats', error: error.message });
   }

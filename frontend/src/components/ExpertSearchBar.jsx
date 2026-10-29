@@ -7,7 +7,7 @@ import {
   ExternalLink, ArrowRight, Clock, CheckCircle
 } from 'lucide-react';
 
-const API_BASE = 'https://experthub.nextgoodtechnologies.in/api';
+import { getApiUrl } from '../utils/apiConfig';
 
 const EXPERT_PAGES = [
   { title: 'Dashboard Overview', path: '/expert/dashboard', icon: Briefcase, badge: 'Home' },
@@ -55,10 +55,10 @@ export default function ExpertSearchBar({ className = '' }) {
     try {
       setLoading(true);
       const [clientsRes, consultRes] = await Promise.all([
-        axios.get(`${API_BASE}/experts/my-clients`, {
+        axios.get(getApiUrl('/experts/my-clients'), {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/expert/consultations`, {
+        axios.get(getApiUrl('/expert/consultations'), {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: [] }))
       ]);

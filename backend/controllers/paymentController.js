@@ -5,8 +5,8 @@ const Consultation = require('../models/Consultation');
 const Expert = require('../models/Expert');
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_SBFgUhpkJffWZY',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YKf15utu1cQxRP9WkcHWD5L8'
+  key_id: process.env.RAZORPAY_KEY_ID || '',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || ''
 });
 
 exports.createOrder = async (req, res) => {
@@ -65,7 +65,7 @@ exports.createOrder = async (req, res) => {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_SBFgUhpkJffWZY'
+      keyId: process.env.RAZORPAY_KEY_ID || ''
     });
   } catch (error) {
     console.error('Create order error:', error);
@@ -79,9 +79,18 @@ exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: 'Missing required payment verification fields' });
+    }
+
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(500).json({ message: 'Payment gateway secret not configured' });
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YKf15utu1cQxRP9WkcHWD5L8')
+      .createHmac('sha256', secret)
       .update(body.toString())
       .digest('hex');
 
@@ -103,17 +112,20 @@ exports.verifyPayment = async (req, res) => {
           await consultation.save();
         }
 
-        // Handle partial wallet payment deduction
+        // Handle partial wallet payment deduction atomically
         if (payment.walletUsed > 0) {
           const User = require('../models/User');
           const WalletTransaction = require('../models/WalletTransaction');
-          const user = await User.findById(payment.user._id);
+          
+          const user = await User.findOneAndUpdate(
+            { _id: payment.user._id, walletBalance: { $gte: payment.walletUsed } },
+            { $inc: { walletBalance: -payment.walletUsed } },
+            { new: false }
+          );
           
           if (user) {
             const balanceBefore = user.walletBalance;
             const balanceAfter = balanceBefore - payment.walletUsed;
-            user.walletBalance = balanceAfter;
-            await user.save();
 
             const tx = new WalletTransaction({
               user: user._id,
@@ -156,12 +168,17 @@ exports.verifyPayment = async (req, res) => {
 
 exports.webhook = async (req, res) => {
   try {
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'your_webhook_secret';
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
     const signature = req.headers['x-razorpay-signature'];
 
+    if (!secret || !signature) {
+      return res.status(400).json({ message: 'Missing webhook configuration or signature header' });
+    }
+
+    const payloadToVerify = req.rawBody || JSON.stringify(req.body);
     const expectedSignature = crypto
       .createHmac('sha256', secret)
-      .update(JSON.stringify(req.body))
+      .update(payloadToVerify)
       .digest('hex');
 
     if (expectedSignature !== signature) {
@@ -226,13 +243,14 @@ exports.webhook = async (req, res) => {
         const User = require('../models/User');
         const walletTx = await WalletTransaction.findOne({ razorpayOrderId: orderId }).populate('user');
         if (walletTx && walletTx.status !== 'SUCCESS') {
-           const user = await User.findById(walletTx.user._id);
+           const user = await User.findOneAndUpdate(
+             { _id: walletTx.user._id },
+             { $inc: { walletBalance: walletTx.amount } },
+             { new: false }
+           );
            if (user) {
              const balanceBefore = user.walletBalance;
              const balanceAfter = balanceBefore + walletTx.amount;
-             
-             user.walletBalance = balanceAfter;
-             await user.save();
 
              walletTx.status = 'SUCCESS';
              walletTx.razorpayPaymentId = paymentData.id;

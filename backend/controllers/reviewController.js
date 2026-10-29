@@ -62,8 +62,10 @@ exports.createReview = async (req, res) => {
       });
     }
 
-    // Sanitize feedback string
-    const trimmedFeedback = typeof feedback === 'string' ? feedback.trim() : '';
+    // Sanitize feedback string and strip HTML angle brackets to prevent Stored XSS
+    const trimmedFeedback = typeof feedback === 'string'
+      ? feedback.trim().replace(/[<>]/g, '')
+      : '';
     if (trimmedFeedback.length > 2000) {
       return res.status(400).json({ message: 'Feedback must not exceed 2000 characters' });
     }

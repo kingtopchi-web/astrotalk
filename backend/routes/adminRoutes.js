@@ -93,4 +93,17 @@ router.get('/payments', getAllPayments);
 router.get('/transactions', getAllTransactions);
 router.get('/revenue', getRevenue);
 
+// Contact Inquiries
+const {
+  getInquiries,
+  updateInquiryStatus,
+  replyToInquiry,
+  deleteInquiry
+} = require('../controllers/contactController');
+
+router.get('/contact-inquiries', getInquiries);
+router.put('/contact-inquiries/:id/status', updateInquiryStatus);
+router.post('/contact-inquiries/:id/reply', replyToInquiry);
+router.delete('/contact-inquiries/:id', deleteInquiry);
+
 module.exports = router;

@@ -61,6 +61,11 @@ exports.getMessages = async (req, res) => {
 // Send a message via REST API (fallback if socket not used for some reason)
 exports.sendMessage = async (req, res) => {
   try {
+    const { conversationId } = req.params;
+    const { text, fileUrl, messageType } = req.body;
+    const senderId = req.user._id;
+    const senderModel = req.user.role === 'EXPERT' ? 'Expert' : (req.user.role === 'ADMIN' ? 'Admin' : 'User');
+
     // 1. Disallow documents, images or file attachments
     if (fileUrl) {
       return res.status(400).json({ 

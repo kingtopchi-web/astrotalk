@@ -144,15 +144,24 @@ function Header() {
               <span>Home</span>
             </Link>
           )}
-          <Link to="/" className="flex items-center gap-2.5 group">
-             <img 
-               src="/logo.png" 
-               alt={`${platformName || 'ExpertHub'} Logo`} 
-               className="w-9 h-9 object-contain rounded-lg shrink-0 transform group-hover:scale-105 transition-transform" 
-             />
-             <span className="font-heading font-extrabold text-xl text-on-background tracking-tight">
-               {platformName || 'ExpertHub'}
-             </span>
+          <Link to="/" className="flex items-center gap-3 group select-none py-1">
+            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+              <img 
+                src="/logo.png" 
+                alt={`${platformName || 'ExpertHub'} Logo`} 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+            <span className="font-heading font-black text-xl sm:text-2xl text-on-background tracking-tight group-hover:text-primary transition-colors flex items-center gap-1">
+              {platformName ? (
+                platformName
+              ) : (
+                <>
+                  <span>Expert</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700">Hub</span>
+                </>
+              )}
+            </span>
           </Link>
         </div>
 
@@ -287,10 +296,10 @@ function Header() {
                      )}
                      
                      <div className="border-t border-border mt-2 pt-2">
-                       <button onClick={() => { setDropdownOpen(null); handleLogout(); }} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-error/10 hover:text-error transition-colors text-sm font-bold text-error">
-                         <span className="material-symbols-outlined text-[18px]">logout</span> Logout
-                       </button>
-                     </div>
+                        <button onClick={() => { setDropdownOpen(null); handleLogout(); }} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-error/10 hover:text-error transition-colors text-sm font-bold text-error">
+                          <span className="material-symbols-outlined text-[18px]">logout</span> Logout
+                        </button>
+                      </div>
                    </div>
                  </div>
                </div>
@@ -322,7 +331,7 @@ function Header() {
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-surface border-b border-border shadow-card py-4 px-4 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+        <div className="md:hidden absolute top-full left-0 w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-surface border-b border-border shadow-card pt-4 px-4 pb-28 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
           {navLinks.map((link, idx) => (
             <div key={idx} className="flex flex-col">
               {link.dropdown ? (
@@ -411,9 +420,34 @@ function Header() {
                  </>
                )}
                
-               <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="text-left font-body font-bold text-lg text-error py-2 flex items-center gap-3 mt-2">
-                 <span className="material-symbols-outlined text-[20px]">logout</span> Logout
-               </button>
+               {/* Responsive Mobile Logout Button */}
+                <div className="pt-3 mt-3 border-t border-border">
+                  <button 
+                    type="button"
+                    onClick={() => { 
+                      setIsMobileMenuOpen(false); 
+                      handleLogout(); 
+                    }} 
+                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl bg-red-50 hover:bg-red-100/80 active:bg-red-200/80 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200/80 dark:border-red-900/50 shadow-sm transition-all duration-150 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 text-red-600 dark:text-red-400 group-hover:scale-105 transition-transform">
+                        <span className="material-symbols-outlined text-[22px]">logout</span>
+                      </div>
+                      <div className="text-left">
+                        <span className="block font-heading font-bold text-base text-red-600 dark:text-red-400 leading-tight">
+                          Logout
+                        </span>
+                        <span className="block text-[11px] text-red-500/80 dark:text-red-400/70 font-medium">
+                          Sign out of your account
+                        </span>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-[20px] text-red-400 group-hover:translate-x-0.5 transition-transform">
+                      chevron_right
+                    </span>
+                  </button>
+                </div>
             </div>
           )}
         </div>

@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id, role: 'ADMIN' }, process.env.JWT_SECRET, {
+    algorithm: 'HS256',
     expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
 };
@@ -13,7 +14,12 @@ const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const admin = await Admin.findOne({ email });
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Please provide both email and password' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const admin = await Admin.findOne({ email: normalizedEmail });
 
     if (admin && (await admin.matchPassword(password))) {
       if (admin.status !== 'ACTIVE') {

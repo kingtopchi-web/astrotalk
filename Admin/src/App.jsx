@@ -18,6 +18,7 @@ import ExpertApplications from './pages/ExpertApplications';
 import ConsultationsList from './pages/ConsultationsList';
 import AdminPlaceholder from './pages/AdminPlaceholder';
 import SupportTickets from './pages/SupportTickets';
+import ContactInquiries from './pages/ContactInquiries';
 import TransactionsList from './pages/TransactionsList';
 import Refunds from './pages/Refunds';
 import Revenue from './pages/Revenue';
@@ -62,6 +63,7 @@ function App() {
 
           {/* COMMUNICATION */}
           <Route path="/messages" element={<SupportTickets />} />
+          <Route path="/contact-inquiries" element={<ContactInquiries />} />
           <Route path="/video-sessions" element={<AdminPlaceholder title="Video Sessions" description="Video session management coming soon." />} />
           <Route path="/notifications" element={<Notifications />} />
 

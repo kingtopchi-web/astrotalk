@@ -118,21 +118,20 @@ const ExpertLogin = () => {
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
               <span>Home</span>
             </Link>
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-md group-hover:border-amber-400/50 transition-all duration-300">
-                <div className="w-full h-full overflow-hidden rounded-lg flex items-center justify-center bg-slate-50/50">
-                  <img 
-                    src="/logo.png" 
-                    alt="ExpertHub Logo" 
-                    className="w-full h-full object-cover object-[center_16%] scale-[1.55]" 
-                  />
-                </div>
+            <Link to="/" className="flex items-center gap-3.5 group select-none">
+              <div className="w-14 h-14 sm:w-15 sm:h-15 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+                <img 
+                  src="/logo.png" 
+                  alt="ExpertHub Logo" 
+                  className="w-full h-full object-cover" 
+                />
               </div>
-              <div className="flex flex-col">
-                <span className="font-heading font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
-                  Expert<span className="text-amber-500">Hub</span>
+              <div className="flex flex-col text-left">
+                <span className="font-heading font-black text-2xl sm:text-[26px] tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none flex items-center gap-1">
+                  <span>Expert</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Hub</span>
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-600 mt-1.5 leading-none">
                   Expert Portal
                 </span>
               </div>

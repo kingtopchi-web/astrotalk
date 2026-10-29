@@ -7,7 +7,7 @@ import {
   User as UserIcon, BookOpen, ExternalLink, CheckCircle
 } from 'lucide-react';
 
-const API_BASE = 'https://experthub.nextgoodtechnologies.in/api';
+import { getApiUrl } from '../utils/apiConfig';
 
 const QUICK_LINKS = [
   { title: 'Find Experts', path: '/experts', icon: Compass, badge: 'Explore' },
@@ -81,7 +81,7 @@ export default function UserSearchBar({ className = '' }) {
       setLoading(true);
       try {
         // Try new /api/public/search endpoint first
-        const searchRes = await axios.get(`${API_BASE}/public/search?q=${encodeURIComponent(query.trim())}`).catch(() => null);
+        const searchRes = await axios.get(getApiUrl(`/public/search?q=${encodeURIComponent(query.trim())}`)).catch(() => null);
         
         if (searchRes && searchRes.data) {
           setExperts(searchRes.data.experts || []);
@@ -89,8 +89,8 @@ export default function UserSearchBar({ className = '' }) {
         } else {
           // Fallback to standard endpoints
           const [expRes, catRes] = await Promise.all([
-            axios.get(`${API_BASE}/public/experts?search=${encodeURIComponent(query.trim())}&limit=5`).catch(() => ({ data: { data: [] } })),
-            axios.get(`${API_BASE}/public/categories`).catch(() => ({ data: [] }))
+            axios.get(getApiUrl(`/public/experts?search=${encodeURIComponent(query.trim())}&limit=5`)).catch(() => ({ data: { data: [] } })),
+            axios.get(getApiUrl('/public/categories')).catch(() => ({ data: [] }))
           ]);
 
           const foundExperts = expRes.data?.data || expRes.data?.experts || [];

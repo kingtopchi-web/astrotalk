@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Expert = require('../models/Expert');
 
+const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
+
 // @route   GET /api/experts
 // @desc    Get all experts with filtering and search
 router.get('/', async (req, res) => {
@@ -20,33 +22,40 @@ router.get('/', async (req, res) => {
 
     let query = {};
 
-    // Search by name, specialty, or specialization
-    if (search) {
+    // Only active, approved experts are publicly listed
+    query.verificationStatus = 'APPROVED';
+    query.status = 'ACTIVE';
+
+    // Search by name, specialty, or specialization safely
+    if (typeof search === 'string' && search.trim()) {
+      const cleanSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { specialty: { $regex: search, $options: 'i' } },
-        { specialization: { $regex: search, $options: 'i' } }
+        { name: { $regex: cleanSearch, $options: 'i' } },
+        { specialty: { $regex: cleanSearch, $options: 'i' } },
+        { specialization: { $regex: cleanSearch, $options: 'i' } }
       ];
     }
 
-    if (category) query.categoryId = category;
-    if (subCategory) query.subCategoryId = subCategory;
-    if (status) query.status = status; // e.g., 'APPROVED'
-    if (rating) query.rating = { $gte: Number(rating) };
+    if (category && typeof category === 'string') query.categoryId = category;
+    if (subCategory && typeof subCategory === 'string') query.subCategoryId = subCategory;
+    if (rating && !isNaN(Number(rating))) query.rating = { $gte: Number(rating) };
 
     if (minPrice || maxPrice) {
       query['rates.chat'] = {};
-      if (minPrice) query['rates.chat'].$gte = Number(minPrice);
-      if (maxPrice) query['rates.chat'].$lte = Number(maxPrice);
+      if (minPrice && !isNaN(Number(minPrice))) query['rates.chat'].$gte = Number(minPrice);
+      if (maxPrice && !isNaN(Number(maxPrice))) query['rates.chat'].$lte = Number(maxPrice);
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
+    const skip = (pageNum - 1) * limitNum;
 
     const experts = await Expert.find(query)
+      .select(PUBLIC_EXPERT_FIELDS)
       .populate('categoryId', 'name')
       .populate('subCategoryId', 'name')
       .skip(skip)
-      .limit(Number(limit))
+      .limit(limitNum)
       .sort({ rating: -1, createdAt: -1 });
 
     const total = await Expert.countDocuments(query);
@@ -54,8 +63,8 @@ router.get('/', async (req, res) => {
     res.json({
       experts,
       total,
-      page: Number(page),
-      totalPages: Math.ceil(total / Number(limit))
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum)
     });
   } catch (error) {
     console.error('Experts Fetch Error:', error);
@@ -139,10 +148,13 @@ router.get('/my-clients', protect, authorizeRoles('EXPERT'), async (req, res) =>
 });
 
 // @route   GET /api/experts/:id
-// @desc    Get single expert by ID
+// @desc    Get single expert by ID (sensitive fields masked)
 router.get('/:id', async (req, res) => {
   try {
-    const expert = await Expert.findById(req.params.id);
+    const expert = await Expert.findById(req.params.id)
+      .select(PUBLIC_EXPERT_FIELDS)
+      .populate('categoryId', 'name')
+      .populate('subCategoryId', 'name');
     if (expert) {
       res.json(expert);
     } else {

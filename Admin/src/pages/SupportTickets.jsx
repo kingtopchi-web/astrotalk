@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { MessageSquare, AlertCircle, Clock, CheckCircle2, Search, X, Send } from 'lucide-react';
+import { MessageSquare, AlertCircle, Clock, CheckCircle2, Search, X, Send, Mail } from 'lucide-react';
 import { API_BASE_URL } from '../utils/apiConfig';
 
 const API = API_BASE_URL;
@@ -117,6 +118,13 @@ export default function SupportTickets() {
           <h1 className="text-2xl font-bold text-slate-800">Support Messages & Tickets</h1>
           <p className="text-sm text-slate-500 mt-1">Manage user queries and support requests</p>
         </div>
+        <Link
+          to="/contact-inquiries"
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-semibold transition-all shadow-sm"
+        >
+          <Mail size={15} />
+          <span>Website Contact Inquiries</span>
+        </Link>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)]">

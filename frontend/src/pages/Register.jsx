@@ -74,23 +74,22 @@ function Register() {
         <div className="w-full lg:w-1/2 flex flex-col justify-center p-6 sm:p-8 lg:p-10 bg-white relative overflow-y-auto">
           <div className="w-full max-w-[420px] relative z-10 py-4 sm:py-6 mx-auto my-auto">
           
-          <div className="flex justify-center mb-4 sm:mb-5">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 group-hover:shadow-md group-hover:border-amber-400/50 transition-all duration-300">
-                <div className="w-full h-full overflow-hidden rounded-lg flex items-center justify-center bg-slate-50/50">
-                  <img 
-                    src="/logo.png" 
-                    alt="ExpertHub Logo" 
-                    className="w-full h-full object-cover object-[center_16%] scale-[1.55]" 
-                  />
-                </div>
+          <div className="flex justify-center mb-5 sm:mb-6">
+            <Link to="/" className="flex items-center gap-3.5 group select-none">
+              <div className="w-14 h-14 sm:w-15 sm:h-15 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+                <img 
+                  src="/logo.png" 
+                  alt="ExpertHub Logo" 
+                  className="w-full h-full object-cover" 
+                />
               </div>
-              <div className="flex flex-col">
-                <span className="font-heading font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none">
-                  Expert<span className="text-amber-500">Hub</span>
+              <div className="flex flex-col text-left">
+                <span className="font-heading font-black text-2xl sm:text-[26px] tracking-tight text-slate-900 group-hover:text-primary transition-colors leading-none flex items-center gap-1">
+                  <span>Expert</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700">Hub</span>
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">
-                  Real Experts • Real Guidance
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mt-1.5 leading-none">
+                  Real Guidance
                 </span>
               </div>
             </Link>

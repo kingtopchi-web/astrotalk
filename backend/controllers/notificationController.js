@@ -361,14 +361,20 @@ exports.getNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const notification = await Notification.findByIdAndUpdate(
-      id,
+    const notification = await Notification.findOneAndUpdate(
+      {
+        _id: id,
+        $or: [
+          { recipient: req.user._id },
+          { recipientRole: req.user.role, recipient: null }
+        ]
+      },
       { isRead: true, readAt: new Date() },
       { new: true }
     );
 
     if (!notification) {
-      return res.status(404).json({ success: false, message: 'Notification not found' });
+      return res.status(404).json({ success: false, message: 'Notification not found or unauthorized' });
     }
 
     const unreadCount = await Notification.countDocuments({
@@ -428,7 +434,21 @@ exports.markAllAsRead = async (req, res) => {
 exports.deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
-    await Notification.findByIdAndUpdate(id, { isDeleted: true });
+    const notification = await Notification.findOneAndUpdate(
+      {
+        _id: id,
+        $or: [
+          { recipient: req.user._id },
+          { recipientRole: req.user.role, recipient: null }
+        ]
+      },
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found or unauthorized' });
+    }
 
     const unreadCount = await Notification.countDocuments({
       $or: [

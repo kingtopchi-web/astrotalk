@@ -17,7 +17,7 @@ function Home() {
 
   const domainData = {
     astrology: {
-      tag: 'ANCIENT WISDOM FOR MODERN LIFE',
+      tag: '',
       title: 'Online Astrology & Horoscope Consultations',
       description: `Astrology has been India's guiding compass for millennia, illuminating path-defining choices in marriage, family, health, and finance. That is why ${brandName} brings together renowned Vedic astrologers, intuitive Tarot card readers, certified Numerologists, and expert Vastu shastra consultants on one trusted platform.`,
       items: [
@@ -111,7 +111,7 @@ function Home() {
     {
       _id: 'seed-1',
       rating: 5,
-      feedback: "This app helped me to get a job in my dream company. I was stressed about not getting a career opportunity after my graduation. One prediction from an astrologer gave me a ray of hope and within a few months, I had a job offer in hand. Thank you so much AstroTalk for helping me out.",
+      feedback: "This app helped me to get a job in my dream company. I was stressed about not getting a career opportunity after my graduation. One prediction from an expert gave me a ray of hope and within a few months, I had a job offer in hand. Thank you so much ExpertHub for helping me out.",
       userName: "Amar Thakur",
       userLocation: "Pune · India",
       userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
@@ -1512,9 +1512,11 @@ function Home() {
               {/* Featured Domain Card */}
               <div className="bg-white dark:bg-surface-card rounded-3xl p-6 sm:p-8 border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-4">
                 {/* Category Pill Tag */}
-                <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-300 border border-orange-200/60 font-heading">
-                  {currentDomainData.tag}
-                </span>
+                {currentDomainData.tag && (
+                  <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-300 border border-orange-200/60 font-heading">
+                    {currentDomainData.tag}
+                  </span>
+                )}
 
                 {/* Heading */}
                 <h3 className="font-heading font-extrabold text-xl sm:text-2xl md:text-3xl text-on-background leading-snug">

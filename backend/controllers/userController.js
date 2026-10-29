@@ -3,6 +3,7 @@ const Expert = require('../models/Expert');
 const Category = require('../models/Category');
 const SubCategory = require('../models/SubCategory');
 const Setting = require('../models/Setting');
+const { searchExperts, getGlobalSearchResults } = require('../utils/searchHelper');
 
 // GET /api/user/profile
 exports.getMyProfile = async (req, res) => {
@@ -78,51 +79,26 @@ exports.updateMyProfile = async (req, res) => {
   }
 };
 
-// GET /api/user/experts — only APPROVED + ACTIVE experts
+// GET /api/user/experts — only APPROVED + ACTIVE experts with fuzzy search & scoring
 exports.getPublicExperts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const skip = (page - 1) * limit;
+    const searchTerm = req.query.search || req.query.q || '';
+    const categoryId = req.query.categoryId || null;
+    const subCategoryId = req.query.subCategoryId || null;
+    const onlineStatus = req.query.onlineStatus || null;
 
-    // Base filter: only public-facing APPROVED + ACTIVE experts who are ONLINE
-    const query = {
-      verificationStatus: 'APPROVED',
-      status: 'ACTIVE',
-      onlineStatus: 'online'
-    };
-
-    if (req.query.onlineStatus && req.query.onlineStatus !== 'any') {
-      query.onlineStatus = req.query.onlineStatus;
-    } else if (req.query.onlineStatus === 'any') {
-      delete query.onlineStatus;
-    }
-
-    if (req.query.categoryId) query.categoryId = req.query.categoryId;
-    if (req.query.subCategoryId) query.subCategoryId = req.query.subCategoryId;
-
-    if (req.query.search) {
-      const re = new RegExp(req.query.search, 'i');
-      query.$or = [{ name: re }, { specialty: re }, { specialization: re }];
-    }
-
-    const experts = await Expert.find(query)
-      .select('-password -documents -rejectionReason -rejectedAt -rejectedBy -approvedBy')
-      .populate('categoryId', 'name slug')
-      .populate('subCategoryId', 'name slug')
-      .skip(skip)
-      .limit(limit)
-      .sort({ rating: -1, createdAt: -1 });
-
-    const total = await Expert.countDocuments(query);
-
-    res.json({
-      data: experts,
+    const result = await searchExperts({
+      searchTerm,
+      categoryId,
+      subCategoryId,
+      onlineStatus,
       page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
+      limit
     });
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -136,7 +112,7 @@ exports.getPublicExpertById = async (req, res) => {
       verificationStatus: 'APPROVED',
       status: 'ACTIVE'
     })
-      .select('-password -documents -rejectionReason -rejectedAt -rejectedBy -approvedBy')
+      .select('name specialty qualification specialization experience bio languages rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability')
       .populate('categoryId', 'name slug')
       .populate('subCategoryId', 'name slug');
 
@@ -231,29 +207,10 @@ exports.getPublicSettings = async (req, res) => {
 // GET /api/public/search?q=...
 exports.globalSearch = async (req, res) => {
   try {
-    const q = (req.query.q || '').trim();
-    if (!q) {
-      return res.json({ experts: [], categories: [] });
-    }
-    const regex = new RegExp(q, 'i');
-
-    const [experts, categories] = await Promise.all([
-      Expert.find({
-        verificationStatus: 'APPROVED',
-        status: 'ACTIVE',
-        $or: [{ name: regex }, { specialty: regex }, { specialization: regex }]
-      })
-      .select('name profileImage specialty rates rating experience pricePerMinute categoryId')
-      .populate('categoryId', 'name')
-      .limit(6),
-
-      Category.find({
-        status: 'ACTIVE',
-        name: regex
-      }).select('name icon description').limit(4)
-    ]);
-
-    res.json({ experts, categories });
+    const q = (req.query.q || req.query.search || '').trim();
+    const limit = parseInt(req.query.limit) || 6;
+    const result = await getGlobalSearchResults(q, limit);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Search error', error: error.message });
   }

@@ -4,7 +4,8 @@ const Setting = require('../models/Setting');
 const { sendNotification } = require('../utils/notificationDispatcher');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id, role: 'EXPERT' }, process.env.JWT_SECRET, {
+    algorithm: 'HS256',
     expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
 };
@@ -15,7 +16,21 @@ const registerExpert = async (req, res) => {
   try {
     const { name, email, password, specialty, pricePerMinute, mobile } = req.body;
 
-    const expertExists = await Expert.findOne({ email });
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+    if (!specialty || typeof specialty !== 'string' || !specialty.trim()) {
+      return res.status(400).json({ message: 'Specialty is required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const expertExists = await Expert.findOne({ email: normalizedEmail });
     if (expertExists) {
       return res.status(400).json({ message: 'Expert already exists' });
     }
@@ -25,12 +40,12 @@ const registerExpert = async (req, res) => {
     const initialStatus = isAutoApprove ? 'APPROVED' : 'PENDING';
 
     const expert = await Expert.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password,
-      specialty,
-      pricePerMinute: pricePerMinute || 0, // Should be populated later or required based on flow
-      mobile,
+      specialty: specialty.trim(),
+      pricePerMinute: Number(pricePerMinute) >= 0 ? Number(pricePerMinute) : 0,
+      mobile: typeof mobile === 'string' ? mobile.trim() : undefined,
       role: 'EXPERT',
       verificationStatus: initialStatus,
     });
@@ -67,13 +82,17 @@ const registerExpert = async (req, res) => {
 };
 
 // @desc    Auth expert & get token
-// @desc    Auth expert & get token
 // @route   POST /api/auth/expert/login
 const loginExpert = async (req, res) => {
   try {
     const { email, password, reactivate } = req.body;
 
-    const expert = await Expert.findOne({ email });
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Please provide both email and password' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const expert = await Expert.findOne({ email: normalizedEmail });
 
     if (expert && (await expert.matchPassword(password))) {
       if (expert.status === 'SUSPENDED') {

@@ -96,9 +96,18 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-surface-light border-r border-border-color text-on-surface h-screen fixed z-20">
         <div className="p-4 border-b border-border-color">
-          <Link to="/" className="flex items-center gap-2.5 px-2 py-1">
-            <img src="/logo.png" alt="ExpertHub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
-            <span className="text-xl font-bold text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
+          <Link to="/" className="flex items-center gap-3 group select-none">
+            <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200">
+              <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-black text-on-surface tracking-tight leading-none">
+                {platformName || 'ExpertHub'}
+              </span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mt-1 leading-none">
+                Expert Partner Portal
+              </span>
+            </div>
           </Link>
         </div>
         
@@ -196,9 +205,11 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
               <span>Home</span>
             </Link>
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-7 h-7 object-contain rounded-md shrink-0" />
-              <span className="font-heading font-extrabold text-base text-on-surface">{platformName || 'ExpertHub'}</span>
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+                <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-full h-full object-cover" />
+              </div>
+              <span className="font-heading font-black text-base text-on-surface leading-none">{platformName || 'ExpertHub'}</span>
             </Link>
           </div>
           
@@ -248,8 +259,10 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
             <div className="fixed inset-0 bg-on-background/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
             <aside className="relative flex flex-col w-64 bg-surface-light text-on-surface h-screen shadow-2xl">
               <div className="p-4 border-b border-border-color flex items-center gap-2.5">
-                <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-8 h-8 object-contain rounded-lg shrink-0" />
-                <span className="text-xl font-bold text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+                  <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-full h-full object-cover" />
+                </div>
+                <span className="text-lg font-black text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
               </div>
               <div className="p-4 flex-1 overflow-y-auto">
                 <nav className="space-y-1">

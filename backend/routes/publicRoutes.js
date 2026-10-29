@@ -10,6 +10,10 @@ const {
   globalSearch
 } = require('../controllers/userController');
 const { getTopReviews } = require('../controllers/reviewController');
+const { submitContactForm } = require('../controllers/contactController');
+
+// Public Contact Form
+router.post('/contact', submitContactForm);
 
 // Public Global Search
 router.get('/search', globalSearch);
