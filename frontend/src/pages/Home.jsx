@@ -540,7 +540,7 @@ function Home() {
                     onClick={handleStartFreeChatClick}
                     className="px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
                   >
-                    Start Free Audio Call <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    Free Audio call for tension free <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
                 </div>
 
