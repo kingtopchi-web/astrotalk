@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Clock, Star, ShieldCheck, Sparkles, MessageCircle, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, Star, ShieldCheck, Sparkles, Phone, CheckCircle, AlertCircle } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
 import { useAuth } from '../context/AuthContext';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
@@ -12,7 +12,7 @@ function FreeServices() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [freeChatStatus, setFreeChatStatus] = useState(null);
-  const [startingChatId, setStartingChatId] = useState(null);
+  const [startingCallId, setStartingCallId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,7 +27,7 @@ function FreeServices() {
         setFreeChatStatus(status);
       }
     } catch (err) {
-      console.error('Failed to fetch free chat status:', err);
+      console.error('Failed to fetch free consultation status:', err);
     }
   };
 
@@ -51,7 +51,7 @@ function FreeServices() {
   const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
   const allExpertsClaimed = experts.length > 0 && experts.every(e => usedExpertIds.includes(e._id));
 
-  const handleStartFreeChat = async (expertId) => {
+  const handleStartFreeCall = async (expertId) => {
     if (!user) {
       navigate('/login?redirect=/free-services');
       return;
@@ -61,23 +61,24 @@ function FreeServices() {
       return;
     }
     if (isFreeChatEnabled === false) {
-      alert('Free chat consultation is currently disabled by administrator.');
+      alert('Free audio call consultation is currently disabled by administrator.');
       return;
     }
     if (usedExpertIds.includes(expertId)) {
-      alert('You have already used your 1-time free consultation with this expert. You can select another expert or start a paid session.');
+      alert('You have already used your 1-time free audio call with this expert. You can select another expert or start a regular session.');
       return;
     }
     if (hasUsedToday) {
-      alert('Daily limit reached: You can take 1 free consultation per day. Please come back tomorrow to chat with another expert for free.');
+      alert('Daily limit reached: You can take 1 free audio consultation per day. Please come back tomorrow to call another expert for free.');
       return;
     }
 
     try {
-      setStartingChatId(expertId);
+      setStartingCallId(expertId);
       const token = localStorage.getItem('token');
-      await axios.post(getApiUrl('/bookings/start-free-chat'), {
-        expertId
+      const res = await axios.post(getApiUrl('/bookings/start-free-call'), {
+        expertId,
+        type: 'call'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -90,38 +91,39 @@ function FreeServices() {
         hasUsedFreeChat: true
       }));
 
-      navigate('/messages');
+      const consultationId = res.data?.consultation?._id;
+      navigate(`/live/${consultationId}?type=audio`);
     } catch (err) {
-      console.error('Error starting free chat:', err);
-      alert(err.response?.data?.message || 'Failed to start free chat session');
+      console.error('Error starting free call:', err);
+      alert(err.response?.data?.message || 'Failed to start free audio call');
     } finally {
-      setStartingChatId(null);
+      setStartingCallId(null);
     }
   };
 
   return (
-    <UserLayout title="Free Services" subtitle="Welcome benefit: Experience a free consultation with every listed expert (1 session daily).">
+    <UserLayout title="Free Services" subtitle="Welcome benefit: Experience a free audio call consultation with every listed expert (1 session daily).">
       <div className="py-6 space-y-6">
         {/* Banner Hero */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/10 via-primary/10 to-orange-500/10 border border-amber-200 dark:border-amber-900/40 p-6 sm:p-8">
           <div className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs">
               <Sparkles size={14} />
-              <span>1 Free Chat Daily · Once Per Expert</span>
+              <span>1 Free Audio Call Daily · Once Per Expert</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-heading font-bold text-on-surface">
-              Chat Free with Every Listed Expert ({durationMinutes} {durationMinutes === 1 ? 'Minute' : 'Minutes'} Each)
+              Call Free with Every Listed Expert ({durationMinutes} {durationMinutes === 1 ? 'Minute' : 'Minutes'} Each)
             </h2>
             <p className="text-sm text-on-surface-variant leading-relaxed">
-              Every user receives a free {durationMinutes}-minute chat consultation once with each listed expert! You can take <strong>1 free consultation per day</strong>. ₹0 charged to your wallet, and 100% free!
+              Every user receives a free {durationMinutes}-minute audio call consultation once with each listed expert! You can take <strong>1 free audio call per day</strong>. ₹0 charged to your wallet, and 100% free!
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-on-surface-variant">
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle size={15} /> 1 session per expert (lifetime)
+                <CheckCircle size={15} /> 1 audio call per expert (lifetime)
               </span>
               <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                <Clock size={15} /> 1 session per day (resets daily)
+                <Clock size={15} /> 1 audio call per day (resets daily)
               </span>
               <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                 <ShieldCheck size={15} /> Zero wallet deduction
@@ -143,7 +145,7 @@ function FreeServices() {
               ) : !isFreeChatEnabled ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-50 px-3.5 py-2 rounded-2xl border border-amber-200 w-fit">
                   <AlertCircle size={15} />
-                  <span>Free chat consultations are temporarily disabled by platform admin.</span>
+                  <span>Free call consultations are temporarily disabled by platform admin.</span>
                 </div>
               ) : allExpertsClaimed ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 px-3.5 py-2 rounded-2xl border border-indigo-200 dark:border-indigo-800 w-fit">
@@ -153,12 +155,12 @@ function FreeServices() {
               ) : hasUsedToday ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 rounded-2xl border border-amber-200 dark:border-amber-800 w-fit">
                   <Clock size={15} className="text-amber-600" />
-                  <span>Daily limit reached (1/day). You have taken your free chat for today. Come back tomorrow to chat with another expert for free!</span>
+                  <span>Daily limit reached (1/day). You have taken your free audio call for today. Come back tomorrow to call another expert for free!</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 rounded-2xl border border-emerald-200 dark:border-emerald-800 w-fit animate-pulse">
                   <CheckCircle size={15} className="text-emerald-600" />
-                  <span>You are eligible today! Choose any expert below who has not been claimed yet to start your {durationMinutes}-minute free session.</span>
+                  <span>You are eligible today! Choose any expert below who has not been claimed yet to start your {durationMinutes}-minute free audio call now.</span>
                 </div>
               )}
             </div>
@@ -226,7 +228,7 @@ function FreeServices() {
                               </span>
                             ) : (
                               <span className="inline-block text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                                FREE
+                                FREE CALL
                               </span>
                             )}
                           </div>
@@ -248,14 +250,14 @@ function FreeServices() {
                         Profile
                       </button>
                       <button
-                        disabled={startingChatId === expert._id || !isAvailableToday}
-                        onClick={() => handleStartFreeChat(expert._id)}
+                        disabled={startingCallId === expert._id || !isAvailableToday}
+                        onClick={() => handleStartFreeCall(expert._id)}
                         title={
                           isClaimedWithExpert
-                            ? 'You have already used your 1-time free consultation with this expert.'
+                            ? 'You have already used your 1-time free audio call with this expert.'
                             : hasUsedToday
-                            ? 'Daily limit reached. You can take 1 free consultation per day. Available tomorrow!'
-                            : `Start ${durationMinutes}-minute free chat`
+                            ? 'Daily limit reached. You can take 1 free audio call per day. Available tomorrow!'
+                            : `Start ${durationMinutes}-minute free audio call`
                         }
                         className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 ${
                           isAvailableToday
@@ -263,15 +265,15 @@ function FreeServices() {
                             : 'bg-surface-variant text-on-surface-variant opacity-60 cursor-not-allowed'
                         }`}
                       >
-                        <MessageCircle size={13} />
+                        <Phone size={13} />
                         <span>
-                          {startingChatId === expert._id 
-                            ? 'Starting...' 
+                          {startingCallId === expert._id 
+                            ? 'Connecting Call...' 
                             : isClaimedWithExpert 
-                            ? 'Free Used' 
+                            ? 'Call Used' 
                             : hasUsedToday 
                             ? 'Available Tomorrow' 
-                            : `Chat Free (${durationMinutes}m)`}
+                            : `Call Free (${durationMinutes}m)`}
                         </span>
                       </button>
                     </div>

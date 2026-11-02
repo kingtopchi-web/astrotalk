@@ -69,14 +69,14 @@ router.get('/free-chat-status', async (req, res) => {
   }
 });
 
-// @route   POST /api/bookings/start-free-chat
-// @desc    Start one-time free chat consultation with dynamic duration
+// @route   POST /api/bookings/start-free-call & /api/bookings/start-free-chat
+// @desc    Start one-time free consultation (audio call by default)
 // @access  Private (USER only)
-router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res) => {
+const handleStartFreeConsultation = async (req, res) => {
   try {
     const { expertId } = req.body;
     if (!expertId) {
-      return res.status(400).json({ message: 'Expert ID is required to start free chat' });
+      return res.status(400).json({ message: 'Expert ID is required to start free consultation' });
     }
 
     const expert = await Expert.findById(expertId);
@@ -86,7 +86,7 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
 
     const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
     if (settings && settings.enableFreeChat === false) {
-      return res.status(400).json({ message: 'Free chat is currently disabled by administrator.' });
+      return res.status(400).json({ message: 'Free consultation is currently disabled by administrator.' });
     }
 
     const user = await User.findById(req.user._id);
@@ -108,7 +108,7 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
 
     const durationMinutes = settings?.freeChatDurationMinutes || 5;
 
-    // Track free chat usage on user document
+    // Track free consultation usage on user document
     user.hasUsedFreeChat = true;
     user.lastFreeChatAt = new Date();
     if (!user.freeChatUsedExperts) user.freeChatUsedExperts = [];
@@ -116,6 +116,10 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
       user.freeChatUsedExperts.push(expertId);
     }
     await user.save();
+
+    // Default to 'call' (audio call) unless explicitly specified
+    const requestedType = (req.body.type || 'call').toLowerCase();
+    const sessionType = (requestedType === 'chat') ? 'chat' : 'call';
 
     // Create Free Consultation with isFree: true, zero cost, zero expert earning
     const consultation = new Consultation({
@@ -125,18 +129,19 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
       durationInMinutes: durationMinutes,
       status: 'ongoing',
       paymentStatus: 'paid',
-      type: 'chat',
+      type: sessionType,
       cost: 0,
       expertEarning: 0,
       platformFee: 0,
       isFree: true,
       freeChatDurationMinutes: durationMinutes,
-      chatStarted: false
+      chatStarted: sessionType === 'chat' ? false : true
     });
-    consultation.meetingLink = `/live/${consultation._id}`;
+    consultation.meetingLink = sessionType === 'chat' ? `/messages` : `/live/${consultation._id}?type=audio`;
     await consultation.save();
 
     // Ensure conversation exists
+    let conversationId = null;
     const Conversation = require('../models/Conversation');
     let conversation = await Conversation.findOne({
       participants: { 
@@ -156,6 +161,7 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
       });
       await conversation.save();
     }
+    conversationId = conversation._id;
 
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
@@ -163,31 +169,35 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
     if (io) {
       io.to(`user_${req.user._id}`).emit('new_chat_consultation', {
         consultationId: consultation._id,
-        type: 'chat',
+        type: sessionType,
         partnerId: expert._id,
         partnerModel: 'Expert',
         consultation,
-        conversationId: conversation._id
+        conversationId
       });
       io.to(`user_${expert._id}`).emit('new_chat_consultation', {
         consultationId: consultation._id,
-        type: 'chat',
+        type: sessionType,
         partnerId: req.user._id,
         partnerModel: 'User',
         userName: req.user.name || 'Client',
         consultation,
-        conversationId: conversation._id
+        conversationId
       });
     }
+
+    const isAudioCall = sessionType === 'call';
 
     sendNotification({
       recipient: req.user._id,
       recipientRole: 'USER',
       recipientModel: 'User',
-      title: 'Free Chat Started 🎁',
-      message: `Your ${durationMinutes}-minute free consultation with ${expert.name} is now live!`,
-      actionText: 'Open Chat',
-      link: '/messages',
+      title: isAudioCall ? 'Free Audio Call Started 🎁' : 'Free Consultation Started 🎁',
+      message: isAudioCall
+        ? `Your ${durationMinutes}-minute free audio consultation with ${expert.name} is connecting!`
+        : `Your ${durationMinutes}-minute free consultation with ${expert.name} is now live!`,
+      actionText: isAudioCall ? 'Join Audio Call' : 'Open Chat',
+      link: isAudioCall ? `/live/${consultation._id}?type=audio` : '/messages',
       type: 'booking_confirmed',
       badge: 'Free'
     }, io).catch(() => {});
@@ -196,25 +206,28 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
       recipient: expert._id,
       recipientRole: 'EXPERT',
       recipientModel: 'Expert',
-      title: 'New Free Consultation Session',
-      message: `${user.name || 'A client'} started a ${durationMinutes}-minute free consultation. Please reply promptly!`,
-      actionText: 'Open Chat & Reply',
-      link: '/expert/messages',
+      title: isAudioCall ? 'New Free Audio Call' : 'New Free Consultation Session',
+      message: `${user.name || 'A client'} started a ${durationMinutes}-minute free ${isAudioCall ? 'audio' : 'chat'} consultation. Please answer promptly!`,
+      actionText: isAudioCall ? 'Answer Audio Call' : 'Open Chat & Reply',
+      link: isAudioCall ? `/live/${consultation._id}?type=audio` : '/expert/messages',
       type: 'consultation_request',
       badge: 'Free'
     }, io).catch(() => {});
 
     return res.status(201).json({
-      message: 'Free chat session started',
+      message: 'Free consultation started',
       consultation,
-      conversationId: conversation._id,
+      conversationId,
       durationMinutes
     });
   } catch (error) {
-    console.error('Start free chat error:', error);
-    return res.status(500).json({ message: 'Failed to start free chat', error: error.message });
+    console.error('Start free consultation error:', error);
+    return res.status(500).json({ message: 'Failed to start free consultation', error: error.message });
   }
-});
+};
+
+router.post('/start-free-call', protect, authorizeRoles('USER'), handleStartFreeConsultation);
+router.post('/start-free-chat', protect, authorizeRoles('USER'), handleStartFreeConsultation);
 
 // @route   POST /api/bookings
 // @desc    Create a new booking (consultation)
@@ -329,7 +342,7 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
     });
     
     // Set meeting link dynamically pointing to our WebRTC live session route
-    consultation.meetingLink = `/live/${consultation._id}`;
+    consultation.meetingLink = `/live/${consultation._id}?type=${schemaType === 'video' ? 'video' : 'audio'}`;
 
     await consultation.save();
 

@@ -313,20 +313,21 @@ function Home() {
     const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
 
     if (usedList.includes(expertId)) {
-      alert('You have already used your 1-time free consultation with this expert. Please select another expert.');
+      alert('You have already used your 1-time free audio call with this expert. Please select another expert.');
       return;
     }
 
     if (hasUsedToday) {
-      alert('Daily limit reached: You can take 1 free consultation per day. Please come back tomorrow to chat with another expert for free.');
+      alert('Daily limit reached: You can take 1 free audio call per day. Please come back tomorrow to call another expert for free.');
       return;
     }
 
     try {
       setStartingFreeChat(true);
       const token = localStorage.getItem('token');
-      await axios.post(getApiUrl('/bookings/start-free-chat'), {
-        expertId
+      const res = await axios.post(getApiUrl('/bookings/start-free-call'), {
+        expertId,
+        type: 'call'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -339,10 +340,11 @@ function Home() {
       }));
 
       setFreeChatModalOpen(false);
-      navigate('/messages');
+      const consultationId = res.data?.consultation?._id;
+      navigate(`/live/${consultationId}?type=audio`);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to start free chat session');
+      alert(err.response?.data?.message || 'Failed to start free audio call');
     } finally {
       setStartingFreeChat(false);
     }
@@ -538,7 +540,7 @@ function Home() {
                     onClick={handleStartFreeChatClick}
                     className="px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
                   >
-                    Start Free Chat <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    Start Free Audio Call <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
                 </div>
 
@@ -1665,7 +1667,7 @@ function Home() {
                   </div>
                   <div>
                     <h3 className="text-lg font-heading font-bold text-on-surface">
-                      Start 1-Time Free Chat
+                      Start 1-Time Free Audio Call
                     </h3>
                     <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
                       <Clock size={13} />
@@ -1676,13 +1678,13 @@ function Home() {
 
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                   <p>
-                    <strong>Special Welcome Benefit:</strong> Enjoy a free <strong>{freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'minute' : 'minutes'}</strong> chat once with each listed expert! You can take <strong>1 free consultation per day</strong>.
+                    <strong>Special Welcome Benefit:</strong> Enjoy a free <strong>{freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'minute' : 'minutes'}</strong> audio call once with each listed expert! You can take <strong>1 free audio consultation per day</strong>.
                   </p>
                 </div>
                 {freeChatStatus?.hasUsedToday && (
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
                     <Clock size={15} />
-                    <span>Daily limit reached (1/day). You have used your free session for today. Remaining experts can be consulted for free tomorrow!</span>
+                    <span>Daily limit reached (1/day). You have used your free audio call for today. Remaining experts can be called for free tomorrow!</span>
                   </div>
                 )}
 
@@ -1730,7 +1732,7 @@ function Home() {
                                   ? 'You have already used your 1-time free consultation with this expert.'
                                   : isDailyLimitReached
                                   ? 'Daily free consultation limit reached. Available tomorrow!'
-                                  : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`
+                                  : `Call Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`
                               }
                               className={`px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 ${
                                 isAvailableToday
@@ -1742,7 +1744,7 @@ function Home() {
                                 {startingFreeChat
                                   ? 'Connecting...'
                                   : isClaimedWithExpert
-                                  ? 'Free Used'
+                                  ? 'Call Used'
                                   : isDailyLimitReached
                                   ? 'Available Tomorrow'
                                   : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`}

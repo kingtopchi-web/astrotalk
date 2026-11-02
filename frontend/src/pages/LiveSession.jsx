@@ -47,12 +47,16 @@ function LiveSession() {
     ? (consultation.expert.rates[consultation.type?.toLowerCase()] || consultation.expert.pricePerMinute || 30)
     : (consultation?.cost && consultation?.durationInMinutes ? (consultation.cost / consultation.durationInMinutes) : 30);
   
-  const costPerSecond = Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
-  const maxAllowedSeconds = userWalletBalance > 0 && costPerSecond > 0 
-    ? Math.floor(userWalletBalance / costPerSecond) 
-    : 3600;
-  const currentBilled = Number((seconds * costPerSecond).toFixed(2));
-  const remainingLiveBalance = Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
+  const isFreeSession = Boolean(consultation?.isFree);
+  const freeDurationMins = Number(consultation?.freeChatDurationMinutes || consultation?.durationInMinutes) || 5;
+  const freeMaxSeconds = freeDurationMins * 60;
+
+  const costPerSecond = isFreeSession ? 0 : Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
+  const maxAllowedSeconds = isFreeSession
+    ? freeMaxSeconds
+    : (userWalletBalance > 0 && costPerSecond > 0 ? Math.floor(userWalletBalance / costPerSecond) : 3600);
+  const currentBilled = isFreeSession ? 0 : Number((seconds * costPerSecond).toFixed(2));
+  const remainingLiveBalance = isFreeSession ? userWalletBalance : Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
   const remainingSeconds = Math.max(0, maxAllowedSeconds - seconds);
 
   useEffect(() => {
@@ -525,12 +529,14 @@ function LiveSession() {
     const timer = setInterval(() => {
       setSeconds(prev => {
         const next = prev + 1;
-        // Pay-As-You-Go Balance Check: If user runs out of balance, disconnect call
-        if (!isExpert && userWalletBalance > 0 && maxAllowedSeconds > 0 && next >= maxAllowedSeconds) {
+        // Pay-As-You-Go or Free Session Duration Check
+        if (!isExpert && maxAllowedSeconds > 0 && next >= maxAllowedSeconds) {
           if (!isEndingRef.current) {
             isEndingRef.current = true;
-            setIsBalanceExhausted(true);
-            // Auto terminate call on insufficient balance
+            if (!isFreeSession) {
+              setIsBalanceExhausted(true);
+            }
+            // Auto terminate call when quota/balance finishes
             setTimeout(() => {
               endCall(true, next);
             }, 500);
@@ -687,10 +693,16 @@ function LiveSession() {
           </div>
           {!isExpert && sessionStatus === 'LIVE' && (
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <div className="flex items-center bg-emerald-500/10 border border-emerald-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-emerald-400 gap-1 sm:gap-1.5">
-                <span className="material-symbols-outlined text-[13px] sm:text-[15px]">account_balance_wallet</span>
-                <span>₹{remainingLiveBalance.toFixed(2)}</span>
-              </div>
+              {isFreeSession ? (
+                <div className="flex items-center bg-amber-500/15 border border-amber-500/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-amber-400 gap-1 sm:gap-1.5">
+                  <span>🎁 Free Audio Call (₹0)</span>
+                </div>
+              ) : (
+                <div className="flex items-center bg-emerald-500/10 border border-emerald-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-emerald-400 gap-1 sm:gap-1.5">
+                  <span className="material-symbols-outlined text-[13px] sm:text-[15px]">account_balance_wallet</span>
+                  <span>₹{remainingLiveBalance.toFixed(2)}</span>
+                </div>
+              )}
               <div className={`flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold gap-1 ${remainingSeconds < 60 ? 'bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse' : 'bg-primary/20 border border-primary/30 text-primary'}`}>
                 <span className="material-symbols-outlined text-[13px] sm:text-[15px]">hourglass_top</span>
                 <span>{formatTime(remainingSeconds)}</span>

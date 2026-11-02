@@ -152,7 +152,7 @@ function ExpertDiscovery() {
   };
 
   const isSelectedExpertFree = Boolean(
-    callType === 'chat' && selectedExpert && isExpertFreeEligible(selectedExpert._id)
+    callType === 'audio' && selectedExpert && isExpertFreeEligible(selectedExpert._id)
   );
   const isSelectedExpertClaimed = Boolean(
     selectedExpert && (freeChatStatus?.usedExpertIds || []).includes(selectedExpert._id)
@@ -176,11 +176,11 @@ function ExpertDiscovery() {
       ? (expert.rates?.audio || expert.pricePerMinute || 30)
       : (expert.rates?.chat || expert.pricePerMinute || 20);
 
-    // If chat and user has free chat eligibility for this expert today, allow starting without balance!
-    const isFreeChatEligible = type === 'chat' && isExpertFreeEligible(expert._id);
+    // If audio and user has free consultation eligibility for this expert today, allow starting without balance!
+    const isFreeCallEligible = type === 'audio' && isExpertFreeEligible(expert._id);
 
     // Require at least 1 minute rate to start (only for paid sessions)
-    if (!isFreeChatEligible && curBal < rate) {
+    if (!isFreeCallEligible && curBal < rate) {
       setShortfallData({
         currentBalance: curBal,
         neededAmount: rate,
@@ -207,7 +207,7 @@ function ExpertDiscovery() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const isFreeChat = callType === 'chat' && isExpertFreeEligible(selectedExpert._id);
+      const isFreeCall = callType === 'audio' && isExpertFreeEligible(selectedExpert._id);
 
       // 1. Create booking (Free if eligible, or Pay-As-You-Go with NO upfront deduction)
       const bookingRes = await axios.post(
@@ -218,12 +218,12 @@ function ExpertDiscovery() {
           type: callType === 'audio' ? 'Audio' : callType === 'chat' ? 'Chat' : 'Video',
           duration: 60,
           isInstant: true,
-          isFree: isFreeChat
+          isFree: isFreeCall
         },
         { headers }
       );
 
-      if (isFreeChat) {
+      if (isFreeCall) {
         setFreeChatStatus(prev => ({
           ...(prev || {}),
           usedExpertIds: [...(prev?.usedExpertIds || []), selectedExpert._id],
@@ -234,7 +234,7 @@ function ExpertDiscovery() {
 
       const consultationId = bookingRes.data._id;
 
-      showToast(isFreeChat ? '🎁 Free Chat Connected! Enjoy your consultation.' : 'Connecting session... Billed per-second from wallet.', 'success');
+      showToast(isFreeCall ? '🎁 Free Audio Call Connected! Connecting your session...' : 'Connecting session... Billed per-second from wallet.', 'success');
       setShowCallModal(false);
       setShowShortfallModal(false);
 
@@ -578,7 +578,7 @@ function ExpertDiscovery() {
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-1">
                       🎁 1-Time Free Consultation
                     </span>
-                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-sm font-medium text-on-surface/70">/ Free Chat</span></p>
+                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-sm font-medium text-on-surface/70">/ Free Call</span></p>
                     <p className="text-xs text-on-surface/70 mt-0.5">Admin limit: {freeDurationMinutes} min{freeDurationMinutes === 1 ? '' : 's'} • Zero wallet deduction</p>
                   </div>
                   <div className="text-right">
@@ -600,7 +600,7 @@ function ExpertDiscovery() {
                     </span>
                   </div>
                 </div>
-                {callType === 'chat' && (
+                {callType === 'audio' && (
                   isSelectedExpertClaimed ? (
                     <div className="p-3 mb-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                       ℹ️ You have already used your 1-time free consultation with {selectedExpert?.name}. Regular per-minute rates apply.
@@ -638,7 +638,7 @@ function ExpertDiscovery() {
                   <p className="font-bold">{isSelectedExpertFree ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
                   <p className="opacity-90 mt-0.5">
                     {isSelectedExpertFree 
-                      ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के चैट कर सकते हैं। समय पूरा होते ही चैट समाप्त हो जाएगी।`
+                      ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के ऑडियो कॉल कर सकते हैं। समय पूरा होते ही कॉल समाप्त हो जाएगी।`
                       : 'कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।'}
                   </p>
                 </div>
