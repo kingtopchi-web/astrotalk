@@ -287,11 +287,14 @@ function Home() {
         return;
       }
 
-      if (config?.hasUsedFreeChat || user.hasUsedFreeChat) {
+      const usedList = config?.usedExpertIds || [];
+      const allUsed = experts.length > 0 && experts.every(e => usedList.includes(e._id));
+
+      if (allUsed) {
         setFreeChatNotice({
           type: 'already_used',
-          title: 'Free Chat Already Used',
-          message: 'You have already used your 1-time free consultation with an expert. Explore our verified experts to continue consultations.'
+          title: 'All Free Consultations Claimed',
+          message: 'You have enjoyed a free consultation with all currently listed experts! Explore our verified experts to continue consultations.'
         });
         setFreeChatModalOpen(true);
         return;
@@ -306,19 +309,34 @@ function Home() {
   };
 
   const handleSelectExpertForFreeChat = async (expertId) => {
+    const usedList = freeChatStatus?.usedExpertIds || [];
+    const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
+
+    if (usedList.includes(expertId)) {
+      alert('You have already used your 1-time free consultation with this expert. Please select another expert.');
+      return;
+    }
+
+    if (hasUsedToday) {
+      alert('Daily limit reached: You can take 1 free consultation per day. Please come back tomorrow to chat with another expert for free.');
+      return;
+    }
+
     try {
       setStartingFreeChat(true);
       const token = localStorage.getItem('token');
-      const res = await axios.post(getApiUrl('/bookings/start-free-chat'), {
+      await axios.post(getApiUrl('/bookings/start-free-chat'), {
         expertId
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (user) {
-        user.hasUsedFreeChat = true;
-        localStorage.setItem('user', JSON.stringify({ ...user, hasUsedFreeChat: true }));
-      }
+      setFreeChatStatus(prev => ({
+        ...(prev || {}),
+        usedExpertIds: [...(prev?.usedExpertIds || []), expertId],
+        hasUsedToday: true,
+        hasUsedFreeChat: true
+      }));
 
       setFreeChatModalOpen(false);
       navigate('/messages');
@@ -1658,9 +1676,15 @@ function Home() {
 
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                   <p>
-                    <strong>Special Welcome Benefit:</strong> You can chat with an expert for <strong>{freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'minute' : 'minutes'}</strong> completely free. The session will automatically terminate once time expires.
+                    <strong>Special Welcome Benefit:</strong> Enjoy a free <strong>{freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'minute' : 'minutes'}</strong> chat once with each listed expert! You can take <strong>1 free consultation per day</strong>.
                   </p>
                 </div>
+                {freeChatStatus?.hasUsedToday && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+                    <Clock size={15} />
+                    <span>Daily limit reached (1/day). You have used your free session for today. Remaining experts can be consulted for free tomorrow!</span>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
@@ -1692,17 +1716,40 @@ function Home() {
                           </div>
                         </div>
 
-                        <button
-                          disabled={startingFreeChat}
-                          onClick={() => handleSelectExpertForFreeChat(expert._id)}
-                          className="px-4 py-2 bg-primary text-background rounded-xl font-bold text-xs hover:bg-primary-light transition-all shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <span>
-                            {startingFreeChat 
-                              ? 'Connecting...' 
-                              : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`}
-                          </span>
-                        </button>
+                        {(() => {
+                          const isClaimedWithExpert = (freeChatStatus?.usedExpertIds || []).includes(expert._id);
+                          const isDailyLimitReached = Boolean(freeChatStatus?.hasUsedToday);
+                          const isAvailableToday = !isClaimedWithExpert && !isDailyLimitReached;
+
+                          return (
+                            <button
+                              disabled={startingFreeChat || !isAvailableToday}
+                              onClick={() => handleSelectExpertForFreeChat(expert._id)}
+                              title={
+                                isClaimedWithExpert
+                                  ? 'You have already used your 1-time free consultation with this expert.'
+                                  : isDailyLimitReached
+                                  ? 'Daily free consultation limit reached. Available tomorrow!'
+                                  : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`
+                              }
+                              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 ${
+                                isAvailableToday
+                                  ? 'bg-primary text-background hover:bg-primary-light cursor-pointer'
+                                  : 'bg-surface-variant text-on-surface-variant opacity-60 cursor-not-allowed'
+                              }`}
+                            >
+                              <span>
+                                {startingFreeChat
+                                  ? 'Connecting...'
+                                  : isClaimedWithExpert
+                                  ? 'Free Used'
+                                  : isDailyLimitReached
+                                  ? 'Available Tomorrow'
+                                  : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`}
+                              </span>
+                            </button>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>

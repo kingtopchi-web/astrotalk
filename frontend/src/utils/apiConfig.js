@@ -29,14 +29,15 @@ export const getApiUrl = (path = '') => {
  * 1. Queries /bookings/free-chat-status (with auth token if present)
  * 2. If it fails or is unavailable, falls back to /public/stats to get exact admin duration
  */
-export const fetchFreeChatConfig = async () => {
+export const fetchFreeChatConfig = async (expertId = null) => {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const queryParam = expertId ? `?expertId=${encodeURIComponent(expertId)}` : '';
 
   // Try primary status endpoint (tries local or prod depending on host)
   const candidateUrls = isLocalhost
-    ? [`${LOCAL_API_URL}/bookings/free-chat-status`, `${PROD_API_URL}/bookings/free-chat-status`]
-    : [`${PROD_API_URL}/bookings/free-chat-status`, `${LOCAL_API_URL}/bookings/free-chat-status`];
+    ? [`${LOCAL_API_URL}/bookings/free-chat-status${queryParam}`, `${PROD_API_URL}/bookings/free-chat-status${queryParam}`]
+    : [`${PROD_API_URL}/bookings/free-chat-status${queryParam}`, `${LOCAL_API_URL}/bookings/free-chat-status${queryParam}`];
 
   for (const url of candidateUrls) {
     try {
@@ -62,6 +63,10 @@ export const fetchFreeChatConfig = async () => {
           enableFreeChat: res.data.enableFreeChat !== false,
           freeChatDurationMinutes: Number(res.data.freeChatDurationMinutes) || 5,
           hasUsedFreeChat: false,
+          hasUsedToday: false,
+          usedExpertIds: [],
+          hasUsedWithExpert: false,
+          isEligibleForExpert: true,
           userId: null
         };
       }
@@ -74,6 +79,10 @@ export const fetchFreeChatConfig = async () => {
     enableFreeChat: true,
     freeChatDurationMinutes: 5,
     hasUsedFreeChat: false,
+    hasUsedToday: false,
+    usedExpertIds: [],
+    hasUsedWithExpert: false,
+    isEligibleForExpert: true,
     userId: null
   };
 };

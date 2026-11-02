@@ -36,6 +36,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  freeChatUsedExperts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Expert'
+  }],
+  lastFreeChatAt: {
+    type: Date,
+    default: null
+  },
   profileImage: {
     type: String,
     default: '',

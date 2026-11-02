@@ -35,7 +35,7 @@ function FreeServices() {
     try {
       setLoading(true);
       const res = await axios.get(getApiUrl('/public/experts'), {
-        params: { limit: 12 }
+        params: { limit: 20 }
       });
       setExperts(res.data.data || []);
     } catch (err) {
@@ -44,6 +44,12 @@ function FreeServices() {
       setLoading(false);
     }
   };
+
+  const usedExpertIds = freeChatStatus?.usedExpertIds || [];
+  const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
+  const durationMinutes = freeChatStatus?.freeChatDurationMinutes || 5;
+  const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
+  const allExpertsClaimed = experts.length > 0 && experts.every(e => usedExpertIds.includes(e._id));
 
   const handleStartFreeChat = async (expertId) => {
     if (!user) {
@@ -54,12 +60,16 @@ function FreeServices() {
       alert('Only client accounts can start a free consultation.');
       return;
     }
-    if (user.hasUsedFreeChat || freeChatStatus?.hasUsedFreeChat) {
-      alert('You have already used your 1-time free consultation benefit.');
+    if (isFreeChatEnabled === false) {
+      alert('Free chat consultation is currently disabled by administrator.');
       return;
     }
-    if (freeChatStatus?.enableFreeChat === false) {
-      alert('Free chat consultation is currently disabled by administrator.');
+    if (usedExpertIds.includes(expertId)) {
+      alert('You have already used your 1-time free consultation with this expert. You can select another expert or start a paid session.');
+      return;
+    }
+    if (hasUsedToday) {
+      alert('Daily limit reached: You can take 1 free consultation per day. Please come back tomorrow to chat with another expert for free.');
       return;
     }
 
@@ -72,10 +82,13 @@ function FreeServices() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (user) {
-        user.hasUsedFreeChat = true;
-        localStorage.setItem('user', JSON.stringify({ ...user, hasUsedFreeChat: true }));
-      }
+      // Update local state so UI reflects usage immediately
+      setFreeChatStatus(prev => ({
+        ...(prev || {}),
+        usedExpertIds: [...(prev?.usedExpertIds || []), expertId],
+        hasUsedToday: true,
+        hasUsedFreeChat: true
+      }));
 
       navigate('/messages');
     } catch (err) {
@@ -86,33 +99,29 @@ function FreeServices() {
     }
   };
 
-  const durationMinutes = freeChatStatus?.freeChatDurationMinutes || 5;
-  const hasUsed = user?.hasUsedFreeChat || freeChatStatus?.hasUsedFreeChat;
-  const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
-
   return (
-    <UserLayout title="Free Services" subtitle="Welcome benefit: Experience your initial consultation completely free.">
+    <UserLayout title="Free Services" subtitle="Welcome benefit: Experience a free consultation with every listed expert (1 session daily).">
       <div className="py-6 space-y-6">
         {/* Banner Hero */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/10 via-primary/10 to-orange-500/10 border border-amber-200 dark:border-amber-900/40 p-6 sm:p-8">
           <div className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs">
               <Sparkles size={14} />
-              <span>1-Time Free Consultation Benefit</span>
+              <span>1 Free Chat Daily · Once Per Expert</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-heading font-bold text-on-surface">
-              Chat Free with Any Top Expert for {durationMinutes} {durationMinutes === 1 ? 'Minute' : 'Minutes'}
+              Chat Free with Every Listed Expert ({durationMinutes} {durationMinutes === 1 ? 'Minute' : 'Minutes'} Each)
             </h2>
             <p className="text-sm text-on-surface-variant leading-relaxed">
-              Every user receives a one-time free chat consultation session. The session terminates automatically when the {durationMinutes}-minute time limit ends. ₹0 charged to your wallet, and 100% free!
+              Every user receives a free {durationMinutes}-minute chat consultation once with each listed expert! You can take <strong>1 free consultation per day</strong>. ₹0 charged to your wallet, and 100% free!
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-on-surface-variant">
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle size={15} /> 1 session per user ID
+                <CheckCircle size={15} /> 1 session per expert (lifetime)
               </span>
               <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                <Clock size={15} /> Admin time limit: {durationMinutes} min{durationMinutes === 1 ? '' : 's'}
+                <Clock size={15} /> 1 session per day (resets daily)
               </span>
               <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                 <ShieldCheck size={15} /> Zero wallet deduction
@@ -131,20 +140,25 @@ function FreeServices() {
                     Sign In
                   </button>
                 </div>
-              ) : hasUsed ? (
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-surface/80 dark:bg-black/20 px-3.5 py-2 rounded-2xl border border-border w-fit">
-                  <AlertCircle size={15} className="text-slate-400" />
-                  <span>You have already redeemed your 1-time free consultation benefit.</span>
-                </div>
               ) : !isFreeChatEnabled ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-50 px-3.5 py-2 rounded-2xl border border-amber-200 w-fit">
                   <AlertCircle size={15} />
                   <span>Free chat consultations are temporarily disabled by platform admin.</span>
                 </div>
+              ) : allExpertsClaimed ? (
+                <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 px-3.5 py-2 rounded-2xl border border-indigo-200 dark:border-indigo-800 w-fit">
+                  <CheckCircle size={15} className="text-indigo-600" />
+                  <span>You have enjoyed a free consultation with all currently listed experts! Explore regular sessions.</span>
+                </div>
+              ) : hasUsedToday ? (
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 rounded-2xl border border-amber-200 dark:border-amber-800 w-fit">
+                  <Clock size={15} className="text-amber-600" />
+                  <span>Daily limit reached (1/day). You have taken your free chat for today. Come back tomorrow to chat with another expert for free!</span>
+                </div>
               ) : (
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 rounded-2xl border border-emerald-200 dark:border-emerald-800 w-fit animate-pulse">
                   <CheckCircle size={15} className="text-emerald-600" />
-                  <span>You are eligible! Choose any expert below to start your {durationMinutes}-minute free session now.</span>
+                  <span>You are eligible today! Choose any expert below who has not been claimed yet to start your {durationMinutes}-minute free session.</span>
                 </div>
               )}
             </div>
@@ -183,59 +197,87 @@ function FreeServices() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {experts.map(expert => (
-                <div
-                  key={expert._id}
-                  className="bg-surface rounded-2xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start gap-3 mb-3">
-                      <img
-                        src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=F7C83C&color=fff`}
-                        alt={expert.name}
-                        className="w-14 h-14 rounded-2xl object-cover shadow-sm shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="font-bold text-on-surface text-sm truncate">{expert.name}</h4>
-                          <span className="inline-block text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                            FREE
-                          </span>
-                        </div>
-                        <p className="text-xs text-on-surface-variant truncate">{expert.specialty || expert.categoryId?.name || 'Consultant'}</p>
-                        <div className="flex items-center gap-1 text-[11px] text-amber-500 font-bold mt-1">
-                          <Star size={12} className="fill-amber-500" />
-                          <span>{expert.rating ? expert.rating.toFixed(1) : '5.0'}</span>
-                          <span className="text-on-surface/40 font-normal">({expert.totalConsultations || expert.reviewsCount || 10}+)</span>
+              {experts.map(expert => {
+                const isClaimedWithExpert = usedExpertIds.includes(expert._id);
+                const isAvailableToday = !isClaimedWithExpert && !hasUsedToday && isFreeChatEnabled;
+
+                return (
+                  <div
+                    key={expert._id}
+                    className="bg-surface rounded-2xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start gap-3 mb-3">
+                        <img
+                          src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=F7C83C&color=fff`}
+                          alt={expert.name}
+                          className="w-14 h-14 rounded-2xl object-cover shadow-sm shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="font-bold text-on-surface text-sm truncate">{expert.name}</h4>
+                            {isClaimedWithExpert ? (
+                              <span className="inline-block text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                                CLAIMED
+                              </span>
+                            ) : hasUsedToday ? (
+                              <span className="inline-block text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                                TOMORROW
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                FREE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-on-surface-variant truncate">{expert.specialty || expert.categoryId?.name || 'Consultant'}</p>
+                          <div className="flex items-center gap-1 text-[11px] text-amber-500 font-bold mt-1">
+                            <Star size={12} className="fill-amber-500" />
+                            <span>{expert.rating ? expert.rating.toFixed(1) : '5.0'}</span>
+                            <span className="text-on-surface/40 font-normal">({expert.totalConsultations || expert.reviewsCount || 10}+)</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => navigate(`/expert/${expert._id}`)}
-                      className="px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded-xl transition-colors"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      disabled={startingChatId === expert._id || hasUsed || !isFreeChatEnabled}
-                      onClick={() => handleStartFreeChat(expert._id)}
-                      className="flex-1 px-3 py-2 bg-primary text-background rounded-xl text-xs font-bold hover:bg-primary-light transition-all shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <MessageCircle size={13} />
-                      <span>
-                        {startingChatId === expert._id 
-                          ? 'Starting...' 
-                          : hasUsed 
-                            ? 'Used' 
+                    <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => navigate(`/expert/${expert._id}`)}
+                        className="px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded-xl transition-colors"
+                      >
+                        Profile
+                      </button>
+                      <button
+                        disabled={startingChatId === expert._id || !isAvailableToday}
+                        onClick={() => handleStartFreeChat(expert._id)}
+                        title={
+                          isClaimedWithExpert
+                            ? 'You have already used your 1-time free consultation with this expert.'
+                            : hasUsedToday
+                            ? 'Daily limit reached. You can take 1 free consultation per day. Available tomorrow!'
+                            : `Start ${durationMinutes}-minute free chat`
+                        }
+                        className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 ${
+                          isAvailableToday
+                            ? 'bg-primary text-background hover:bg-primary-light cursor-pointer'
+                            : 'bg-surface-variant text-on-surface-variant opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        <MessageCircle size={13} />
+                        <span>
+                          {startingChatId === expert._id 
+                            ? 'Starting...' 
+                            : isClaimedWithExpert 
+                            ? 'Free Used' 
+                            : hasUsedToday 
+                            ? 'Available Tomorrow' 
                             : `Chat Free (${durationMinutes}m)`}
-                      </span>
-                    </button>
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -140,9 +140,24 @@ function ExpertDiscovery() {
     }
   };
 
-  const hasUsedFreeChat = Boolean(user?.hasUsedFreeChat || freeChatStatus?.hasUsedFreeChat);
   const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
-  const isFreeEligible = Boolean(user && !hasUsedFreeChat && isFreeChatEnabled);
+  const isExpertFreeEligible = (expertId) => {
+    if (!user || user.role !== 'USER' || !expertId) return false;
+    if (!isFreeChatEnabled) return false;
+    const usedList = freeChatStatus?.usedExpertIds || [];
+    const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
+    if (hasUsedToday) return false;
+    if (usedList.includes(expertId)) return false;
+    return true;
+  };
+
+  const isSelectedExpertFree = Boolean(
+    callType === 'chat' && selectedExpert && isExpertFreeEligible(selectedExpert._id)
+  );
+  const isSelectedExpertClaimed = Boolean(
+    selectedExpert && (freeChatStatus?.usedExpertIds || []).includes(selectedExpert._id)
+  );
+  const isDailyLimitReached = Boolean(freeChatStatus?.hasUsedToday);
 
   const openCallModal = async (expert, type) => {
     const token = localStorage.getItem('token');
@@ -161,8 +176,8 @@ function ExpertDiscovery() {
       ? (expert.rates?.audio || expert.pricePerMinute || 30)
       : (expert.rates?.chat || expert.pricePerMinute || 20);
 
-    // If chat and user has not used their free chat benefit yet, allow starting without balance!
-    const isFreeChatEligible = type === 'chat' && isFreeEligible;
+    // If chat and user has free chat eligibility for this expert today, allow starting without balance!
+    const isFreeChatEligible = type === 'chat' && isExpertFreeEligible(expert._id);
 
     // Require at least 1 minute rate to start (only for paid sessions)
     if (!isFreeChatEligible && curBal < rate) {
@@ -192,7 +207,7 @@ function ExpertDiscovery() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const isFreeChat = callType === 'chat' && isFreeEligible;
+      const isFreeChat = callType === 'chat' && isExpertFreeEligible(selectedExpert._id);
 
       // 1. Create booking (Free if eligible, or Pay-As-You-Go with NO upfront deduction)
       const bookingRes = await axios.post(
@@ -208,9 +223,13 @@ function ExpertDiscovery() {
         { headers }
       );
 
-      if (isFreeChat && user) {
-        user.hasUsedFreeChat = true;
-        localStorage.setItem('user', JSON.stringify({ ...user, hasUsedFreeChat: true }));
+      if (isFreeChat) {
+        setFreeChatStatus(prev => ({
+          ...(prev || {}),
+          usedExpertIds: [...(prev?.usedExpertIds || []), selectedExpert._id],
+          hasUsedToday: true,
+          hasUsedFreeChat: true
+        }));
       }
 
       const consultationId = bookingRes.data._id;
@@ -553,7 +572,7 @@ function ExpertDiscovery() {
             </div>
             <div className="p-6">
               {/* Pay as you go Rate Info or Free Chat Banner */}
-              {callType === 'chat' && isFreeEligible ? (
+              {isSelectedExpertFree ? (
                 <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-4 mb-4 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
                   <div>
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-1">
@@ -569,6 +588,7 @@ function ExpertDiscovery() {
                   </div>
                 </div>
               ) : (
+                <>
                 <div className="bg-primary/10 rounded-xl p-4 mb-4 border border-primary/20 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
@@ -580,6 +600,18 @@ function ExpertDiscovery() {
                     </span>
                   </div>
                 </div>
+                {callType === 'chat' && (
+                  isSelectedExpertClaimed ? (
+                    <div className="p-3 mb-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      ℹ️ You have already used your 1-time free consultation with {selectedExpert?.name}. Regular per-minute rates apply.
+                    </div>
+                  ) : isDailyLimitReached ? (
+                    <div className="p-3 mb-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-xs text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      ℹ️ Daily free consultation limit reached (1/day). You can chat with {selectedExpert?.name} for free tomorrow, or continue now at regular rates.
+                    </div>
+                  ) : null
+                )}
+                </>
               )}
               
               {/* Wallet Status Info */}
@@ -594,8 +626,8 @@ function ExpertDiscovery() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-on-surface/60">{callType === 'chat' && isFreeEligible ? 'Session cost' : 'Estimated talk time'}</p>
-                  <p className="text-sm font-bold text-emerald-600">{callType === 'chat' && isFreeEligible ? '₹0 (Free Session)' : `~${Math.max(1, Math.floor(walletBalance / (getPerMinuteRate() * 1.2)))} mins`}</p>
+                  <p className="text-xs text-on-surface/60">{isSelectedExpertFree ? 'Session cost' : 'Estimated talk time'}</p>
+                  <p className="text-sm font-bold text-emerald-600">{isSelectedExpertFree ? '₹0 (Free Session)' : `~${Math.max(1, Math.floor(walletBalance / (getPerMinuteRate() * 1.2)))} mins`}</p>
                 </div>
               </div>
 
@@ -603,9 +635,9 @@ function ExpertDiscovery() {
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 mb-6 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
                 <span className="text-base mt-0.5">💡</span>
                 <div>
-                  <p className="font-bold">{callType === 'chat' && isFreeEligible ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
+                  <p className="font-bold">{isSelectedExpertFree ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
                   <p className="opacity-90 mt-0.5">
-                    {callType === 'chat' && isFreeEligible 
+                    {isSelectedExpertFree 
                       ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के चैट कर सकते हैं। समय पूरा होते ही चैट समाप्त हो जाएगी।`
                       : 'कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।'}
                   </p>
@@ -619,7 +651,7 @@ function ExpertDiscovery() {
               >
                 {processingPayment ? (
                   'Connecting...'
-                ) : callType === 'chat' && isFreeEligible ? (
+                ) : isSelectedExpertFree ? (
                   <>
                     <MessageSquare size={18} />
                     <span>Start Free Chat ({freeDurationMinutes}m) / मुफ़्त चैट शुरू करें (₹0)</span>

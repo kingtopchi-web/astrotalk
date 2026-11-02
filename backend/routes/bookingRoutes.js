@@ -8,6 +8,7 @@ const ExpertService = require('../models/ExpertService');
 const WalletTransaction = require('../models/WalletTransaction');
 const User = require('../models/User');
 const Setting = require('../models/Setting');
+const { checkFreeChatEligibility } = require('../utils/freeChatHelper');
 
 // @route   GET /api/bookings/free-chat-status
 // @desc    Get free chat settings and user eligibility
@@ -19,7 +20,15 @@ router.get('/free-chat-status', async (req, res) => {
     const freeChatDurationMinutes = settings?.freeChatDurationMinutes || 5;
 
     let hasUsedFreeChat = false;
+    let hasUsedToday = false;
+    let usedExpertIds = [];
+    let isEligibleForExpert = true;
+    let hasUsedWithExpert = false;
+    let reason = null;
+    let message = null;
     let userId = null;
+
+    const expertId = req.query.expertId || null;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {
@@ -28,8 +37,16 @@ router.get('/free-chat-status', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
         if (user) {
-          hasUsedFreeChat = Boolean(user.hasUsedFreeChat);
           userId = user._id;
+          const eligibility = await checkFreeChatEligibility(user._id, expertId);
+          hasUsedToday = eligibility.hasUsedToday;
+          usedExpertIds = eligibility.usedExpertIds;
+          hasUsedWithExpert = eligibility.hasUsedWithExpert;
+          isEligibleForExpert = eligibility.isEligible;
+          reason = eligibility.reason;
+          message = eligibility.message;
+          // hasUsedFreeChat reflects whether user is blocked right now (either today or with queried expert)
+          hasUsedFreeChat = expertId ? (!eligibility.isEligible) : eligibility.hasUsedToday;
         }
       } catch (e) {}
     }
@@ -38,6 +55,12 @@ router.get('/free-chat-status', async (req, res) => {
       enableFreeChat,
       freeChatDurationMinutes,
       hasUsedFreeChat,
+      hasUsedToday,
+      usedExpertIds,
+      hasUsedWithExpert,
+      isEligibleForExpert,
+      reason,
+      message,
       userId
     });
   } catch (error) {
@@ -71,17 +94,27 @@ router.post('/start-free-chat', protect, authorizeRoles('USER'), async (req, res
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user.hasUsedFreeChat) {
+    // Verify 1-per-day and 1-per-expert eligibility
+    const eligibility = await checkFreeChatEligibility(req.user._id, expertId);
+    if (!eligibility.isEligible) {
       return res.status(400).json({ 
-        message: 'You have already used your 1-time free consultation.',
+        message: eligibility.message,
+        reason: eligibility.reason,
+        hasUsedToday: eligibility.hasUsedToday,
+        hasUsedWithExpert: eligibility.hasUsedWithExpert,
         hasUsedFreeChat: true 
       });
     }
 
     const durationMinutes = settings?.freeChatDurationMinutes || 5;
 
-    // Immediately mark user as having used free chat so it cannot be reused
+    // Track free chat usage on user document
     user.hasUsedFreeChat = true;
+    user.lastFreeChatAt = new Date();
+    if (!user.freeChatUsedExperts) user.freeChatUsedExperts = [];
+    if (!user.freeChatUsedExperts.some(id => id.toString() === expertId.toString())) {
+      user.freeChatUsedExperts.push(expertId);
+    }
     await user.save();
 
     // Create Free Consultation with isFree: true, zero cost, zero expert earning
@@ -215,10 +248,14 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
         return res.status(400).json({ message: 'Free chat consultation is currently disabled by administrator.' });
       }
 
-      const userDoc = await User.findById(req.user._id);
-      if (userDoc && userDoc.hasUsedFreeChat) {
+      // Verify 1-per-day and 1-per-expert eligibility
+      const eligibility = await checkFreeChatEligibility(req.user._id, expertId);
+      if (!eligibility.isEligible) {
         return res.status(400).json({ 
-          message: 'You have already used your 1-time free chat consultation.',
+          message: eligibility.message,
+          reason: eligibility.reason,
+          hasUsedToday: eligibility.hasUsedToday,
+          hasUsedWithExpert: eligibility.hasUsedWithExpert,
           hasUsedFreeChat: true
         });
       }
@@ -228,8 +265,12 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       platformFee = 0;
       amount = 0;
 
-      // Mark user as having used free chat
-      await User.findByIdAndUpdate(req.user._id, { hasUsedFreeChat: true });
+      // Track free chat usage on user document
+      await User.findByIdAndUpdate(req.user._id, {
+        $addToSet: { freeChatUsedExperts: expertId },
+        lastFreeChatAt: new Date(),
+        hasUsedFreeChat: true
+      });
     } else {
       let ratePerMinute = expert.rates ? expert.rates[type.toLowerCase()] : (expert.pricePerMinute || 20);
       basePrice = ratePerMinute * consultationDuration;

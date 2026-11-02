@@ -497,8 +497,152 @@ async function runTests() {
     const refreshedExpert = await Expert.findById(approvedExpert._id);
     assert(refreshedExpert.rating === 5 && refreshedExpert.reviewsCount === 1, 'Expert aggregate rating recalculated accurately from database records');
 
+    // ==========================================
+    // TEST GROUP 7: FREE CHAT INTEGRITY (1/DAY & 1/EXPERT LIFETIME)
+    // ==========================================
+    console.log('\n--- TEST GROUP 7: FREE CHAT INTEGRITY (1/DAY & 1/EXPERT LIFETIME) ---');
+
+    // Create 2 test experts for free chat test
+    const freeExpertA = await Expert.create({
+      name: 'Free Expert Alpha',
+      email: `free_expert_a_${Date.now()}@experthub.test`,
+      password: 'password123',
+      phone: '9888877771',
+      specialty: 'Astrology',
+      pricePerMinute: 30,
+      approvalStatus: 'approved',
+      isVerified: true
+    });
+
+    const freeExpertB = await Expert.create({
+      name: 'Free Expert Beta',
+      email: `free_expert_b_${Date.now()}@experthub.test`,
+      password: 'password123',
+      phone: '9888877772',
+      specialty: 'Tarot',
+      pricePerMinute: 40,
+      approvalStatus: 'approved',
+      isVerified: true
+    });
+
+    const freeUser = await User.create({
+      name: 'Free Chat Tester',
+      email: `free_user_${Date.now()}@experthub.test`,
+      password: 'password123',
+      status: 'ACTIVE',
+      walletBalance: 0
+    });
+    const freeUserToken = jwt.sign(
+      { id: freeUser._id, role: 'USER' },
+      JWT_TEST_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 7.1 Free chat succeeds for Expert A on Day 1
+    const startFreeA = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/bookings/start-free-chat',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freeUserToken}`
+      }
+    }, {
+      expertId: freeExpertA._id.toString()
+    });
+    assert(startFreeA.statusCode === 201 && startFreeA.body.consultation.isFree === true, 'Free chat successfully initiated with Expert A on Day 1 (201)');
+
+    // 7.2 Free chat on the SAME day with Expert B is rejected with DAILY_LIMIT_REACHED
+    const startFreeBSameDay = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/bookings/start-free-chat',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freeUserToken}`
+      }
+    }, {
+      expertId: freeExpertB._id.toString()
+    });
+    assert(startFreeBSameDay.statusCode === 400 && startFreeBSameDay.body.reason === 'DAILY_LIMIT_REACHED', 'Same day free chat with Expert B rejected with DAILY_LIMIT_REACHED (400)');
+
+    // 7.3 Free chat with Expert A is rejected with EXPERT_ALREADY_USED
+    const startFreeAAgain = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/bookings/start-free-chat',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freeUserToken}`
+      }
+    }, {
+      expertId: freeExpertA._id.toString()
+    });
+    assert(startFreeAAgain.statusCode === 400 && startFreeAAgain.body.reason === 'EXPERT_ALREADY_USED', 'Lifetime repeat free chat with Expert A rejected with EXPERT_ALREADY_USED (400)');
+
+    // 7.4 Simulate Next Day: shift Expert A session date to yesterday (25 hours ago)
+    const yesterday = new Date(Date.now() - 25 * 60 * 60 * 1000);
+    await Consultation.collection.updateMany(
+      { user: freeUser._id, expert: freeExpertA._id },
+      { $set: { createdAt: yesterday, startTime: yesterday } }
+    );
+    await User.findByIdAndUpdate(freeUser._id, { lastFreeChatAt: yesterday });
+
+    // User connects with Expert B on new day -> SUCCEEDS!
+    const startFreeBNextDay = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/bookings/start-free-chat',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freeUserToken}`
+      }
+    }, {
+      expertId: freeExpertB._id.toString()
+    });
+    assert(startFreeBNextDay.statusCode === 201 && startFreeBNextDay.body.consultation.isFree === true, 'Next day free chat with Expert B successfully started (201)');
+
+    // 7.5 Status endpoint returns accurate eligibility per expert
+    const statusResA = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/bookings/free-chat-status?expertId=${freeExpertA._id}`,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${freeUserToken}`
+      }
+    });
+    assert(
+      statusResA.statusCode === 200 &&
+      statusResA.body.hasUsedWithExpert === true &&
+      statusResA.body.reason === 'EXPERT_ALREADY_USED',
+      'Status endpoint confirms Expert A is claimed (hasUsedWithExpert: true)'
+    );
+
+    const statusResOverall = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/bookings/free-chat-status',
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${freeUserToken}`
+      }
+    });
+    assert(
+      statusResOverall.statusCode === 200 &&
+      statusResOverall.body.hasUsedToday === true &&
+      statusResOverall.body.usedExpertIds.length >= 2,
+      'Status endpoint accurately tracks today limit and all used expert IDs'
+    );
+
     // Clean up test documents created during this run
-    await User.deleteMany({ _id: { $in: [activeUser._id, suspendedUser._id] } });
+    await User.deleteMany({ _id: { $in: [activeUser._id, suspendedUser._id, freeUser._id] } });
+    await Expert.deleteMany({ _id: { $in: [approvedExpert._id, pendingExpert._id, freeExpertA._id, freeExpertB._id] } });
+    await Consultation.deleteMany({ user: freeUser._id });
     await Expert.deleteMany({ _id: { $in: [approvedExpert._id, pendingExpert._id] } });
     await Consultation.deleteMany({ _id: { $in: [consultation._id, incompleteConsultation._id] } });
     await Review.deleteMany({ consultation: incompleteConsultation._id });
