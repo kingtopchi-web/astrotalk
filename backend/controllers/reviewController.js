@@ -126,8 +126,21 @@ exports.createReview = async (req, res) => {
     // 9. Update expert's aggregate rating and review count
     const updatedStats = await updateExpertAggregateRating(expertId);
 
-    // 10. Notify expert in real time (non-blocking)
+    // 10. Notify expert and broadcast real-time rating updates
     const io = req.app.get('io');
+    if (io) {
+      io.to(`expert_${expertId}`).emit('expert_rating_updated', {
+        expertId,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+      io.emit('public_expert_rating_updated', {
+        expertId,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+    }
+
     const expert = await Expert.findById(expertId).select('name');
     if (expert) {
       sendNotification({

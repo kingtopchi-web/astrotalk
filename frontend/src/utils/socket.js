@@ -9,7 +9,9 @@ const SOCKET_URL = isLocalhost ? 'http://localhost:5000' : 'https://experthub.ne
  * longer timeouts and more reconnection attempts to handle cold starts.
  */
 export const createSocket = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   return io(SOCKET_URL, {
+    auth: token ? { token } : {},
     // Transport: try websocket first, fall back to polling
     transports: ['websocket', 'polling'],
 

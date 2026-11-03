@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Expert = require('../models/Expert');
+const { getAdminMinimumDistanceKm, filterExpertsByMinimumDistance, extractCoordinates } = require('../utils/distanceHelper');
 
-const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
+const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages country latitude longitude location rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
 
 // @route   GET /api/experts
 // @desc    Get all experts with filtering and search
@@ -50,6 +51,34 @@ router.get('/', async (req, res) => {
     const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
 
+    const adminMinDistanceKm = await getAdminMinimumDistanceKm();
+    const userLat = req.query.latitude || req.query.lat;
+    const userLng = req.query.longitude || req.query.lng || req.query.lon;
+    const userCoords = extractCoordinates({ lat: userLat, lng: userLng });
+
+    if (adminMinDistanceKm > 0 && userCoords) {
+      const allMatching = await Expert.find(query)
+        .select(PUBLIC_EXPERT_FIELDS)
+        .populate('categoryId', 'name')
+        .populate('subCategoryId', 'name')
+        .sort({ rating: -1, createdAt: -1 });
+
+      const filtered = filterExpertsByMinimumDistance(allMatching, userCoords, adminMinDistanceKm);
+      const total = filtered.length;
+      const paginated = filtered.slice(skip, skip + limitNum).map(exp => {
+        const item = typeof exp.toObject === 'function' ? exp.toObject() : { ...exp };
+        if (exp.distanceKm !== undefined) item.distanceKm = exp.distanceKm;
+        return item;
+      });
+
+      return res.json({
+        experts: paginated,
+        total,
+        page: pageNum,
+        totalPages: Math.ceil(total / limitNum) || 1
+      });
+    }
+
     const experts = await Expert.find(query)
       .select(PUBLIC_EXPERT_FIELDS)
       .populate('categoryId', 'name')
@@ -96,7 +125,50 @@ router.put('/settings', protect, authorizeRoles('EXPERT'), async (req, res) => {
     }
 
     if (bankDetails) {
-      expert.bankDetails = { ...expert.bankDetails, ...bankDetails };
+      const { accountName, accountNumber, ifscCode, bankName, passbookImage } = bankDetails;
+
+      if (accountName || accountNumber || ifscCode || bankName || passbookImage) {
+        if (!accountName || !accountNumber || !ifscCode || !bankName) {
+          return res.status(400).json({ message: 'Account Holder Name, Account Number, Bank Name, and IFSC Code are all required.' });
+        }
+
+        // Passbook image is strictly required for verification
+        const existingPassbook = expert.bankDetails?.passbookImage;
+        const finalPassbook = (passbookImage && typeof passbookImage === 'string' && passbookImage.trim()) ? passbookImage.trim() : existingPassbook;
+        if (!finalPassbook) {
+          return res.status(400).json({ message: 'Bank Passbook / Cheque image is strictly required for bank verification.' });
+        }
+
+        // Dynamic re-verification: any update or edit to bank details resets status to PENDING for Admin approval!
+        expert.bankDetails = {
+          accountName: accountName.trim(),
+          accountNumber: accountNumber.trim(),
+          bankName: bankName.trim(),
+          ifscCode: ifscCode.trim().toUpperCase(),
+          passbookImage: finalPassbook,
+          verificationStatus: 'PENDING',
+          rejectionReason: '',
+          submittedAt: new Date(),
+          verifiedAt: null,
+          verifiedBy: null
+        };
+
+        // Notify Admin
+        try {
+          const io = req.app.get('io');
+          const { sendNotification } = require('../utils/notificationDispatcher');
+          sendNotification({
+            recipientRole: 'ADMIN',
+            recipientModel: 'Admin',
+            title: 'Bank Verification Request',
+            message: `Expert ${expert.name} submitted bank details & passbook image for verification.`,
+            actionText: 'Review Bank Details',
+            link: '/experts',
+            type: 'bank_verification_request',
+            badge: 'Bank'
+          }, io).catch(() => {});
+        } catch (e) {}
+      }
     }
 
     await expert.save();

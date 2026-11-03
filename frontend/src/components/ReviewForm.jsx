@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiConfig';
 
 /**
  * ReviewForm modal/component for reviewing an eligible completed consultation.
@@ -64,7 +65,7 @@ export default function ReviewForm({
 
       // Connect form submit to real backend endpoint
       const response = await axios.post(
-        'https://experthub.nextgoodtechnologies.in/api/reviews',
+        getApiUrl('/reviews'),
         {
           consultationId,
           rating,

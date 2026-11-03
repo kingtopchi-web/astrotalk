@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Settings as SettingsIcon, Sliders,
   Save, CheckCircle, RefreshCw, Mail, Phone,
-  Percent, Clock, AlertCircle
+  Percent, Clock, AlertCircle, MapPin
 } from 'lucide-react';
 import { LOCAL_API_URL, PROD_API_URL, isLocalhost } from '../utils/apiConfig';
 
@@ -28,6 +28,7 @@ export default function Settings() {
     enableInstantBooking: true,
     enableFreeChat: true,
     freeChatDurationMinutes: '5',
+    minimumExpertDistanceKm: '0',
     
     // Security
     sessionTimeoutMinutes: '60',
@@ -287,9 +288,9 @@ export default function Settings() {
                       max="100"
                       className="w-32 px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-slate-500">% deducted per consultation</span>
+                    <span className="text-sm text-slate-500">% platform default take rate</span>
                   </div>
-                  <p className="text-xs text-slate-400">Current take: 15% to Stitch, 85% to the expert.</p>
+                  <p className="text-xs text-slate-400">Default fallback rate. You can also configure dynamic category-wise commission rates in Categories.</p>
                 </div>
 
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
@@ -309,6 +310,31 @@ export default function Settings() {
                     <span className="text-sm text-slate-500">Minutes</span>
                   </div>
                   <p className="text-xs text-slate-400">Shortest allowed bookable session slot.</p>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={16} className="text-blue-600" />
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Minimum Expert Distance (KM)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      name="minimumExpertDistanceKm"
+                      value={formData.minimumExpertDistanceKm ?? ''}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      placeholder="e.g. 100"
+                      className="w-36 px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-slate-500">KM</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Only experts at or above this geographical distance (expertDistance &ge; adminMinimumDistance) will be displayed. Set to 0 to disable.
+                  </p>
                 </div>
 
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">

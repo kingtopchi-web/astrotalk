@@ -125,6 +125,21 @@ const DetailModal = ({ consultation, onClose, onStatusUpdate }) => {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-orange-50 rounded-xl p-3">
+              <p className="text-[10px] text-slate-500 uppercase font-semibold mb-0.5">Platform Fee</p>
+              <p className="text-sm font-bold text-orange-700">
+                ₹{Number(consultation.platformFee || 0).toFixed(2)} ({consultation.commissionRate != null ? consultation.commissionRate : 20}% Take)
+              </p>
+            </div>
+            <div className="bg-emerald-50 rounded-xl p-3">
+              <p className="text-[10px] text-slate-500 uppercase font-semibold mb-0.5">Expert Net Earning</p>
+              <p className="text-sm font-bold text-emerald-700">
+                ₹{Number(consultation.expertEarning || 0).toFixed(2)}
+              </p>
+            </div>
+          </div>
+
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Scheduled At</p>
             <p className="text-sm font-semibold text-slate-800">

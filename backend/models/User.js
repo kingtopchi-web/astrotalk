@@ -13,7 +13,16 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false,
+  },
+  authProvider: {
+    type: String,
+    enum: ['email', 'google', 'facebook', 'otp'],
+    default: 'email',
+  },
+  socialId: {
+    type: String,
+    default: '',
   },
   mobile: {
     type: String,
@@ -50,6 +59,8 @@ const userSchema = new mongoose.Schema({
   },
   bio: { type: String, default: '' },
   location: { type: String, default: '' },
+  latitude: { type: Number, default: null },
+  longitude: { type: Number, default: null },
   gender: { type: String, enum: ['male', 'female', 'other', ''], default: '' },
   dateOfBirth: { type: Date },
   savedExperts: [{
@@ -88,13 +99,14 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function () {
-  if (!this.isModified('password')) return;
+  if (!this.isModified('password') || !this.password) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Match user entered password to hashed password in database
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

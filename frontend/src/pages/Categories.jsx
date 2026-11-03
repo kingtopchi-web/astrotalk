@@ -125,7 +125,7 @@ function Categories() {
               {filteredCategories.map((category) => (
                 <Link
                   key={category._id}
-                  to={`/experts?categoryId=${category._id}`}
+                  to={`/category/${category._id}`}
                   className="bg-surface-muted rounded-2xl p-6 border border-border hover:border-primary/50 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group cursor-pointer hover:-translate-y-1"
                 >
                   <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-border group-hover:border-primary shadow-sm mb-4 transition-all">

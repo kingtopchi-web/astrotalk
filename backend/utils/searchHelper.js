@@ -1,6 +1,7 @@
 const Category = require('../models/Category');
 const SubCategory = require('../models/SubCategory');
 const Expert = require('../models/Expert');
+const { getAdminMinimumDistanceKm, filterExpertsByMinimumDistance, extractCoordinates } = require('./distanceHelper');
 
 // Levenshtein distance for typo tolerance
 function levenshteinDistance(a, b) {
@@ -116,7 +117,10 @@ async function searchExperts({
   subCategoryId = null,
   onlineStatus = null,
   page = 1,
-  limit = 12
+  limit = 12,
+  latitude = null,
+  longitude = null,
+  userCoords = null
 }) {
   const queryTerm = (searchTerm || '').trim();
   const baseFilter = {
@@ -133,10 +137,41 @@ async function searchExperts({
   if (categoryId) baseFilter.categoryId = categoryId;
   if (subCategoryId) baseFilter.subCategoryId = subCategoryId;
 
+  // Retrieve dynamic Admin-configured minimum expert distance
+  const adminMinDistanceKm = await getAdminMinimumDistanceKm();
+  const resolvedUserCoords = extractCoordinates(userCoords || { lat: latitude, lng: longitude });
+  const isDistanceFilteringActive = adminMinDistanceKm > 0 && Boolean(resolvedUserCoords);
+
   // Case 1: No search term -> standard query
   if (!queryTerm) {
-    const skip = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
-    const parsedLimit = parseInt(limit);
+    const parsedLimit = parseInt(limit) || 12;
+    const parsedPage = Math.max(1, parseInt(page) || 1);
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    if (isDistanceFilteringActive) {
+      const allApproved = await Expert.find(baseFilter)
+        .select('-password -documents -rejectionReason -rejectedAt -rejectedBy -approvedBy')
+        .populate('categoryId', 'name slug')
+        .populate('subCategoryId', 'name slug')
+        .sort({ onlineStatus: -1, rating: -1, createdAt: -1 });
+
+      const filtered = filterExpertsByMinimumDistance(allApproved, resolvedUserCoords, adminMinDistanceKm);
+      const total = filtered.length;
+      const paginatedData = filtered.slice(skip, skip + parsedLimit).map(exp => {
+        const item = typeof exp.toObject === 'function' ? exp.toObject() : { ...exp };
+        if (exp.distanceKm !== undefined) item.distanceKm = exp.distanceKm;
+        return item;
+      });
+
+      return {
+        data: paginatedData,
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit) || 1,
+        categories: []
+      };
+    }
 
     // Online experts first, then by rating, then newest
     const [experts, total] = await Promise.all([
@@ -152,7 +187,7 @@ async function searchExperts({
 
     return {
       data: experts,
-      page: parseInt(page),
+      page: parsedPage,
       limit: parsedLimit,
       total,
       totalPages: Math.ceil(total / parsedLimit) || 1,
@@ -245,7 +280,7 @@ async function searchExperts({
     $or: expertOrs
   };
 
-  const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
+  const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages country latitude longitude location rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
 
   let candidateExperts = await Expert.find(expertQuery)
     .select(PUBLIC_EXPERT_FIELDS)
@@ -268,6 +303,11 @@ async function searchExperts({
       ];
       return tokens.some(t => targetWords.some(w => isFuzzyWordMatch(t, w)));
     });
+  }
+
+  // Apply Minimum Distance Filter if configured and user location provided
+  if (isDistanceFilteringActive) {
+    candidateExperts = filterExpertsByMinimumDistance(candidateExperts, resolvedUserCoords, adminMinDistanceKm);
   }
 
   // Step 3: Relevance Scoring & Sorting
@@ -328,7 +368,12 @@ async function searchExperts({
   const parsedLimit = parseInt(limit) || 12;
   const parsedPage = parseInt(page) || 1;
   const skip = (Math.max(1, parsedPage) - 1) * parsedLimit;
-  const paginatedData = finalScored.slice(skip, skip + parsedLimit).map(s => s.expert);
+  const paginatedData = finalScored.slice(skip, skip + parsedLimit).map(s => {
+    const exp = s.expert;
+    const item = typeof exp.toObject === 'function' ? exp.toObject() : { ...exp };
+    if (exp.distanceKm !== undefined) item.distanceKm = exp.distanceKm;
+    return item;
+  });
 
   return {
     data: paginatedData,

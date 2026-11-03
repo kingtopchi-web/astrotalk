@@ -5,12 +5,14 @@ import { usePlatformSettings } from '../context/PlatformSettingsContext';
 import NotificationDropdown from './NotificationDropdown';
 import LogoutModal from './LogoutModal';
 import { getApiUrl } from '../utils/apiConfig';
+import ThemeToggle from './ThemeToggle';
 
 function Header() {
   const { auth, logout } = useAuth();
   const { platformName, supportEmail, contactPhone } = usePlatformSettings();
   const navigate = useNavigate();
   const location = useLocation();
+  const isHomePage = location.pathname === '/';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
@@ -208,8 +210,9 @@ function Header() {
         </nav>
 
         {/* Right Section (Auth / Profile) */}
-        <div className="hidden md:flex items-center justify-end gap-4 flex-1">
-
+        <div className="hidden md:flex items-center justify-end gap-3.5 flex-1">
+          {/* Theme Toggle Button (Only on Home Page) */}
+          {isHomePage && <ThemeToggle variant="segmented" />}
           
           {!auth.token ? (
             <div className="flex items-center gap-3">
@@ -308,8 +311,8 @@ function Header() {
         </div>
 
         {/* Mobile Menu Toggle & Theme */}
-        <div className="md:hidden flex items-center gap-2">
-
+        <div className="md:hidden flex items-center gap-1.5">
+          {isHomePage && <ThemeToggle variant="button" className="p-1.5" />}
           
           {auth.token && (
             <NotificationDropdown 
@@ -332,6 +335,16 @@ function Header() {
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-surface border-b border-border shadow-card pt-4 px-4 pb-28 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+          {/* Mobile Theme Switcher (Only on Home Page) */}
+          {isHomePage && (
+            <div className="flex items-center justify-between p-2.5 mb-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-bold text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-primary">palette</span>
+                Theme Mode
+              </span>
+              <ThemeToggle variant="segmented" />
+            </div>
+          )}
           {navLinks.map((link, idx) => (
             <div key={idx} className="flex flex-col">
               {link.dropdown ? (

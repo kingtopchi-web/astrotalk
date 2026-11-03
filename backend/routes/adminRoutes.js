@@ -12,11 +12,14 @@ const {
   getExpertById,
   approveExpert,
   rejectExpert,
+  approveExpertBankDetails,
+  rejectExpertBankDetails,
   updateExpertStatus,
   deleteExpert,
   getCategories,
   createCategory,
   updateCategory,
+  deleteCategory,
   getSubCategories,
   createSubCategory,
   updateSubCategory,
@@ -34,6 +37,18 @@ const {
   updateSettings,
   globalSearch
 } = require('../controllers/adminController');
+
+const {
+  getAdminDocumentRequirements,
+  createDocumentRequirement,
+  updateDocumentRequirement,
+  deleteDocumentRequirement,
+  getExpertDocumentsForAdmin,
+  verifyExpertDocument,
+  rejectExpertDocument,
+  requestDocumentReupload,
+  updateDocumentAdminNotes
+} = require('../controllers/documentController');
 
 // All routes require authentication and ADMIN role
 router.use(protect);
@@ -67,13 +82,29 @@ router.get('/experts', getExperts);
 router.get('/experts/:id', getExpertById);
 router.patch('/experts/:id/approve', approveExpert);
 router.patch('/experts/:id/reject', rejectExpert);
+router.patch('/experts/:id/bank/approve', approveExpertBankDetails);
+router.patch('/experts/:id/bank/reject', rejectExpertBankDetails);
 router.patch('/experts/:id/status', updateExpertStatus);
 router.delete('/experts/:id', deleteExpert);
+
+// Expert Document Verification
+router.get('/experts/:expertId/documents', getExpertDocumentsForAdmin);
+router.patch('/experts/:expertId/documents/:documentId/verify', verifyExpertDocument);
+router.patch('/experts/:expertId/documents/:documentId/reject', rejectExpertDocument);
+router.patch('/experts/:expertId/documents/:documentId/request-reupload', requestDocumentReupload);
+router.patch('/experts/:expertId/documents/:documentId/notes', updateDocumentAdminNotes);
 
 // Categories
 router.get('/categories', getCategories);
 router.post('/categories', createCategory);
 router.patch('/categories/:id', updateCategory);
+router.delete('/categories/:id', deleteCategory);
+
+// Document Requirements (Admin Category Management)
+router.get('/document-requirements', getAdminDocumentRequirements);
+router.post('/document-requirements', createDocumentRequirement);
+router.patch('/document-requirements/:id', updateDocumentRequirement);
+router.delete('/document-requirements/:id', deleteDocumentRequirement);
 
 // SubCategories
 router.get('/sub-categories', getSubCategories);

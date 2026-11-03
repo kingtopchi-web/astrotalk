@@ -148,6 +148,10 @@ app.use('/api/reviews', reviewRoutes);
 const publicRoutes = require('./routes/publicRoutes');
 app.use('/api/public', publicRoutes);
 
+const { getCategoryRequirements, getDocumentFile } = require('./controllers/documentController');
+app.get('/api/categories/:categoryId/document-requirements', getCategoryRequirements);
+app.get('/api/documents/:documentId/file', getDocumentFile);
+
 // Public category endpoints (no auth needed for registration forms)
 const Category = require('./models/Category');
 const SubCategory = require('./models/SubCategory');
@@ -244,10 +248,16 @@ io.on('connection', (socket) => {
     if (!socket.userId) socket.userId = userId;
     console.log(`Socket ${socket.id} joined user_${userId}`);
 
-    // If an expert connects, ensure their status is marked online
+    // If an expert connects, ensure their status is marked online and role is set
     try {
       const Expert = require('./models/Expert');
-      await Expert.findByIdAndUpdate(userId, { onlineStatus: 'online' });
+      const isExpert = await Expert.exists({ _id: userId });
+      if (isExpert) {
+        socket.userRole = 'EXPERT';
+        await Expert.findByIdAndUpdate(userId, { onlineStatus: 'online' });
+      } else if (!socket.userRole || socket.userRole === 'ANONYMOUS') {
+        socket.userRole = 'USER';
+      }
     } catch (e) {}
   });
 
@@ -290,7 +300,18 @@ io.on('connection', (socket) => {
     }
     // Enforce authenticated sender identity
     data.senderId = socket.userId.toString();
-    data.senderModel = socket.userRole === 'EXPERT' ? 'Expert' : (socket.userRole === 'ADMIN' ? 'Admin' : 'User');
+    if (socket.userRole === 'EXPERT') {
+      data.senderModel = 'Expert';
+    } else if (socket.userRole === 'ADMIN') {
+      data.senderModel = 'Admin';
+    } else if (socket.userRole === 'USER') {
+      data.senderModel = 'User';
+    } else {
+      const Expert = require('./models/Expert');
+      const isExpert = await Expert.exists({ _id: socket.userId });
+      data.senderModel = isExpert ? 'Expert' : 'User';
+      if (isExpert) socket.userRole = 'EXPERT';
+    }
     try {
       // 1. Disallow any documents or images / attachments
       if (data.fileUrl) {
@@ -417,19 +438,40 @@ io.on('connection', (socket) => {
           }
         }
 
+        // Check if the sender is the EXPERT for this consultation
+        const senderIdStr = (socket.userId || data.senderId || '').toString();
+        const isClient = activeChatConsultation.user && activeChatConsultation.user.toString() === senderIdStr;
+        const isSenderExpert = 
+          !isClient ||
+          data.senderModel === 'Expert' || 
+          socket.userRole === 'EXPERT' ||
+          (activeChatConsultation.expert && activeChatConsultation.expert.toString() === senderIdStr);
+
+        if (isSenderExpert) {
+          data.senderModel = 'Expert';
+        }
+
         // If the sender is the EXPERT and chat has not officially started yet, mark it started!
-        if (data.senderModel === 'Expert' && !activeChatConsultation.chatStarted) {
+        if (isSenderExpert && !activeChatConsultation.chatStarted) {
           activeChatConsultation.chatStarted = true;
           activeChatConsultation.chatStartedAt = new Date();
           activeChatConsultation.status = 'ongoing';
           await activeChatConsultation.save();
 
-          // Broadcast to conversation that expert has replied and session timer has officially begun!
-          io.to(`conversation_${data.conversationId}`).emit('chat_session_started', {
+          const startPayload = {
             consultationId: activeChatConsultation._id,
             chatStartedAt: activeChatConsultation.chatStartedAt,
             startTime: activeChatConsultation.chatStartedAt
-          });
+          };
+
+          // Broadcast to conversation room AND direct user rooms of both participants
+          io.to(`conversation_${data.conversationId}`).emit('chat_session_started', startPayload);
+          if (activeChatConsultation.user) {
+            io.to(`user_${activeChatConsultation.user}`).emit('chat_session_started', startPayload);
+          }
+          if (activeChatConsultation.expert) {
+            io.to(`user_${activeChatConsultation.expert}`).emit('chat_session_started', startPayload);
+          }
         }
       }
 
@@ -558,6 +600,22 @@ io.on('connection', (socket) => {
       const reason = data.reason || 'Chat request declined by expert';
       io.to(`user_${data.userId}`).emit('chat_rejected', { consultationId: data.consultationId, reason });
       io.to(`user_${data.userId}`).emit('session_ended', { consultationId: data.consultationId, reason });
+    }
+  });
+
+  // Handle chat consultation end
+  socket.on('end_chat_session', (data) => {
+    if (data?.conversationId) {
+      io.to(`conversation_${data.conversationId}`).emit('session_ended', {
+        consultationId: data.consultationId,
+        reason: data.reason || 'Chat session completed'
+      });
+    }
+    if (data?.consultationId) {
+      io.to(`call_room_${data.consultationId}`).emit('session_ended', {
+        consultationId: data.consultationId,
+        reason: data.reason || 'Chat session completed'
+      });
     }
   });
 });

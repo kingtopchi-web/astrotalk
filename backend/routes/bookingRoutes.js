@@ -83,6 +83,9 @@ const handleStartFreeConsultation = async (req, res) => {
     if (!expert) {
       return res.status(404).json({ message: 'Expert not found' });
     }
+    if (expert.verificationStatus !== 'APPROVED') {
+      return res.status(400).json({ message: 'This expert is not verified for consultations yet.', code: 'EXPERT_NOT_VERIFIED' });
+    }
 
     const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
     if (settings && settings.enableFreeChat === false) {
@@ -240,12 +243,16 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
     if (!expert) {
       return res.status(404).json({ message: 'Expert not found' });
     }
+    if (expert.verificationStatus !== 'APPROVED') {
+      return res.status(400).json({ message: 'This expert is not verified for consultations yet.', code: 'EXPERT_NOT_VERIFIED' });
+    }
 
     const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
     let consultationDuration = duration || 45;
     let basePrice = 0;
     let platformFee = 0;
     let amount = 0;
+    let commission = null;
 
     // Convert 'Video'/'Audio'/'Chat' to match schema ('video', 'call', 'chat')
     let schemaType = 'call';
@@ -285,7 +292,17 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
         hasUsedFreeChat: true
       });
     } else {
-      let ratePerMinute = expert.rates ? expert.rates[type.toLowerCase()] : (expert.pricePerMinute || 20);
+      const lowerSessionType = type.toLowerCase();
+      let ratePerMinute = 20;
+      if (lowerSessionType === 'chat') {
+        ratePerMinute = Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
+      } else if (lowerSessionType === 'audio' || lowerSessionType === 'call') {
+        ratePerMinute = Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10);
+      } else if (lowerSessionType === 'video') {
+        ratePerMinute = Math.max(20, expert.rates?.video || expert.pricePerMinute || 20);
+      } else {
+        ratePerMinute = Math.max(10, expert.rates?.[lowerSessionType] || expert.pricePerMinute || 10);
+      }
       basePrice = ratePerMinute * consultationDuration;
       
       // If booked via a specific service, use the service price as total price
@@ -296,7 +313,9 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
         }
       }
 
-      const commissionRate = (settings && settings.platformCommissionRate) ? (settings.platformCommissionRate / 100) : 0.20;
+      const { getEffectiveCommission } = require('../utils/commissionHelper');
+      commission = await getEffectiveCommission({ expertId, expert, serviceId });
+      const commissionRate = commission.rate;
       platformFee = Number((basePrice * commissionRate).toFixed(2));
       amount = Number((basePrice + platformFee).toFixed(2));
 
@@ -337,6 +356,8 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       cost: amount,
       expertEarning: basePrice,
       platformFee: platformFee,
+      commissionRate: isFreeBooking ? 0 : (commission ? commission.percentage : 20),
+      category: isFreeBooking ? (expert?.categoryId || null) : (commission?.categoryId || expert?.categoryId || null),
       isFree: isFreeBooking,
       freeChatDurationMinutes: isFreeBooking ? consultationDuration : null
     });
@@ -477,14 +498,44 @@ router.get('/active-chat/:partnerId', protect, async (req, res) => {
       query.expert = req.params.partnerId;
     }
 
-    const consultation = await Consultation.findOne(query).sort({ startTime: 1 });
+    const consultation = await Consultation.findOne(query).sort({ startTime: -1 });
     if (!consultation) {
       return res.status(404).json({ message: 'No active chat consultation found' });
     }
 
-    // if scheduled, we might want to mark it as ongoing since they are checking it in chat
-    if (consultation.status === 'scheduled') {
-      // Actually we let frontend or another action mark it ongoing, but we return it anyway
+    // If chat has not officially started, check if expert has already sent a reply!
+    if (consultation && !consultation.chatStarted) {
+      try {
+        const Message = require('../models/Message');
+        const Conversation = require('../models/Conversation');
+        const conv = await Conversation.findOne({
+          participants: {
+            $all: [
+              { $elemMatch: { participantId: consultation.user } },
+              { $elemMatch: { participantId: consultation.expert } }
+            ]
+          }
+        });
+        if (conv) {
+          const expertMsg = await Message.findOne({
+            conversationId: conv._id,
+            $or: [
+              { senderModel: 'Expert' },
+              { sender: consultation.expert },
+              { sender: { $ne: consultation.user } }
+            ],
+            createdAt: { $gte: new Date(new Date(consultation.startTime).getTime() - 120000) }
+          });
+          if (expertMsg) {
+            consultation.chatStarted = true;
+            consultation.chatStartedAt = expertMsg.createdAt || new Date();
+            consultation.status = 'ongoing';
+            await consultation.save();
+          }
+        }
+      } catch (e) {
+        console.warn('Check expert message error:', e.message);
+      }
     }
 
     res.json(consultation);
@@ -582,18 +633,30 @@ router.post('/:id/end', protect, async (req, res) => {
       return res.status(404).json({ message: 'Consultation not found' });
     }
 
-    let { actualDuration } = req.body;
-    let numericDuration = Number(actualDuration) || 0.01;
-    if (numericDuration <= 0) numericDuration = 0.01;
+    let { actualDuration, durationSeconds } = req.body;
+
+    // 1. Calculate exact total elapsed seconds
+    let totalSeconds = 0;
+    if (durationSeconds !== undefined && durationSeconds !== null && !isNaN(Number(durationSeconds))) {
+      totalSeconds = Math.max(0, Number(durationSeconds));
+    } else if (actualDuration) {
+      totalSeconds = Math.max(0, Math.round(Number(actualDuration) * 60));
+    }
 
     // Server-side bounds check: never allow client-manipulated duration to exceed elapsed time
     let maxAllowedMinutes = consultation.durationInMinutes || 60;
-    if (consultation.startTime) {
-      const elapsedMs = Date.now() - new Date(consultation.startTime).getTime();
-      const elapsedMinutes = Math.max(0.1, elapsedMs / (60 * 1000));
+    const sessionStartTime = consultation.chatStartedAt || consultation.startTime;
+    if (sessionStartTime) {
+      const elapsedMs = Date.now() - new Date(sessionStartTime).getTime();
+      const elapsedMinutes = Math.max(0.01, elapsedMs / (60 * 1000));
       maxAllowedMinutes = Math.min(maxAllowedMinutes, Math.ceil(elapsedMinutes + 2)); // 2 min buffer
+      const serverElapsedSec = Math.max(0, Math.floor(elapsedMs / 1000));
+      // Cap at server elapsed time + 30s buffer for network latency
+      if (totalSeconds > serverElapsedSec + 30) {
+        totalSeconds = serverElapsedSec;
+      }
     }
-    actualDuration = Math.min(numericDuration, maxAllowedMinutes);
+    actualDuration = Math.min(Number((totalSeconds / 60).toFixed(2)) || 0.01, maxAllowedMinutes);
 
     const expert = consultation.expert;
     const user = consultation.user;
@@ -666,27 +729,62 @@ router.post('/:id/end', protect, async (req, res) => {
       });
     }
 
-    // Calculate actual cost safely
+    // 2-MINUTE THRESHOLD RULE:
+    // If call/chat ends before 2 minutes (totalSeconds < 120s):
+    // - Expert receives ₹0.
+    // - User is charged ₹0 (or 100% full refund if pre-paid).
+    // If call/chat runs for 2 minutes or more (totalSeconds >= 120s, e.g. 121s):
+    // - User is billed for the ENTIRE duration including the initial 2 minutes!
+    // - Expert receives full earnings for the ENTIRE duration including the initial 2 minutes!
+    const isUnderTwoMinutes = totalSeconds < 120;
+
     const consultType = (consultation.type || 'video').toLowerCase();
-    const ratePerMinute = expert?.rates 
-      ? (expert.rates[consultType] || expert.pricePerMinute || 30) 
-      : (expert?.pricePerMinute || 30);
-    const actualBasePrice = Number((actualDuration * ratePerMinute).toFixed(2));
-    
-    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
-    const commissionRate = (settings && settings.platformCommissionRate) ? (settings.platformCommissionRate / 100) : 0.20;
+    let ratePerMinute = 20;
+    if (consultType === 'chat') {
+      ratePerMinute = Math.max(5, expert?.rates?.chat || expert?.pricePerMinute || 5);
+    } else if (consultType === 'audio' || consultType === 'call') {
+      ratePerMinute = Math.max(10, expert?.rates?.audio || expert?.pricePerMinute || 10);
+    } else if (consultType === 'video') {
+      ratePerMinute = Math.max(20, expert?.rates?.video || expert?.pricePerMinute || 20);
+    } else {
+      ratePerMinute = Math.max(10, expert?.rates?.[consultType] || expert?.pricePerMinute || 10);
+    }
 
-    const actualPlatformFee = Number((actualBasePrice * commissionRate).toFixed(2));
-    const actualTotalCost = Number((actualBasePrice + actualPlatformFee).toFixed(2));
+    const { getEffectiveCommission } = require('../utils/commissionHelper');
+    const commission = await getEffectiveCommission({
+      categoryId: consultation.category,
+      expertId: consultation.expert,
+      expert
+    });
+    const commissionRate = commission.rate;
 
-    const finalEarning = actualBasePrice; // Expert base price
-    const finalPlatformFee = actualPlatformFee; // Platform fee
+    let actualBasePrice = 0;
+    let actualPlatformFee = 0;
+    let actualTotalCost = 0;
+    let finalEarning = 0;
+    let finalPlatformFee = 0;
+    const durationLabel = totalSeconds >= 60 
+      ? `${Math.floor(totalSeconds / 60)}m ${totalSeconds % 60}s` 
+      : `${totalSeconds}s`;
+
+    if (!isUnderTwoMinutes) {
+      // Per-second pro-rata billing: billed strictly according to exact elapsed seconds!
+      // (e.g. 2 min 8 sec = 128s, NOT rounded up to 3 full minutes!)
+      actualBasePrice = Number(((totalSeconds / 60) * ratePerMinute).toFixed(2));
+      actualPlatformFee = Number((actualBasePrice * commissionRate).toFixed(2));
+      actualTotalCost = Number((actualBasePrice + actualPlatformFee).toFixed(2));
+      finalEarning = actualBasePrice;
+      finalPlatformFee = actualPlatformFee;
+    }
 
     // Check if this consultation was pre-paid upfront or Pay-As-You-Go (post-paid)
     if (consultation.paymentStatus === 'paid') {
-      // PRE-PAID CASE: Money was already deducted upfront; refund difference with duplicate check
-      const originalCost = consultation.cost;
-      const refundAmount = originalCost > actualTotalCost ? Number((originalCost - actualTotalCost).toFixed(2)) : 0;
+      // PRE-PAID CASE: Money was already deducted upfront
+      const originalCost = consultation.cost || 0;
+      // If under 2 mins, refund 100% of original cost! Otherwise refund unused difference.
+      const refundAmount = isUnderTwoMinutes
+        ? originalCost
+        : (originalCost > actualTotalCost ? Number((originalCost - actualTotalCost).toFixed(2)) : 0);
 
       const existingRefund = await WalletTransaction.findOne({
         consultation: consultation._id,
@@ -709,78 +807,30 @@ router.post('/:id/end', protect, async (req, res) => {
           status: 'SUCCESS',
           balanceBefore: userBalanceBefore,
           balanceAfter: userBalanceAfter,
-          description: `Refund for unused time in ${consultation.type} session`,
+          description: isUnderTwoMinutes
+            ? `Full refund: ${consultation.type} session ended under 2 minutes (${totalSeconds}s)`
+            : `Refund for unused time in ${consultation.type} session`,
           consultation: consultation._id,
           completedAt: new Date()
         });
         await refundTx.save();
       }
 
-      // Credit Expert if not already credited
-      const existingCredit = await WalletTransaction.findOne({
-        consultation: consultation._id,
-        type: 'CREDIT'
-      });
-
-      if (!existingCredit) {
-        const updatedExpert = await Expert.findOneAndUpdate(
-          { _id: expert._id },
-          { $inc: { walletBalance: finalEarning } },
-          { new: false }
-        );
-        const expertBalanceBefore = updatedExpert ? (updatedExpert.walletBalance || 0) : 0;
-        const expertBalanceAfter = Number((expertBalanceBefore + finalEarning).toFixed(2));
-
-        const expertTx = new WalletTransaction({
-          user: expert._id,
-          type: 'CREDIT',
-          amount: finalEarning,
-          status: 'SUCCESS',
-          balanceBefore: expertBalanceBefore,
-          balanceAfter: expertBalanceAfter,
-          description: `Earnings for ${actualDuration}m ${consultation.type} session`,
-          consultation: consultation._id,
-          completedAt: new Date()
-        });
-        await expertTx.save();
-      }
-    } else {
-      // PAY-AS-YOU-GO CASE (Astrotalk style): No upfront deduction occurred!
-      // Debit user wallet for exact duration used, capped at available balance
-      const existingDebit = await WalletTransaction.findOne({
-        consultation: consultation._id,
-        type: 'DEBIT'
-      });
-
-      if (!existingDebit) {
-        const userBalanceBefore = user.walletBalance || 0;
-        const debitAmount = Number(Math.min(actualTotalCost, userBalanceBefore).toFixed(2));
-        user.walletBalance = Number(Math.max(0, userBalanceBefore - debitAmount).toFixed(2));
-        await user.save();
-
-        const debitTx = new WalletTransaction({
-          user: user._id,
-          type: 'DEBIT',
-          amount: debitAmount,
-          status: 'SUCCESS',
-          balanceBefore: userBalanceBefore,
-          balanceAfter: user.walletBalance,
-          description: `Payment for ${actualDuration}m ${consultation.type} session`,
-          consultation: consultation._id,
-          completedAt: new Date()
-        });
-        await debitTx.save();
-
-        // Credit Expert
+      // Credit Expert ONLY if session ran 2+ minutes and has positive earnings
+      if (!isUnderTwoMinutes && finalEarning > 0) {
         const existingCredit = await WalletTransaction.findOne({
           consultation: consultation._id,
           type: 'CREDIT'
         });
 
         if (!existingCredit) {
-          const expertBalanceBefore = expert.walletBalance || 0;
-          expert.walletBalance = Number((expertBalanceBefore + finalEarning).toFixed(2));
-          await expert.save();
+          const updatedExpert = await Expert.findOneAndUpdate(
+            { _id: expert._id },
+            { $inc: { walletBalance: finalEarning } },
+            { new: false }
+          );
+          const expertBalanceBefore = updatedExpert ? (updatedExpert.walletBalance || 0) : 0;
+          const expertBalanceAfter = Number((expertBalanceBefore + finalEarning).toFixed(2));
 
           const expertTx = new WalletTransaction({
             user: expert._id,
@@ -788,12 +838,65 @@ router.post('/:id/end', protect, async (req, res) => {
             amount: finalEarning,
             status: 'SUCCESS',
             balanceBefore: expertBalanceBefore,
-            balanceAfter: expert.walletBalance,
-            description: `Earnings for ${actualDuration}m ${consultation.type} session`,
+            balanceAfter: expertBalanceAfter,
+            description: `Earnings for ${durationLabel} ${consultation.type} session (including first 2 mins)`,
             consultation: consultation._id,
             completedAt: new Date()
           });
           await expertTx.save();
+        }
+      }
+    } else {
+      // PAY-AS-YOU-GO CASE: No upfront deduction occurred!
+      if (!isUnderTwoMinutes && actualTotalCost > 0) {
+        const existingDebit = await WalletTransaction.findOne({
+          consultation: consultation._id,
+          type: 'DEBIT'
+        });
+
+        if (!existingDebit) {
+          const userBalanceBefore = user.walletBalance || 0;
+          const debitAmount = Number(Math.min(actualTotalCost, userBalanceBefore).toFixed(2));
+          user.walletBalance = Number(Math.max(0, userBalanceBefore - debitAmount).toFixed(2));
+          await user.save();
+
+          const debitTx = new WalletTransaction({
+            user: user._id,
+            type: 'DEBIT',
+            amount: debitAmount,
+            status: 'SUCCESS',
+            balanceBefore: userBalanceBefore,
+            balanceAfter: user.walletBalance,
+            description: `Payment for ${durationLabel} ${consultation.type} session`,
+            consultation: consultation._id,
+            completedAt: new Date()
+          });
+          await debitTx.save();
+
+          // Credit Expert
+          const existingCredit = await WalletTransaction.findOne({
+            consultation: consultation._id,
+            type: 'CREDIT'
+          });
+
+          if (!existingCredit && finalEarning > 0) {
+            const expertBalanceBefore = expert.walletBalance || 0;
+            expert.walletBalance = Number((expertBalanceBefore + finalEarning).toFixed(2));
+            await expert.save();
+
+            const expertTx = new WalletTransaction({
+              user: expert._id,
+              type: 'CREDIT',
+              amount: finalEarning,
+              status: 'SUCCESS',
+              balanceBefore: expertBalanceBefore,
+              balanceAfter: expert.walletBalance,
+              description: `Earnings for ${durationLabel} ${consultation.type} session (including first 2 mins)`,
+              consultation: consultation._id,
+              completedAt: new Date()
+            });
+            await expertTx.save();
+          }
         }
       }
     }
@@ -803,6 +906,8 @@ router.post('/:id/end', protect, async (req, res) => {
       cost: actualTotalCost,
       expertEarning: finalEarning,
       platformFee: finalPlatformFee,
+      commissionRate: commission.percentage,
+      category: commission.categoryId || consultation.category || expert.categoryId || null,
       durationInMinutes: actualDuration,
       paymentStatus: 'paid'
     });
@@ -841,46 +946,76 @@ router.post('/:id/end', protect, async (req, res) => {
 
     const { sendNotification } = require('../utils/notificationDispatcher');
 
-    // Dynamic Notification to User: Rate Your Consultation
-    await sendNotification({
-      recipient: user._id,
-      recipientRole: 'USER',
-      recipientModel: 'User',
-      title: 'Rate Your Consultation',
-      message: `Share your feedback about your completed session with ${expert.name}.`,
-      actionText: 'Write a review',
-      link: '/bookings',
-      type: 'rate_consultation',
-      badge: 'New'
-    }, io);
-
-    // Dynamic Notification to User: Wallet Debit / Update
-    if (actualTotalCost > 0) {
+    // Dynamic Notification to User: Rate Your Consultation (only if session ran 2+ min)
+    if (!isUnderTwoMinutes) {
       await sendNotification({
         recipient: user._id,
         recipientRole: 'USER',
         recipientModel: 'User',
-        title: 'Wallet Deduction',
-        message: `₹${actualTotalCost} was charged for your ${actualDuration}m ${consultation.type} consultation with ${expert.name}. Updated balance: ₹${user.walletBalance}.`,
+        title: 'Rate Your Consultation',
+        message: `Share your feedback about your completed session with ${expert.name}.`,
+        actionText: 'Write a review',
+        link: '/bookings',
+        type: 'rate_consultation',
+        badge: 'New'
+      }, io).catch(() => {});
+    }
+
+    if (isUnderTwoMinutes) {
+      // Notification to User for < 2 min grace
+      await sendNotification({
+        recipient: user._id,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: 'Session Ended (< 2 Min)',
+        message: `Your ${consultation.type} session ended under 2 minutes (${totalSeconds}s). As per policy, ₹0 was charged.`,
         actionText: 'View wallet',
         link: '/wallet',
         type: 'wallet_update',
-        badge: 'Debit'
-      }, io);
-    }
+        badge: 'Free'
+      }, io).catch(() => {});
 
-    // Dynamic Notification to Expert: Earnings Update
-    await sendNotification({
-      recipient: expert._id,
-      recipientRole: 'EXPERT',
-      recipientModel: 'Expert',
-      title: 'Earnings Update',
-      message: `You earned ₹${finalEarning.toFixed(2)} from your completed consultation with ${user.name || 'Client'}.`,
-      actionText: 'View earnings',
-      link: '/expert/earnings',
-      type: 'earnings_update',
-      badge: 'New'
-    }, io);
+      // Notification to Expert for < 2 min grace
+      await sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Session Ended (< 2 Min)',
+        message: `Your ${consultation.type} session with ${user.name || 'Client'} ended in under 2 minutes (${totalSeconds}s). Sessions under 2 minutes are not billed.`,
+        actionText: 'View consultations',
+        link: '/expert/consultations',
+        type: 'consultation_completed',
+        badge: 'Info'
+      }, io).catch(() => {});
+    } else {
+      // Dynamic Notification to User: Wallet Debit / Update
+      if (actualTotalCost > 0) {
+        await sendNotification({
+          recipient: user._id,
+          recipientRole: 'USER',
+          recipientModel: 'User',
+          title: 'Wallet Deduction',
+          message: `₹${actualTotalCost} was charged for your ${durationLabel} ${consultation.type} consultation with ${expert.name}. Updated balance: ₹${user.walletBalance}.`,
+          actionText: 'View wallet',
+          link: '/wallet',
+          type: 'wallet_update',
+          badge: 'Debit'
+        }, io).catch(() => {});
+      }
+
+      // Dynamic Notification to Expert: Earnings Update
+      await sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Earnings Update',
+        message: `You earned ₹${finalEarning.toFixed(2)} for ${durationLabel} from your completed consultation with ${user.name || 'Client'}.`,
+        actionText: 'View earnings',
+        link: '/expert/earnings',
+        type: 'earnings_update',
+        badge: 'New'
+      }, io).catch(() => {});
+    }
 
     res.json({ message: 'Session ended successfully', consultation });
   } catch (error) {

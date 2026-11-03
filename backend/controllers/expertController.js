@@ -71,12 +71,21 @@ exports.getDashboardStats = async (req, res) => {
 // PATCH /api/expert/profile
 exports.updateMyExpertProfile = async (req, res) => {
   try {
+    // Validate profileImage size (strictly max 1MB)
+    if (req.body.profileImage && typeof req.body.profileImage === 'string') {
+      const approxBytes = Math.round((req.body.profileImage.length * 3) / 4);
+      if (approxBytes > 1.2 * 1024 * 1024) {
+        return res.status(400).json({ message: 'Profile photo size exceeds maximum 1MB limit. Please upload a compressed image.' });
+      }
+    }
+
     const allowed = [
       'name', 'mobile', 'profileImage',
       'categoryId', 'subCategoryId',
       'specialty', 'qualification', 'specialization',
       'experience', 'bio', 'languages',
-      'rates', 'onlineStatus', 'availability'
+      'rates', 'onlineStatus', 'availability',
+      'latitude', 'longitude', 'location', 'country'
     ];
 
     const updates = {};
@@ -85,6 +94,54 @@ exports.updateMyExpertProfile = async (req, res) => {
         updates[field] = req.body[field];
       }
     });
+
+    // Enforce platform minimum rates: Chat >= ₹5/min, Audio >= ₹10/min, Video >= ₹20/min
+    if (req.body.rates !== undefined) {
+      const chatRate = Number(req.body.rates.chat);
+      const audioRate = Number(req.body.rates.audio);
+      const videoRate = Number(req.body.rates.video);
+
+      if (isNaN(chatRate) || chatRate < 5) {
+        return res.status(400).json({ 
+          message: 'Minimum rate for Chat is ₹5 per minute. You cannot set a rate lower than ₹5/min.' 
+        });
+      }
+      if (isNaN(audioRate) || audioRate < 10) {
+        return res.status(400).json({ 
+          message: 'Minimum rate for Audio call is ₹10 per minute. You cannot set a rate lower than ₹10/min.' 
+        });
+      }
+      if (isNaN(videoRate) || videoRate < 20) {
+        return res.status(400).json({ 
+          message: 'Minimum rate for Video call is ₹20 per minute. You cannot set a rate lower than ₹20/min.' 
+        });
+      }
+
+      updates.rates = {
+        chat: chatRate,
+        audio: audioRate,
+        video: videoRate
+      };
+      updates.pricePerMinute = chatRate;
+    }
+
+    if (updates.latitude !== undefined && updates.longitude !== undefined) {
+      const latNum = Number(updates.latitude);
+      const lngNum = Number(updates.longitude);
+      if (!isNaN(latNum) && !isNaN(lngNum)) {
+        updates.latitude = latNum;
+        updates.longitude = lngNum;
+        if (!updates.location) {
+          updates.location = {
+            type: 'Point',
+            coordinates: [lngNum, latNum],
+            country: updates.country || 'India'
+          };
+        } else if (Array.isArray(updates.location.coordinates)) {
+          updates.location.coordinates = [lngNum, latNum];
+        }
+      }
+    }
 
     const expert = await Expert.findByIdAndUpdate(
       req.user._id,
@@ -231,20 +288,38 @@ exports.getEarnings = async (req, res) => {
 // POST /api/expert/payouts/request
 exports.requestPayout = async (req, res) => {
   try {
+    const expert = await Expert.findById(req.user._id);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    if (!expert.bankDetails || expert.bankDetails.verificationStatus !== 'APPROVED') {
+      const status = expert.bankDetails?.verificationStatus || 'NOT_SUBMITTED';
+      let message = 'Bank details must be verified and approved by the Administrator before requesting a payout.';
+      if (status === 'PENDING') {
+        message = 'Your bank details are currently pending verification by the Administrator. Payout will be enabled once approved.';
+      } else if (status === 'REJECTED') {
+        message = `Your bank details were rejected: "${expert.bankDetails?.rejectionReason || 'Invalid documents'}". Please update your bank details in Settings.`;
+      }
+      return res.status(400).json({
+        message,
+        code: 'BANK_NOT_VERIFIED',
+        bankVerificationStatus: status
+      });
+    }
+
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
     sendNotification({
       recipientRole: 'ADMIN',
       recipientModel: 'Admin',
       title: 'Expert Payout Request',
-      message: `Expert ${req.user.name || 'Expert'} has requested a payout of earnings.`,
+      message: `Expert ${expert.name || 'Expert'} has requested a payout of earnings.`,
       actionText: 'Process payout',
       link: '/transactions',
       type: 'payout_request',
       badge: 'Payout'
     }, io).catch(e => console.error(e));
 
-    res.json({ message: 'Payout requested successfully' });
+    res.json({ message: 'Payout requested successfully', bankVerificationStatus: expert.bankDetails.verificationStatus });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

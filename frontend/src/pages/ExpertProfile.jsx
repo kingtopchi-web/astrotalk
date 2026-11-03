@@ -4,6 +4,7 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BottomNav from '../components/BottomNav';
+import { getApiUrl } from '../utils/apiConfig';
 import { 
   BadgeCheck, 
   MapPin, 
@@ -54,7 +55,7 @@ function ExpertPublicProfile() {
   const fetchExpertReviews = async () => {
     try {
       setLoadingReviews(true);
-      const res = await axios.get(`https://experthub.nextgoodtechnologies.in/api/reviews/expert/${id}`);
+      const res = await axios.get(getApiUrl(`/reviews/expert/${id}`));
       if (res.data?.success) {
         setReviewsData({
           reviews: res.data.reviews || [],
@@ -82,7 +83,7 @@ function ExpertPublicProfile() {
     if (!token) return 0;
     try {
       setLoadingWallet(true);
-      const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/wallet', {
+      const res = await axios.get(getApiUrl('/wallet'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const bal = Number(res.data?.balance || 0);
@@ -107,10 +108,10 @@ function ExpertPublicProfile() {
     
     const curBal = await fetchUserWallet();
     const rate = type === 'video' 
-      ? (expert?.rates?.video || expert?.pricePerMinute || 50)
+      ? Math.max(20, expert?.rates?.video || expert?.pricePerMinute || 20)
       : type === 'audio' 
-      ? (expert?.rates?.audio || expert?.pricePerMinute || 30)
-      : (expert?.rates?.chat || expert?.pricePerMinute || 20);
+      ? Math.max(10, expert?.rates?.audio || expert?.pricePerMinute || 10)
+      : Math.max(5, expert?.rates?.chat || expert?.pricePerMinute || 5);
 
     // Require at least 1 minute rate to start
     if (curBal < rate) {
@@ -127,11 +128,11 @@ function ExpertPublicProfile() {
   };
 
   const getPerMinuteRate = () => {
-    if (!expert) return 30;
-    if (callType === 'video') return expert.rates?.video || expert.pricePerMinute || 50;
-    if (callType === 'audio') return expert.rates?.audio || expert.pricePerMinute || 30;
-    if (callType === 'chat') return expert.rates?.chat || expert.pricePerMinute || 20;
-    return 30;
+    if (!expert) return 20;
+    if (callType === 'video') return Math.max(20, expert.rates?.video || expert.pricePerMinute || 20);
+    if (callType === 'audio') return Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10);
+    if (callType === 'chat') return Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
+    return 20;
   };
 
   const executeSessionBookingAndPayment = async () => {
@@ -142,7 +143,7 @@ function ExpertPublicProfile() {
 
       // 1. Create Pay-As-You-Go booking (NO upfront wallet deduction!)
       const bookingRes = await axios.post(
-        'https://experthub.nextgoodtechnologies.in/api/bookings',
+        getApiUrl('/bookings'),
         {
           expertId: id,
           date: new Date().toISOString(),
@@ -161,7 +162,7 @@ function ExpertPublicProfile() {
 
       if (callType === 'chat') {
         axios.post(
-          'https://experthub.nextgoodtechnologies.in/api/messages/conversations',
+          getApiUrl('/messages/conversations'),
           { expertId: id },
           { headers }
         ).finally(() => {
@@ -241,8 +242,8 @@ function ExpertPublicProfile() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         const [expertRes, servicesRes] = await Promise.all([
-          axios.get(`https://experthub.nextgoodtechnologies.in/api/user/experts/${id}`, { headers }),
-          axios.get(`https://experthub.nextgoodtechnologies.in/api/expert-services/public/${id}`)
+          axios.get(getApiUrl(`/user/experts/${id}`), { headers }),
+          axios.get(getApiUrl(`/expert-services/public/${id}`))
         ]);
 
         setExpert(expertRes.data);
@@ -305,10 +306,10 @@ function ExpertPublicProfile() {
   const subCategoryName = expert.subCategoryId?.name || '';
   const price = expert.pricing || 500;
 
-  // Dynamic rates per minute
-  const chatRate = expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10);
-  const audioRate = expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 15);
-  const videoRate = expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20);
+  // Dynamic rates per minute (enforcing platform minimums: Chat ₹5, Audio ₹10, Video ₹20)
+  const chatRate = Math.max(5, expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 5));
+  const audioRate = Math.max(10, expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10));
+  const videoRate = Math.max(20, expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20));
   
   // Real or fallback tags
   const expertiseTags = expert.tags?.length > 0 ? expert.tags : [categoryName, subCategoryName, 'Consultation'].filter(Boolean);
@@ -382,9 +383,15 @@ function ExpertPublicProfile() {
                   <CalendarIcon size={16} className="text-slate-400" />
                   <span>{expert.experience || '5+ Years Experience'}</span>
                 </div>
+                {expert.languages && expert.languages.length > 0 && (
+                  <div className="flex items-center gap-1.5 border-l border-slate-200 pl-4">
+                    <Globe size={16} className="text-amber-500" />
+                    <span>{expert.languages.join(', ')}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 border-l border-slate-200 pl-4">
                   <MapPin size={16} className="text-slate-400" />
-                  <span>{expert.location || 'New Delhi, India'}</span>
+                  <span>{expert.country || expert.location || 'India'}</span>
                 </div>
               </div>
               
@@ -688,14 +695,14 @@ function ExpertPublicProfile() {
                   </li>
                 )}
                 {(() => {
-                  const langs = expert.languages && expert.languages.length > 0
-                    ? Array.from(new Set([...expert.languages, 'Hindi']))
+                  const langs = Array.isArray(expert.languages) && expert.languages.length > 0
+                    ? expert.languages
                     : ['English', 'Hindi'];
                   return (
                     <li className="flex gap-4">
                       <Globe size={20} className="text-slate-400 shrink-0" />
                       <div>
-                        <p className="text-xs font-semibold text-slate-500 mb-1">Language</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">Languages</p>
                         <p className="text-sm font-bold text-slate-800">{langs.join(', ')}</p>
                       </div>
                     </li>
@@ -704,8 +711,8 @@ function ExpertPublicProfile() {
                 <li className="flex gap-4">
                   <MapPin size={20} className="text-slate-400 shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-1">Location</p>
-                    <p className="text-sm font-bold text-slate-800">{expert.location || 'Remote'}</p>
+                    <p className="text-xs font-semibold text-slate-500 mb-1">Country / Location</p>
+                    <p className="text-sm font-bold text-slate-800">{expert.country || expert.location || 'India'}</p>
                   </div>
                 </li>
               </ul>

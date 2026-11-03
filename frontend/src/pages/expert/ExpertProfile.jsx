@@ -3,17 +3,19 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../../components/Header';
 import BottomNav from '../../components/BottomNav';
+import { getApiUrl } from '../../utils/apiConfig';
 
 function ExpertProfile() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [expert, setExpert] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reviewsData, setReviewsData] = useState({ reviews: [], total: 0, averageRating: 0 });
 
   useEffect(() => {
     const fetchExpert = async () => {
       try {
-        const res = await axios.get(`https://experthub.nextgoodtechnologies.in/api/experts/${id}`);
+        const res = await axios.get(getApiUrl(`/experts/${id}`));
         setExpert(res.data);
         setLoading(false);
       } catch (err) {
@@ -21,7 +23,22 @@ function ExpertProfile() {
         setLoading(false);
       }
     };
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(getApiUrl(`/reviews/expert/${id}`));
+        if (res.data) {
+          setReviewsData({
+            reviews: res.data.reviews || [],
+            total: res.data.total || 0,
+            averageRating: res.data.averageRating || 0
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to fetch reviews', err);
+      }
+    };
     fetchExpert();
+    fetchReviews();
   }, [id]);
 
   if (loading) {
@@ -104,10 +121,10 @@ function ExpertProfile() {
                   <p className="font-body text-lg text-primary font-bold mb-3">{specialtyName}</p>
                   
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-                    <div className="inline-flex items-center gap-1.5 bg-secondary/10 text-secondary px-3 py-1.5 rounded-full text-sm font-bold">
-                      <span className="material-symbols-outlined text-[16px]">star</span>
-                      {expert.rating || '4.8'}
-                      <span className="text-secondary/70 font-semibold ml-1">({expert.reviewsCount || '120'} reviews)</span>
+                    <div className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 px-3 py-1.5 rounded-full text-sm font-bold">
+                      <span className="material-symbols-outlined text-[16px] text-amber-500 fill-amber-500">star</span>
+                      <span>{reviewsData.total > 0 ? reviewsData.averageRating.toFixed(1) : (expert.rating > 0 ? expert.rating.toFixed(1) : 'New')}</span>
+                      <span className="text-amber-700/70 font-semibold ml-1">({reviewsData.total || expert.reviewsCount || 0} reviews)</span>
                     </div>
                     {expert.experience && (
                       <div className="inline-flex items-center gap-1.5 bg-surface text-on-surface-variant px-3 py-1.5 rounded-full text-sm font-semibold border border-border">
@@ -169,19 +186,62 @@ function ExpertProfile() {
               )}
             </div>
             
-            {/* Reviews Summary (Placeholder for Future Phase) */}
-            <div className="glass-panel p-6 sm:p-8 opacity-70">
+            {/* Client Reviews Section (Dynamic) */}
+            <div className="glass-panel p-6 sm:p-8">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="font-heading font-bold text-xl text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">reviews</span>
-                  Client Reviews
+                  <span className="material-symbols-outlined text-amber-500">reviews</span>
+                  Client Reviews & Ratings
                 </h2>
-                <span className="text-xs font-bold uppercase tracking-wider bg-surface px-2 py-1 rounded border border-border">Coming Soon</span>
+                <span className="text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full">
+                  {reviewsData.total || 0} verified reviews
+                </span>
               </div>
-              <div className="text-center py-8">
-                <span className="material-symbols-outlined text-[48px] text-border mb-3">forum</span>
-                <p className="text-on-surface-variant font-medium">Detailed reviews and ratings will be available in Phase 5.</p>
-              </div>
+
+              {reviewsData.reviews.length === 0 ? (
+                <div className="text-center py-8">
+                  <span className="material-symbols-outlined text-[48px] text-slate-300 mb-2">forum</span>
+                  <p className="text-slate-500 font-medium text-sm">
+                    No client reviews yet. Reviews will automatically appear here once users complete a consultation with you.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {reviewsData.reviews.map((rev) => (
+                    <div key={rev._id} className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2.5">
+                          {rev.user?.profileImage ? (
+                            <img src={rev.user.profileImage} alt={rev.user.name} className="w-8 h-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">
+                              {(rev.user?.name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-800">{rev.user?.name || 'Verified Client'}</h4>
+                            <span className="text-[10px] text-slate-400">
+                              {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span key={star} className={`material-symbols-outlined text-[16px] ${star <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}>
+                              star
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {rev.feedback && (
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pl-10">
+                          "{rev.feedback}"
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>

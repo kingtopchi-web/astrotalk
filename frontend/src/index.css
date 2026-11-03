@@ -39,6 +39,59 @@
     --color-border: #E5E7EB;
   }
 
+  .dark,
+  :root.dark,
+  .dark-theme {
+    --color-primary: #F7C83C;
+    --color-primary-dark: #DCA714;
+    --color-primary-light: #FDE047;
+    --color-secondary: #FF7A00;
+    --color-secondary-dark: #EA580C;
+    --color-secondary-light: #FED7AA;
+    --color-accent: #10B981;
+    --color-surface: #1E293B;       /* Deep slate surface */
+    --color-surface-muted: #0F172A; /* Dark slate */
+    --color-surface-card: #1E293B;  /* Dark card */
+    --color-background: #0B0F19;    /* Deep night background */
+    --color-on-background: #F8FAFC; /* White / light text */
+    --color-on-surface: #F1F5F9;    /* Light text on surface */
+    --color-on-surface-variant: #94A3B8; /* Muted text */
+    --color-border: #334155;        /* Dark border */
+  }
+
+  /* Dark mode overrides for common components */
+  .dark .bg-white {
+    background-color: #1E293B !important;
+  }
+  .dark .bg-slate-50,
+  .dark .bg-slate-100 {
+    background-color: #0F172A !important;
+  }
+  .dark .text-slate-900,
+  .dark .text-slate-800 {
+    color: #F8FAFC !important;
+  }
+  .dark .text-slate-700,
+  .dark .text-slate-600 {
+    color: #CBD5E1 !important;
+  }
+  .dark .text-slate-500,
+  .dark .text-slate-400 {
+    color: #94A3B8 !important;
+  }
+  .dark .border-slate-200,
+  .dark .border-slate-100,
+  .dark .border-slate-300 {
+    border-color: #334155 !important;
+  }
+  .dark .border-border {
+    border-color: #334155 !important;
+  }
+  .dark header {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    border-color: #334155 !important;
+  }
+
 
   html {
     width: 100%;

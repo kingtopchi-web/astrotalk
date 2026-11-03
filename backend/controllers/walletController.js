@@ -312,10 +312,10 @@ exports.createCallOrder = async (req, res) => {
     if (!expert) return res.status(404).json({ message: 'Expert not found' });
 
     let rate = 0;
-    if (type === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
-    else if (type === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
-    else if (type === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
-    else rate = expert.pricePerMinute || 50;
+    if (type === 'video') rate = Math.max(20, expert.rates?.video || expert.pricePerMinute || 20);
+    else if (type === 'audio' || type === 'call') rate = Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10);
+    else if (type === 'chat') rate = Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
+    else rate = Math.max(10, expert.pricePerMinute || 10);
 
     const amount = rate * minutes;
     const amountInPaise = Math.round(amount * 100);
@@ -375,19 +375,21 @@ exports.verifyCallPayment = async (req, res) => {
     if (!expert) return res.status(404).json({ message: 'Expert not found' });
 
     let rate = 0;
-    if (type === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
-    else if (type === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
-    else if (type === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
-    else rate = expert.pricePerMinute || 50;
+    if (type === 'video') rate = Math.max(20, expert.rates?.video || expert.pricePerMinute || 20);
+    else if (type === 'audio' || type === 'call') rate = Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10);
+    else if (type === 'chat') rate = Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
+    else rate = Math.max(10, expert.pricePerMinute || 10);
 
     const validatedMinutes = Number(minutes) > 0 ? Number(minutes) : 10;
     const expectedAmount = rate * validatedMinutes;
     // Server-side authoritative amount
     const actualAmount = (typeof amount === 'number' && amount >= expectedAmount) ? amount : expectedAmount;
 
-    // Platform takes 20% fee, expert gets 80%
-    const expertEarning = actualAmount * 0.8;
-    const platformFee = actualAmount - expertEarning;
+    // Dynamic category-based platform commission calculation
+    const { getEffectiveCommission } = require('../utils/commissionHelper');
+    const commission = await getEffectiveCommission({ expertId, expert });
+    const platformFee = Number((actualAmount * commission.rate).toFixed(2));
+    const expertEarning = Number((actualAmount - platformFee).toFixed(2));
 
     // We do NOT credit the expert here. We wait until the consultation completes to calculate pro-rata.
 
@@ -417,7 +419,9 @@ exports.verifyCallPayment = async (req, res) => {
       durationInMinutes: validatedMinutes,
       cost: actualAmount,
       expertEarning: expertEarning,
-      platformFee: platformFee
+      platformFee: platformFee,
+      commissionRate: commission.percentage,
+      category: commission.categoryId || expert.categoryId || null
     });
     await consultation.save();
 
@@ -439,10 +443,10 @@ exports.payCallWithWallet = async (req, res) => {
     if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
 
     let rate = 0;
-    if (type === 'video') rate = expert.rates?.video || expert.pricePerMinute || 50;
-    else if (type === 'audio') rate = expert.rates?.audio || expert.pricePerMinute || 30;
-    else if (type === 'chat') rate = expert.rates?.chat || expert.pricePerMinute || 20;
-    else rate = expert.pricePerMinute || 50;
+    if (type === 'video') rate = Math.max(20, expert.rates?.video || expert.pricePerMinute || 20);
+    else if (type === 'audio' || type === 'call') rate = Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10);
+    else if (type === 'chat') rate = Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
+    else rate = Math.max(10, expert.pricePerMinute || 10);
 
     const totalCost = rate * minutes;
 
@@ -468,9 +472,11 @@ exports.payCallWithWallet = async (req, res) => {
     const balanceBefore = user.walletBalance;
     const balanceAfter = balanceBefore - totalCost;
 
-    // 80% to expert, 20% platform fee
-    const expertEarning = totalCost * 0.8;
-    const platformFee = totalCost - expertEarning;
+    // Dynamic category-based platform commission calculation
+    const { getEffectiveCommission } = require('../utils/commissionHelper');
+    const commission = await getEffectiveCommission({ expertId, expert });
+    const platformFee = Number((totalCost * commission.rate).toFixed(2));
+    const expertEarning = Number((totalCost - platformFee).toFixed(2));
 
     // Record wallet transaction
     const userTransaction = new WalletTransaction({
@@ -495,7 +501,9 @@ exports.payCallWithWallet = async (req, res) => {
       durationInMinutes: minutes,
       cost: totalCost,
       expertEarning,
-      platformFee
+      platformFee,
+      commissionRate: commission.percentage,
+      category: commission.categoryId || expert.categoryId || null
     });
     await consultation.save();
 

@@ -43,19 +43,31 @@ function LiveSession() {
   const consType = (consultation?.type || '').toLowerCase();
   // Any consultation that isn't explicitly video is an audio call (e.g. 'call', 'audio', etc.)
   const isAudioOnly = searchType === 'audio' || searchType === 'call' || (searchType !== 'video' && consType !== 'video');
-  const expertRatePerMin = consultation?.expert?.rates 
+  const getMinRateForType = (t) => {
+    const l = (t || '').toLowerCase();
+    if (l === 'chat') return 5;
+    if (l === 'audio' || l === 'call') return 10;
+    if (l === 'video') return 20;
+    return 10;
+  };
+
+  const rawExpertRate = consultation?.expert?.rates 
     ? (consultation.expert.rates[consultation.type?.toLowerCase()] || consultation.expert.pricePerMinute || 30)
     : (consultation?.cost && consultation?.durationInMinutes ? (consultation.cost / consultation.durationInMinutes) : 30);
+
+  const expertRatePerMin = Math.max(getMinRateForType(consultation?.type), rawExpertRate);
   
   const isFreeSession = Boolean(consultation?.isFree);
   const freeDurationMins = Number(consultation?.freeChatDurationMinutes || consultation?.durationInMinutes) || 5;
   const freeMaxSeconds = freeDurationMins * 60;
 
-  const costPerSecond = isFreeSession ? 0 : Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
+  const costPerMinWithGst = expertRatePerMin * 1.20;
+  const costPerSecond = isFreeSession ? 0 : Number((costPerMinWithGst / 60).toFixed(4));
+  const isUnderTwoMin = seconds < 120;
   const maxAllowedSeconds = isFreeSession
     ? freeMaxSeconds
     : (userWalletBalance > 0 && costPerSecond > 0 ? Math.floor(userWalletBalance / costPerSecond) : 3600);
-  const currentBilled = isFreeSession ? 0 : Number((seconds * costPerSecond).toFixed(2));
+  const currentBilled = isFreeSession || isUnderTwoMin ? 0 : Number((seconds * costPerSecond).toFixed(2));
   const remainingLiveBalance = isFreeSession ? userWalletBalance : Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
   const remainingSeconds = Math.max(0, maxAllowedSeconds - seconds);
 
@@ -204,7 +216,6 @@ function LiveSession() {
 
     const handleRemoteEnd = () => {
       soundService.stopRing();
-      setSessionStatus('COMPLETED');
       setIsIncoming(false);
       setCallAccepted(false);
       setIsConnected(false);
@@ -215,6 +226,12 @@ function LiveSession() {
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
         peerConnectionRef.current = null;
+      }
+      if (!isExpert) {
+        setShowEndModal(false);
+        setShowReviewModal(true);
+      } else {
+        setSessionStatus('COMPLETED');
       }
     };
 
@@ -603,7 +620,10 @@ function LiveSession() {
       }
 
       // Call end endpoint to deduct actual duration from wallet
-      await axios.post(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}/end`, { actualDuration }, {
+      await axios.post(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}/end`, {
+        actualDuration,
+        durationSeconds: usedSeconds
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       }).catch((e)=>{
         console.warn('Booking end response:', e?.response?.data || e.message);
@@ -667,11 +687,30 @@ function LiveSession() {
   
   if (sessionStatus === 'COMPLETED') {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-slate-900 text-background p-6">
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-900 text-background p-6 relative">
         <span className="material-symbols-outlined text-green-500 text-6xl mb-4">task_alt</span>
         <h2 className="text-xl font-bold mb-2">Consultation Ended</h2>
         <p className="text-on-surface/50 mb-6 text-center max-w-md">This consultation has been completed successfully.</p>
         <button onClick={() => navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true })} className="px-6 py-2 bg-primary rounded-xl font-bold hover:bg-primary/100">Go Back</button>
+        
+        {/* Post-Session Review Form Prompt */}
+        {!isExpert && showReviewModal && (
+          <ReviewForm
+            consultationId={consultationId}
+            expertName={otherUserName || consultation?.expert?.name || 'Expert'}
+            consultationType={isAudioOnly ? 'Audio' : 'Video'}
+            onSuccess={() => {
+              setTimeout(() => {
+                setShowReviewModal(false);
+                navigate('/bookings', { replace: true });
+              }, 1800);
+            }}
+            onClose={() => {
+              setShowReviewModal(false);
+              navigate('/bookings', { replace: true });
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -902,6 +941,15 @@ function LiveSession() {
             {sessionStatus === 'LIVE' && (
                 <p className="text-sm text-on-surface/50 text-center mb-6">
                   Session duration: {formatTime(seconds)}.<br/> 
+                  {seconds < 120 ? (
+                    <span className="text-emerald-400 font-medium text-xs mt-1 block">
+                      ✨ 2 मिनट से पहले कॉल काटने पर ₹0 कटेगा (फ्री)
+                    </span>
+                  ) : (
+                    <span className="text-amber-400 font-medium text-xs mt-1 block">
+                      कुल शुल्क: ₹{currentBilled.toFixed(2)} ({formatTime(seconds)})
+                    </span>
+                  )}
                 </p>
             )}
             <div className="flex gap-3">
@@ -1009,7 +1057,7 @@ function LiveSession() {
               आपके वॉलेट में बैलेंस समाप्त हो गया है, इसलिए कॉल डिस्कनेक्ट कर दी गई है।
               <br />
               <span className="text-xs text-slate-400 mt-1 block">
-                Total Call Duration: {formatTime(seconds)} | Deducted: ₹{(seconds * costPerSecond).toFixed(2)}
+                Total Call Duration: {formatTime(seconds)} | Deducted: ₹{isUnderTwoMin ? '0.00' : currentBilled.toFixed(2)}
               </span>
             </p>
 
@@ -1040,13 +1088,16 @@ function LiveSession() {
       )}
 
       {/* Post-Session Review Form Prompt */}
-      {showReviewModal && (
+      {!isExpert && showReviewModal && (
         <ReviewForm
           consultationId={consultationId}
-          expertName={consultation?.expert?.name || 'your expert'}
-          consultationType={consultation?.type || 'Consultation'}
+          expertName={otherUserName || consultation?.expert?.name || 'Expert'}
+          consultationType={isAudioOnly ? 'Audio' : 'Video'}
           onSuccess={() => {
-            // Success confirmation shows in ReviewForm for 1.5s, then onClose fires
+            setTimeout(() => {
+              setShowReviewModal(false);
+              navigate('/bookings', { replace: true });
+            }, 1800);
           }}
           onClose={() => {
             setShowReviewModal(false);

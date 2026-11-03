@@ -8,6 +8,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ADMIN_API_URL } from '../utils/apiConfig';
+import { compressAvatarImage } from '../utils/imageCompressor';
 
 function AdminProfile() {
   const navigate = useNavigate();
@@ -75,14 +76,22 @@ function AdminProfile() {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm(prev => ({ ...prev, profileImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressAvatarImage(file);
+        if (compressed?.dataUrl) {
+          setForm(prev => ({ ...prev, profileImage: compressed.dataUrl }));
+        }
+      } catch (err) {
+        console.error('Image compression error:', err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setForm(prev => ({ ...prev, profileImage: reader.result }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

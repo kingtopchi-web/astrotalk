@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Columns, Filter, Download, Search as SearchIcon, Edit2, Trash2, CheckCircle, XCircle, X, Plus } from 'lucide-react';
+import { Columns, Filter, Download, Search as SearchIcon, Edit2, Trash2, CheckCircle, XCircle, X, Plus, Building2, Eye, FileText, AlertTriangle, ShieldCheck, Clock } from 'lucide-react';
 import { ADMIN_API_URL } from '../utils/apiConfig';
 
 const STATUS_COLORS = {
@@ -23,6 +23,7 @@ const ExpertsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('');
+  const [bankFilter, setBankFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState(searchParam || '');
   const [showSearch, setShowSearch] = useState(Boolean(searchParam));
@@ -37,6 +38,12 @@ const ExpertsList = () => {
   const [targetExpert, setTargetExpert] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Bank verification modal state
+  const [selectedBankExpert, setSelectedBankExpert] = useState(null);
+  const [showBankRejectInput, setShowBankRejectInput] = useState(false);
+  const [bankRejectReason, setBankRejectReason] = useState('');
+  const [previewPassbookFull, setPreviewPassbookFull] = useState(false);
+
   const fetchExperts = async () => {
     setLoading(true);
     setError('');
@@ -44,6 +51,7 @@ const ExpertsList = () => {
       const token = localStorage.getItem('adminToken');
       const params = { page, limit: 15 };
       if (verificationFilter) params.verificationStatus = verificationFilter;
+      if (bankFilter) params.bankVerificationStatus = bankFilter;
       if (statusFilter) params.status = statusFilter;
       if (search) params.search = search;
 
@@ -63,7 +71,7 @@ const ExpertsList = () => {
 
   useEffect(() => {
     fetchExperts();
-  }, [page, verificationFilter, statusFilter]);
+  }, [page, verificationFilter, bankFilter, statusFilter]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -89,9 +97,20 @@ const ExpertsList = () => {
   }, [search]);
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Specialty', 'Verification', 'Status', 'Joined'];
-    const csvData = experts.map(e => [e.name, e.email, e.specialty, e.verificationStatus, e.status, new Date(e.createdAt).toLocaleDateString()].join(','));
-    const blob = new Blob([headers.join(',') + '\\n' + csvData.join('\\n')], { type: 'text/csv' });
+    const headers = ['Name', 'Email', 'Specialty', 'Profile Verification', 'Bank Status', 'Bank Name', 'Account No', 'IFSC', 'Status', 'Joined'];
+    const csvData = experts.map(e => [
+      e.name,
+      e.email,
+      e.specialty || '',
+      e.verificationStatus || 'PENDING',
+      e.bankDetails?.verificationStatus || 'NOT_SUBMITTED',
+      e.bankDetails?.bankName || '',
+      e.bankDetails?.accountNumber ? `"${e.bankDetails.accountNumber}"` : '',
+      e.bankDetails?.ifscCode || '',
+      e.status,
+      new Date(e.createdAt).toLocaleDateString()
+    ].join(','));
+    const blob = new Blob([headers.join(',') + '\n' + csvData.join('\n')], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('href', url);
@@ -137,6 +156,50 @@ const ExpertsList = () => {
       fetchExperts();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to reject expert');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApproveBank = async (expertId) => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.patch(`${ADMIN_API_URL}/experts/${expertId}/bank/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Update table list state instantly without page refresh
+      setExperts(prev => prev.map(e => e._id === expertId ? res.data.expert : e));
+      // Automatically exit from modal
+      setSelectedBankExpert(null);
+      setShowBankRejectInput(false);
+      setBankRejectReason('');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to approve bank details');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectBank = async (expertId) => {
+    if (!bankRejectReason.trim()) {
+      alert('Please provide a reason for rejecting the bank details.');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.patch(`${ADMIN_API_URL}/experts/${expertId}/bank/reject`, { reason: bankRejectReason.trim() }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Update table list state instantly without page refresh
+      setExperts(prev => prev.map(e => e._id === expertId ? res.data.expert : e));
+      // Automatically exit from modal
+      setSelectedBankExpert(null);
+      setShowBankRejectInput(false);
+      setBankRejectReason('');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to reject bank details');
     } finally {
       setActionLoading(false);
     }
@@ -194,23 +257,34 @@ const ExpertsList = () => {
           
           {/* Dynamic Filter */}
           {showFilters && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <select 
                 value={verificationFilter}
                 onChange={(e) => { setVerificationFilter(e.target.value); setPage(1); }}
                 className="py-1.5 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-300"
               >
-                <option value="">All Verification</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
+                <option value="">All Profile Status</option>
+                <option value="PENDING">Profile Pending</option>
+                <option value="APPROVED">Profile Approved</option>
+                <option value="REJECTED">Profile Rejected</option>
+              </select>
+              <select 
+                value={bankFilter}
+                onChange={(e) => { setBankFilter(e.target.value); setPage(1); }}
+                className="py-1.5 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-300 bg-amber-50/50 font-medium"
+              >
+                <option value="">All Bank Verification</option>
+                <option value="PENDING">Bank Review Pending (Review Passbook)</option>
+                <option value="APPROVED">Bank Approved</option>
+                <option value="REJECTED">Bank Rejected</option>
+                <option value="NOT_SUBMITTED">Bank Not Submitted</option>
               </select>
               <select 
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                 className="py-1.5 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-300"
               >
-                <option value="">All Status</option>
+                <option value="">All Account Status</option>
                 <option value="ACTIVE">Active</option>
                 <option value="SUSPENDED">Suspended</option>
                 <option value="BLOCKED">Blocked</option>
@@ -255,7 +329,8 @@ const ExpertsList = () => {
                   <th className="p-4 font-semibold">Expert</th>
                   <th className="p-4 font-semibold">Category</th>
                   <th className="p-4 font-semibold">Specialty</th>
-                  <th className="p-4 font-semibold">Verification</th>
+                  <th className="p-4 font-semibold">Profile Status</th>
+                  <th className="p-4 font-semibold">Bank & Passbook</th>
                   <th className="p-4 font-semibold">Status</th>
                   <th className="p-4 font-semibold">Joined</th>
                   <th className="p-4 font-semibold text-right"></th>
@@ -281,6 +356,32 @@ const ExpertsList = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[expert.verificationStatus] || STATUS_COLORS.PENDING}`}>
                         {expert.verificationStatus || 'PENDING'}
                       </span>
+                    </td>
+                    <td className="p-4">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBankExpert(expert)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition hover:shadow-xs cursor-pointer"
+                        title="Click to view bank details and passbook document"
+                      >
+                        {expert.bankDetails?.verificationStatus === 'APPROVED' ? (
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                            <CheckCircle size={12} /> Bank Approved
+                          </span>
+                        ) : expert.bankDetails?.verificationStatus === 'PENDING' ? (
+                          <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 font-bold animate-pulse">
+                            <Clock size={12} /> Passbook Pending Review
+                          </span>
+                        ) : expert.bankDetails?.verificationStatus === 'REJECTED' ? (
+                          <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                            <XCircle size={12} /> Bank Rejected
+                          </span>
+                        ) : (
+                          <span className="bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full text-[11px]">
+                            Not Submitted
+                          </span>
+                        )}
+                      </button>
                     </td>
                     <td className="p-4">
                       {expert.status === 'ACTIVE' ? (
@@ -384,6 +485,209 @@ const ExpertsList = () => {
                 {actionLoading ? 'Rejecting...' : 'Reject Expert'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bank Verification & Passbook Modal */}
+      {selectedBankExpert && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Building2 size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">Expert Bank Details & Passbook</h3>
+                  <p className="text-xs text-slate-400">{selectedBankExpert.name} ({selectedBankExpert.email})</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setSelectedBankExpert(null); setShowBankRejectInput(false); }}
+                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Status Header */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl border bg-slate-50 border-slate-200">
+                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Verification Status</span>
+                {selectedBankExpert.bankDetails?.verificationStatus === 'APPROVED' ? (
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1">
+                    <CheckCircle size={14} /> Approved & Payouts Active
+                  </span>
+                ) : selectedBankExpert.bankDetails?.verificationStatus === 'PENDING' ? (
+                  <span className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 animate-pulse">
+                    <Clock size={14} /> Pending Administrator Review
+                  </span>
+                ) : selectedBankExpert.bankDetails?.verificationStatus === 'REJECTED' ? (
+                  <span className="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1">
+                    <XCircle size={14} /> Rejected
+                  </span>
+                ) : (
+                  <span className="bg-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-medium">
+                    Not Submitted
+                  </span>
+                )}
+              </div>
+
+              {selectedBankExpert.bankDetails?.rejectionReason && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700">
+                  <span className="font-bold">Previous Rejection Reason:</span> {selectedBankExpert.bankDetails.rejectionReason}
+                </div>
+              )}
+
+              {/* Account Info Grid */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-slate-400 font-semibold mb-0.5">Account Holder Name</p>
+                  <p className="font-bold text-slate-800 text-sm">{selectedBankExpert.bankDetails?.accountName || '—'}</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-slate-400 font-semibold mb-0.5">Bank Name</p>
+                  <p className="font-bold text-slate-800 text-sm">{selectedBankExpert.bankDetails?.bankName || '—'}</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-slate-400 font-semibold mb-0.5">Account Number</p>
+                  <p className="font-bold text-slate-800 text-sm font-mono tracking-wider">{selectedBankExpert.bankDetails?.accountNumber || '—'}</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-slate-400 font-semibold mb-0.5">IFSC Code</p>
+                  <p className="font-bold text-slate-800 text-sm font-mono uppercase">{selectedBankExpert.bankDetails?.ifscCode || '—'}</p>
+                </div>
+              </div>
+
+              {/* Bank Passbook / Cheque Image */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <FileText size={14} className="text-amber-600" />
+                    <span>Uploaded Bank Passbook / Cancelled Cheque</span>
+                  </label>
+                  {selectedBankExpert.bankDetails?.passbookImage && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPassbookFull(true)}
+                      className="text-xs text-amber-600 hover:text-amber-700 font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye size={12} /> View Fullscreen
+                    </button>
+                  )}
+                </div>
+
+                {selectedBankExpert.bankDetails?.passbookImage ? (
+                  <div 
+                    onClick={() => setPreviewPassbookFull(true)}
+                    className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-100 max-h-56 flex items-center justify-center p-2 cursor-pointer group"
+                  >
+                    <img 
+                      src={selectedBankExpert.bankDetails.passbookImage} 
+                      alt="Bank Passbook" 
+                      className="max-h-52 w-auto object-contain rounded-lg transition-transform group-hover:scale-102"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
+                      <Eye size={16} /> Click to expand
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center text-slate-400 text-xs bg-slate-50">
+                    No passbook image uploaded yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Rejection input toggle */}
+              {showBankRejectInput && (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Reason for Bank Details Rejection <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={bankRejectReason}
+                    onChange={(e) => setBankRejectReason(e.target.value)}
+                    placeholder="e.g. Account name does not match passbook name, or IFSC code is incorrect..."
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-red-400 outline-none resize-none"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowBankRejectInput(false)}
+                      className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectBank(selectedBankExpert._id)}
+                      disabled={actionLoading}
+                      className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {actionLoading ? 'Rejecting...' : 'Confirm Reject Bank Details'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => { setSelectedBankExpert(null); setShowBankRejectInput(false); }}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Close
+              </button>
+
+              <div className="flex items-center gap-2">
+                {!showBankRejectInput && (
+                  <button
+                    type="button"
+                    onClick={() => setShowBankRejectInput(true)}
+                    disabled={actionLoading || !selectedBankExpert.bankDetails?.accountNumber}
+                    className="px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition disabled:opacity-40 cursor-pointer"
+                  >
+                    Reject Bank Details
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleApproveBank(selectedBankExpert._id)}
+                  disabled={actionLoading || !selectedBankExpert.bankDetails?.accountNumber}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle size={14} />
+                  <span>{actionLoading ? 'Processing...' : 'Approve Bank Details'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Passbook Lightbox */}
+      {previewPassbookFull && selectedBankExpert?.bankDetails?.passbookImage && (
+        <div 
+          onClick={() => setPreviewPassbookFull(false)}
+          className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img 
+              src={selectedBankExpert.bankDetails.passbookImage} 
+              alt="Passbook Document" 
+              className="max-h-[85vh] w-auto object-contain rounded-xl shadow-2xl" 
+            />
+            <button 
+              onClick={() => setPreviewPassbookFull(false)}
+              className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-slate-800 flex items-center justify-center font-bold shadow-lg"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}

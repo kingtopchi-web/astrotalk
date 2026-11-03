@@ -8,6 +8,8 @@ const Payment = require('../models/Payment');
 const WalletTransaction = require('../models/WalletTransaction');
 const Setting = require('../models/Setting');
 const ContactInquiry = require('../models/ContactInquiry');
+const ExpertDocument = require('../models/ExpertDocument');
+const { getRequirementsForCategory } = require('../utils/documentRequirementsHelper');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -317,6 +319,7 @@ exports.getExperts = async (req, res) => {
 
     let query = {};
     if (req.query.verificationStatus) query.verificationStatus = req.query.verificationStatus;
+    if (req.query.bankVerificationStatus) query['bankDetails.verificationStatus'] = req.query.bankVerificationStatus;
     if (req.query.status) query.status = req.query.status;
     if (req.query.categoryId) query.categoryId = req.query.categoryId;
     if (req.query.subCategoryId) query.subCategoryId = req.query.subCategoryId;
@@ -367,20 +370,87 @@ exports.getExpertById = async (req, res) => {
 
 exports.approveExpert = async (req, res) => {
   try {
-    const expert = await Expert.findByIdAndUpdate(
-      req.params.id,
-      {
-        verificationStatus: 'APPROVED',
-        approvedAt: new Date(),
-        approvedBy: req.user._id,
-        status: 'ACTIVE'
-      },
-      { new: true }
-    );
+    const expert = await Expert.findById(req.params.id);
     if (!expert) return res.status(404).json({ message: 'Expert not found' });
 
-    res.json({ message: 'Expert approved successfully', expert });
+    // Strict validation: check all mandatory documents for this expert
+    let requirements = [];
+    if (expert.categoryId) {
+      requirements = await getRequirementsForCategory(expert.categoryId, expert.subCategoryId);
+    }
+
+    const mandatoryReqs = requirements.filter(r => r.isMandatory);
+    if (mandatoryReqs.length > 0) {
+      const documents = await ExpertDocument.find({ expertId: expert._id });
+      
+      const unverifiedMandatory = mandatoryReqs.filter(reqItem => {
+        const doc = documents.find(d => 
+          d.docKey === reqItem.docKey || 
+          (d.requirementId && d.requirementId.toString() === reqItem._id.toString())
+        );
+        return !doc || doc.status !== 'VERIFIED';
+      });
+
+      if (unverifiedMandatory.length > 0) {
+        return res.status(400).json({
+          message: `Cannot approve expert: All mandatory category qualification documents must be verified first. Unverified document(s): ${unverifiedMandatory.map(m => m.name).join(', ')}`,
+          unverifiedDocuments: unverifiedMandatory.map(m => ({ docKey: m.docKey, name: m.name }))
+        });
+      }
+    }
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+    const updateFields = {
+      verificationStatus: 'APPROVED',
+      status: 'ACTIVE',
+      approvedAt: new Date(),
+      approvedBy: adminId,
+      rejectionReason: ''
+    };
+
+    if (!expert.rates || expert.rates.chat < 5 || expert.rates.audio < 10 || expert.rates.video < 20) {
+      updateFields.rates = {
+        chat: Math.max(5, expert.rates?.chat || 5),
+        audio: Math.max(10, expert.rates?.audio || 10),
+        video: Math.max(20, expert.rates?.video || 20)
+      };
+      updateFields.pricePerMinute = Math.max(5, expert.pricePerMinute || 5);
+    }
+
+    const updated = await Expert.findByIdAndUpdate(
+      expert._id,
+      { $set: updateFields },
+      { new: true, runValidators: false }
+    ).select('-password');
+
+    // Send notifications to expert
+    try {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Expert Application Approved!',
+        message: 'Congratulations! Your qualifications and professional documents have been verified. Your profile is now approved and active to receive consultation bookings.',
+        type: 'expert_approved',
+        badge: 'Approved',
+        actionText: 'Go to dashboard',
+        link: '/expert/dashboard'
+      }, io).catch(() => {});
+
+      if (io) {
+        io.to(`user_${expert._id}`).emit('expert_status_updated', {
+          verificationStatus: 'APPROVED',
+          status: 'ACTIVE',
+          message: 'Your expert application and qualification documents have been approved by Administrator.'
+        });
+      }
+    } catch (e) {}
+
+    res.json({ message: 'Expert approved successfully', expert: updated });
   } catch (error) {
+    console.error('approveExpert error:', error);
     res.status(500).json({ message: 'Error approving expert', error: error.message });
   }
 };
@@ -392,22 +462,184 @@ exports.rejectExpert = async (req, res) => {
       return res.status(400).json({ message: 'Rejection reason is required' });
     }
 
-    const expert = await Expert.findByIdAndUpdate(
-      req.params.id,
-      {
-        verificationStatus: 'REJECTED',
-        rejectionReason: reason,
-        rejectedAt: new Date(),
-        rejectedBy: req.user._id,
-        status: 'BLOCKED'
-      },
-      { new: true }
-    );
+    const expert = await Expert.findById(req.params.id);
     if (!expert) return res.status(404).json({ message: 'Expert not found' });
 
-    res.json({ message: 'Expert rejected', expert });
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    const updated = await Expert.findByIdAndUpdate(
+      expert._id,
+      {
+        $set: {
+          verificationStatus: 'REJECTED',
+          rejectionReason: reason.trim(),
+          rejectedAt: new Date(),
+          rejectedBy: adminId
+        }
+      },
+      { new: true, runValidators: false }
+    ).select('-password');
+
+    // Send notification to expert
+    try {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Expert Application Review Update',
+        message: `Your application could not be approved at this time: "${reason.trim()}". Please review your documents and update as requested.`,
+        type: 'expert_rejected',
+        badge: 'Alert',
+        actionText: 'Review documents',
+        link: '/expert/settings'
+      }, io).catch(() => {});
+
+      if (io) {
+        io.to(`user_${expert._id}`).emit('expert_status_updated', {
+          verificationStatus: 'REJECTED',
+          rejectionReason: reason.trim(),
+          message: `Your application was rejected: "${reason.trim()}".`
+        });
+      }
+    } catch (e) {}
+
+    res.json({ message: 'Expert rejected', expert: updated });
   } catch (error) {
+    console.error('rejectExpert error:', error);
     res.status(500).json({ message: 'Error rejecting expert', error: error.message });
+  }
+};
+
+exports.approveExpertBankDetails = async (req, res) => {
+  try {
+    const expert = await Expert.findById(req.params.id);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    if (!expert.bankDetails || !expert.bankDetails.accountNumber) {
+      return res.status(400).json({ message: 'No bank details submitted for this expert.' });
+    }
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    const updated = await Expert.findByIdAndUpdate(
+      expert._id,
+      {
+        $set: {
+          'bankDetails.verificationStatus': 'APPROVED',
+          'bankDetails.rejectionReason': '',
+          'bankDetails.verifiedAt': new Date(),
+          'bankDetails.verifiedBy': adminId
+        }
+      },
+      { new: true, runValidators: false }
+    ).select('-password');
+
+    // Notify expert via In-App / Email Notification
+    try {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Bank Details Approved',
+        message: 'Your bank details and passbook document have been verified and approved by the Administrator. Payouts are now enabled.',
+        actionText: 'View Bank Settings',
+        link: '/expert/settings',
+        type: 'bank_verified',
+        badge: 'Verified'
+      }, io).catch(() => {});
+
+      // Instant Real-time Socket broadcast directly to expert
+      if (io) {
+        io.to(`user_${expert._id}`).emit('bank_status_updated', {
+          expertId: expert._id,
+          verificationStatus: 'APPROVED',
+          bankDetails: updated.bankDetails,
+          message: 'Your bank details and passbook have been verified and approved by Administrator!'
+        });
+        io.to(expert._id.toString()).emit('bank_status_updated', {
+          expertId: expert._id,
+          verificationStatus: 'APPROVED',
+          bankDetails: updated.bankDetails,
+          message: 'Your bank details and passbook have been verified and approved by Administrator!'
+        });
+      }
+    } catch (e) {}
+
+    res.json({ message: 'Bank details approved successfully', expert: updated });
+  } catch (error) {
+    console.error('approveExpertBankDetails error:', error);
+    res.status(500).json({ message: 'Error approving bank details', error: error.message });
+  }
+};
+
+exports.rejectExpertBankDetails = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Rejection reason is required.' });
+    }
+
+    const expert = await Expert.findById(req.params.id);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    const updated = await Expert.findByIdAndUpdate(
+      expert._id,
+      {
+        $set: {
+          'bankDetails.verificationStatus': 'REJECTED',
+          'bankDetails.rejectionReason': reason.trim(),
+          'bankDetails.verifiedAt': new Date(),
+          'bankDetails.verifiedBy': adminId
+        }
+      },
+      { new: true, runValidators: false }
+    ).select('-password');
+
+    // Notify expert via In-App / Email Notification
+    try {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: 'Bank Details Verification Rejected',
+        message: `Your bank verification was rejected: "${reason.trim()}". Please update your details and re-upload your passbook image.`,
+        actionText: 'Update Bank Details',
+        link: '/expert/settings',
+        type: 'bank_rejected',
+        badge: 'Alert'
+      }, io).catch(() => {});
+
+      // Instant Real-time Socket broadcast directly to expert
+      if (io) {
+        io.to(`user_${expert._id}`).emit('bank_status_updated', {
+          expertId: expert._id,
+          verificationStatus: 'REJECTED',
+          rejectionReason: reason.trim(),
+          bankDetails: updated.bankDetails,
+          message: `Your bank verification was rejected: "${reason.trim()}". Please update and re-upload your passbook.`
+        });
+        io.to(expert._id.toString()).emit('bank_status_updated', {
+          expertId: expert._id,
+          verificationStatus: 'REJECTED',
+          rejectionReason: reason.trim(),
+          bankDetails: updated.bankDetails,
+          message: `Your bank verification was rejected: "${reason.trim()}". Please update and re-upload your passbook.`
+        });
+      }
+    } catch (e) {}
+
+    res.json({ message: 'Bank details rejected', expert: updated });
+  } catch (error) {
+    console.error('rejectExpertBankDetails error:', error);
+    res.status(500).json({ message: 'Error rejecting bank details', error: error.message });
   }
 };
 
@@ -452,15 +684,29 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
   try {
-    const { name, slug, description, status } = req.body;
+    const { name, slug, description, status, commissionRate } = req.body;
     
     // Simple validation
     if (!name || !slug) return res.status(400).json({ message: 'Name and slug are required' });
+
+    let parsedCommission = null;
+    if (commissionRate !== undefined && commissionRate !== null && commissionRate !== '') {
+      parsedCommission = Number(commissionRate);
+      if (isNaN(parsedCommission) || parsedCommission < 0 || parsedCommission > 100) {
+        return res.status(400).json({ message: 'Commission rate must be a valid percentage between 0 and 100' });
+      }
+    }
     
     const exists = await Category.findOne({ name });
     if (exists) return res.status(400).json({ message: 'Category name already exists' });
 
-    const category = new Category({ name, slug, description, status });
+    const category = new Category({
+      name,
+      slug,
+      description,
+      status,
+      commissionRate: parsedCommission
+    });
     await category.save();
     
     res.status(201).json({ message: 'Category created', category });
@@ -471,7 +717,7 @@ exports.createCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
   try {
-    const { name, slug, description, status } = req.body;
+    const { name, slug, description, status, commissionRate } = req.body;
     
     const category = await Category.findById(req.params.id);
     if (!category) return res.status(404).json({ message: 'Category not found' });
@@ -480,11 +726,35 @@ exports.updateCategory = async (req, res) => {
     if (slug) category.slug = slug;
     if (description !== undefined) category.description = description;
     if (status) category.status = status;
+
+    if (commissionRate !== undefined) {
+      if (commissionRate === null || commissionRate === '') {
+        category.commissionRate = null; // Revert to global platform default
+      } else {
+        const parsedCommission = Number(commissionRate);
+        if (isNaN(parsedCommission) || parsedCommission < 0 || parsedCommission > 100) {
+          return res.status(400).json({ message: 'Commission rate must be a valid percentage between 0 and 100' });
+        }
+        category.commissionRate = parsedCommission;
+      }
+    }
     
     await category.save();
     res.json({ message: 'Category updated', category });
   } catch (error) {
     res.status(500).json({ message: 'Error updating category', error: error.message });
+  }
+};
+
+exports.deleteCategory = async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) return res.status(404).json({ message: 'Category not found' });
+    
+    await Category.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Category deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting category', error: error.message });
   }
 };
 
@@ -566,7 +836,15 @@ exports.updateAdminProfile = async (req, res) => {
     if (mobile !== undefined) admin.mobile = mobile;
     if (location !== undefined) admin.location = location;
     if (bio !== undefined) admin.bio = bio;
-    if (profileImage !== undefined) admin.profileImage = profileImage;
+    if (profileImage !== undefined) {
+      if (typeof profileImage === 'string' && profileImage.length > 0) {
+        const approxBytes = Math.round((profileImage.length * 3) / 4);
+        if (approxBytes > 1.2 * 1024 * 1024) {
+          return res.status(400).json({ message: 'Profile photo size exceeds maximum 1MB limit.' });
+        }
+      }
+      admin.profileImage = profileImage;
+    }
     
     await admin.save();
     

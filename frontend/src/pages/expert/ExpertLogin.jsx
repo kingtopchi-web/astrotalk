@@ -17,10 +17,10 @@ const ExpertLogin = () => {
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
-  // Prevent logged in users from seeing login page via back/forward browser buttons
+  // Prevent logged in expert from seeing expert login page via back/forward browser buttons
   useEffect(() => {
-    if (user) {
-      navigate(user.role === 'EXPERT' ? '/expert/dashboard' : '/dashboard', { replace: true });
+    if (user && user.role === 'EXPERT') {
+      navigate('/expert/dashboard', { replace: true });
     }
   }, [user, navigate]);
 

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PlatformSettingsProvider } from './context/PlatformSettingsContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import GuestRoute from './components/GuestRoute';
 import ScrollToTop from './components/ScrollToTop';
@@ -15,6 +16,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Experts from './pages/Experts';
 import Categories from './pages/Categories';
+import CategoryExperts from './pages/CategoryExperts';
 import FreeServices from './pages/FreeServices';
 import Blog from './pages/Blog';
 import Notifications from './pages/Notifications';
@@ -58,14 +60,9 @@ import IncomingConsultationAlert from './components/IncomingConsultationAlert';
 
 import './index.css';
 
-import { useLocation } from 'react-router-dom';
 
-function ThemeManager() {
+function PlatformHeaderManager() {
   useEffect(() => {
-    document.documentElement.classList.add('light-theme');
-    localStorage.removeItem('home_theme');
-    localStorage.removeItem('app_theme');
-
     // Enforce platform title & logo as tab favicon across all browsers
     document.title = 'ExpertHub';
     let iconLink = document.querySelector("link[rel*='icon']");
@@ -86,8 +83,9 @@ function App() {
     <AuthProvider>
       <PlatformSettingsProvider>
         <Router>
-          <ScrollToTop />
-          <ThemeManager />
+          <ThemeProvider>
+            <ScrollToTop />
+            <PlatformHeaderManager />
           <IncomingConsultationAlert />
         <Routes>
           {/* Guest-Only Auth Routes (Logged-in users automatically redirected to dashboard) */}
@@ -95,13 +93,17 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/expert/login" element={<ExpertLogin />} />
-            <Route path="/expert/register" element={<ExpertRegister />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
           </Route>
+
+          {/* Expert Registration (Accessible by Guests and Users upgrading to Expert) */}
+          <Route path="/expert/register" element={<ExpertRegister />} />
 
           {/* Semi-Public / Public Pages */}
           <Route path="/" element={<Home />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/category/:id" element={<CategoryExperts />} />
+          <Route path="/categories/:id" element={<CategoryExperts />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -161,7 +163,8 @@ function App() {
           </Route>
 
         </Routes>
-      </Router>
+          </ThemeProvider>
+        </Router>
       </PlatformSettingsProvider>
     </AuthProvider>
   );

@@ -26,6 +26,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { getApiUrl } from '../../utils/apiConfig';
+import { compressAvatarImage } from '../../utils/imageCompressor';
 
 function ExpertProfileEdit() {
   const navigate = useNavigate();
@@ -54,13 +55,38 @@ function ExpertProfileEdit() {
     subCategoryId: '',
     profileImage: '',
     rates: { chat: 20, audio: 30, video: 45 },
-    instantCallEnabled: true
+    instantCallEnabled: true,
+    latitude: '',
+    longitude: '',
+    city: '',
+    state: ''
   });
 
   // Quick tags state
   const [tags, setTags] = useState(['PitchDecks', 'CapTables', 'SeedRounds']);
   const [newTagInput, setNewTagInput] = useState('');
   const [showAddTag, setShowAddTag] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+
+  const detectMyLocation = () => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      setDetectingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setDetectingLocation(false);
+          if (pos && pos.coords) {
+            setForm(prev => ({
+              ...prev,
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude
+            }));
+          }
+        },
+        () => setDetectingLocation(false),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      );
+    }
+  };
 
   const token = localStorage.getItem('token');
 
@@ -93,7 +119,11 @@ function ExpertProfileEdit() {
             audio: p.rates?.audio ?? 30, 
             video: p.rates?.video ?? 45 
           },
-          instantCallEnabled: p.instantCallEnabled ?? true
+          instantCallEnabled: p.instantCallEnabled ?? true,
+          latitude: p.latitude ?? '',
+          longitude: p.longitude ?? '',
+          city: p.location?.city || p.city || '',
+          state: p.location?.state || p.state || ''
         });
 
         if (p.specialization) {
@@ -141,18 +171,22 @@ function ExpertProfileEdit() {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit. Please choose a smaller photo.');
-        return;
+      try {
+        const compressed = await compressAvatarImage(file);
+        if (compressed && compressed.dataUrl) {
+          setForm(f => ({ ...f, profileImage: compressed.dataUrl }));
+        }
+      } catch (err) {
+        console.error('Image compression failed:', err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setForm(f => ({ ...f, profileImage: reader.result }));
+        };
+        reader.readAsDataURL(file);
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm(f => ({ ...f, profileImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -194,6 +228,26 @@ function ExpertProfileEdit() {
     setError('');
     setSuccess('');
 
+    const chatRate = Number(form.rates.chat);
+    const audioRate = Number(form.rates.audio);
+    const videoRate = Number(form.rates.video);
+
+    if (isNaN(chatRate) || chatRate < 5) {
+      setError('Chat consultation minimum rate is ₹5/min. You cannot set a rate lower than ₹5.');
+      setSaving(false);
+      return;
+    }
+    if (isNaN(audioRate) || audioRate < 10) {
+      setError('Audio call consultation minimum rate is ₹10/min. You cannot set a rate lower than ₹10.');
+      setSaving(false);
+      return;
+    }
+    if (isNaN(videoRate) || videoRate < 20) {
+      setError('Video call consultation minimum rate is ₹20/min. You cannot set a rate lower than ₹20.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const payload = {
         name: form.name,
@@ -205,14 +259,22 @@ function ExpertProfileEdit() {
         bio: form.bio,
         profileImage: form.profileImage,
         rates: {
-          chat: Number(form.rates.chat) || 0,
-          audio: Number(form.rates.audio) || 0,
-          video: Number(form.rates.video) || 0
+          chat: chatRate,
+          audio: audioRate,
+          video: videoRate
         }
       };
 
       if (form.categoryId) payload.categoryId = form.categoryId;
       if (form.subCategoryId) payload.subCategoryId = form.subCategoryId;
+      if (form.latitude !== '' && form.latitude !== null && form.latitude !== undefined) {
+        payload.latitude = Number(form.latitude);
+      }
+      if (form.longitude !== '' && form.longitude !== null && form.longitude !== undefined) {
+        payload.longitude = Number(form.longitude);
+      }
+      if (form.city) payload.city = form.city;
+      if (form.state) payload.state = form.state;
 
       await axios.patch(getApiUrl('/expert/profile'), payload, {
         headers: { Authorization: `Bearer ${token}` }
@@ -396,7 +458,7 @@ function ExpertProfileEdit() {
                       <span className="text-xs font-bold text-slate-400">₹</span>
                       <input 
                         type="number"
-                        min="0"
+                        min="5"
                         value={form.rates.chat}
                         onChange={(e) => setForm({
                           ...form,
@@ -405,7 +467,7 @@ function ExpertProfileEdit() {
                         className="w-12 text-sm font-bold text-slate-900 text-center outline-none bg-transparent"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1">per min</span>
+                    <span className="text-[10px] text-slate-500 font-semibold mt-1">Min ₹5/min</span>
                   </div>
 
                   {/* Audio Rate */}
@@ -418,7 +480,7 @@ function ExpertProfileEdit() {
                       <span className="text-xs font-bold text-slate-400">₹</span>
                       <input 
                         type="number"
-                        min="0"
+                        min="10"
                         value={form.rates.audio}
                         onChange={(e) => setForm({
                           ...form,
@@ -427,7 +489,7 @@ function ExpertProfileEdit() {
                         className="w-12 text-sm font-bold text-slate-900 text-center outline-none bg-transparent"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1">per min</span>
+                    <span className="text-[10px] text-slate-500 font-semibold mt-1">Min ₹10/min</span>
                   </div>
 
                   {/* Video Rate */}
@@ -440,7 +502,7 @@ function ExpertProfileEdit() {
                       <span className="text-xs font-bold text-slate-400">₹</span>
                       <input 
                         type="number"
-                        min="0"
+                        min="20"
                         value={form.rates.video}
                         onChange={(e) => setForm({
                           ...form,
@@ -449,7 +511,7 @@ function ExpertProfileEdit() {
                         className="w-12 text-sm font-bold text-slate-900 text-center outline-none bg-transparent"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1">per min</span>
+                    <span className="text-[10px] text-slate-500 font-semibold mt-1">Min ₹20/min</span>
                   </div>
 
                 </div>
@@ -592,6 +654,33 @@ function ExpertProfileEdit() {
                         placeholder="Bengaluru, India (IST)"
                         className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
                       />
+                    </div>
+                  </div>
+
+                  {/* Live Coordinates / Geolocation */}
+                  <div className="sm:col-span-2 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={16} className={form.latitude && form.longitude ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
+                        <div>
+                          <p className="text-xs font-bold text-slate-800">
+                            Geographical Coordinates (For User Distance Matching)
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {form.latitude && form.longitude
+                              ? `Latitude: ${Number(form.latitude).toFixed(4)}, Longitude: ${Number(form.longitude).toFixed(4)}`
+                              : 'No GPS location saved yet. Click detect to set your current location.'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={detectMyLocation}
+                        disabled={detectingLocation}
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-lg transition-all shrink-0 cursor-pointer"
+                      >
+                        {detectingLocation ? 'Detecting...' : (form.latitude ? 'Update GPS Location' : 'Auto-Detect Location')}
+                      </button>
                     </div>
                   </div>
 

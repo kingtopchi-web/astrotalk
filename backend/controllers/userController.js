@@ -58,8 +58,16 @@ exports.getSavedExperts = async (req, res) => {
 // PATCH /api/user/profile
 exports.updateMyProfile = async (req, res) => {
   try {
+    // Validate profileImage size (strictly max 1MB)
+    if (req.body.profileImage && typeof req.body.profileImage === 'string') {
+      const approxBytes = Math.round((req.body.profileImage.length * 3) / 4);
+      if (approxBytes > 1.2 * 1024 * 1024) {
+        return res.status(400).json({ message: 'Profile image size exceeds maximum 1MB limit. Please upload a compressed image.' });
+      }
+    }
+
     // Whitelist only safe fields - never allow role/status escalation
-    const allowed = ['name', 'mobile', 'gender', 'dateOfBirth', 'location', 'bio', 'profileImage'];
+    const allowed = ['name', 'mobile', 'gender', 'dateOfBirth', 'location', 'bio', 'profileImage', 'latitude', 'longitude'];
     const updates = {};
     allowed.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -88,6 +96,8 @@ exports.getPublicExperts = async (req, res) => {
     const categoryId = req.query.categoryId || null;
     const subCategoryId = req.query.subCategoryId || null;
     const onlineStatus = req.query.onlineStatus || null;
+    const latitude = req.query.latitude || req.query.lat || (req.user?.latitude);
+    const longitude = req.query.longitude || req.query.lng || req.query.lon || (req.user?.longitude);
 
     const result = await searchExperts({
       searchTerm,
@@ -95,7 +105,9 @@ exports.getPublicExperts = async (req, res) => {
       subCategoryId,
       onlineStatus,
       page,
-      limit
+      limit,
+      latitude,
+      longitude
     });
 
     res.json(result);
@@ -112,7 +124,7 @@ exports.getPublicExpertById = async (req, res) => {
       verificationStatus: 'APPROVED',
       status: 'ACTIVE'
     })
-      .select('name specialty qualification specialization experience bio languages rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability')
+      .select('name specialty qualification specialization experience bio languages country rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability')
       .populate('categoryId', 'name slug')
       .populate('subCategoryId', 'name slug');
 
@@ -197,7 +209,8 @@ exports.getPublicSettings = async (req, res) => {
       contactPhone: settings?.contactPhone || '+91 98765 43210',
       address: settings?.address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India',
       enableFreeChat: settings ? settings.enableFreeChat !== false : true,
-      freeChatDurationMinutes: settings?.freeChatDurationMinutes || 5
+      freeChatDurationMinutes: settings?.freeChatDurationMinutes || 5,
+      minimumExpertDistanceKm: settings?.minimumExpertDistanceKm || 0
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

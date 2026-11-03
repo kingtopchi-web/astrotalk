@@ -11,6 +11,7 @@ const {
 } = require('../controllers/userController');
 const { getTopReviews } = require('../controllers/reviewController');
 const { submitContactForm } = require('../controllers/contactController');
+const { getCategoryRequirements } = require('../controllers/documentController');
 
 // Public Contact Form
 router.post('/contact', submitContactForm);
@@ -32,6 +33,8 @@ router.get('/testimonials', getTopReviews);
 // Categories (public, used for filtering)
 router.get('/categories', getPublicCategories);
 router.get('/categories/:categoryId/subcategories', getPublicSubCategories);
+router.get('/categories/:categoryId/document-requirements', getCategoryRequirements);
+router.get('/document-requirements', getCategoryRequirements);
 
 module.exports = router;
 

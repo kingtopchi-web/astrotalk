@@ -1,11 +1,35 @@
 const express = require('express');
 const router = express.Router();
 
-const { registerUser, loginUser, reactivateUser, forgotPassword, resetPassword } = require('../controllers/userAuthController');
+const { 
+  registerUser, 
+  loginUser, 
+  reactivateUser, 
+  forgotPassword, 
+  resetPassword,
+  sendAuthOtp,
+  verifyOtpLogin,
+  verifyOtpRegister,
+  socialLogin,
+  verifyGoogleToken
+} = require('../controllers/userAuthController');
 const { registerExpert, loginExpert, reactivateExpert } = require('../controllers/expertAuthController');
 const { loginAdmin } = require('../controllers/adminAuthController');
 
-// User Auth
+// Passwordless OTP Auth & Social Auth
+router.post('/send-otp', sendAuthOtp);
+router.post('/verify-otp-login', verifyOtpLogin);
+router.post('/verify-otp-register', verifyOtpRegister);
+router.post('/social-login', socialLogin);
+router.post('/google-verify', verifyGoogleToken);
+
+router.post('/user/send-otp', sendAuthOtp);
+router.post('/user/verify-otp-login', verifyOtpLogin);
+router.post('/user/verify-otp-register', verifyOtpRegister);
+router.post('/user/social-login', socialLogin);
+router.post('/user/google-verify', verifyGoogleToken);
+
+// User Auth (Traditional fallback preserved)
 router.post('/user/register', registerUser);
 router.post('/user/login', loginUser);
 router.post('/user/reactivate', reactivateUser);

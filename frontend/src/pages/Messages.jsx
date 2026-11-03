@@ -4,6 +4,7 @@ import axios from 'axios';
 import { createSocket } from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
 import UserLayout from '../components/UserLayout';
+import ReviewForm from '../components/ReviewForm';
 import { getApiUrl } from '../utils/apiConfig';
 import { 
   Send, 
@@ -33,6 +34,8 @@ function Messages() {
   const [inputText, setInputText] = useState('');
   const [socket, setSocket] = useState(null);
   const [activeConsultation, setActiveConsultation] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewModalData, setReviewModalData] = useState(null);
   const [seconds, setSeconds] = useState(0);
   const [billedAmount, setBilledAmount] = useState(0);
   const [lastMessageTime, setLastMessageTime] = useState(null);
@@ -51,6 +54,7 @@ function Messages() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isEndingRef = useRef(false);
+  const chatStartedRef = useRef(false);
   const messagesEndRef = useRef(null);
   const moreMenuRef = useRef(null);
 
@@ -169,6 +173,11 @@ function Messages() {
         }
         return [...prev, msg];
       });
+      // If message is from expert, expert has responded!
+      if (msg.senderModel === 'Expert' || (activeConsultation?.expert && (msg.sender === activeConsultation.expert || msg.sender?._id === activeConsultation.expert))) {
+        setChatStarted(true);
+        setActiveConsultation(prev => prev ? { ...prev, chatStarted: true, chatStartedAt: prev.chatStartedAt || new Date() } : prev);
+      }
       setConversations(prev => prev.map(conv => {
         if (conv._id === msg.conversationId || conv._id === msg.conversation) {
           return { ...conv, lastMessage: msg.text, lastMessageAt: msg.createdAt };
@@ -203,6 +212,14 @@ function Messages() {
     });
 
     newSocket.on('session_ended', (data) => {
+      if (activeConsultation) {
+        setReviewModalData({
+          consultationId: activeConsultation._id,
+          expertName: otherUser?.name || 'Expert',
+          consultationType: 'Chat'
+        });
+        setShowReviewModal(true);
+      }
       setActiveConsultation(null);
       setChatStarted(false);
       if (data?.reason) {
@@ -282,23 +299,80 @@ function Messages() {
   const expertRatePerMin = activeConsultation?.cost && activeConsultation?.durationInMinutes
     ? (activeConsultation.cost / activeConsultation.durationInMinutes)
     : 30;
-  const costPerSecond = isFreeConsultation ? 0 : Number(((expertRatePerMin * 1.20) / 60).toFixed(4));
+  const costPerMinWithGst = expertRatePerMin * 1.20;
+  const costPerSecond = isFreeConsultation ? 0 : Number((costPerMinWithGst / 60).toFixed(4));
+  const isUnderTwoMin = seconds < 120;
   const maxAllowedSeconds = isFreeConsultation
     ? freeTotalAllowedSeconds
     : (userWalletBalance > 0 && costPerSecond > 0 ? Math.floor(userWalletBalance / costPerSecond) : 3600);
-  const currentBilled = isFreeConsultation ? 0 : (chatStarted ? Number((seconds * costPerSecond).toFixed(2)) : 0);
+  const currentBilled = isFreeConsultation || isUnderTwoMin ? 0 : (chatStarted ? Number((seconds * costPerSecond).toFixed(2)) : 0);
   const remainingLiveBalance = isFreeConsultation ? userWalletBalance : Math.max(0, Number((userWalletBalance - currentBilled).toFixed(2)));
   const remainingSeconds = isFreeConsultation ? freeRemainingSeconds : Math.max(0, maxAllowedSeconds - seconds);
 
+  // Keep chatStartedRef in sync
+  useEffect(() => {
+    chatStartedRef.current = chatStarted;
+  }, [chatStarted]);
+
+  // Auto-detect if messages already contain a reply from the expert
+  useEffect(() => {
+    if (chatStarted || !activeConsultation || !messages?.length) return;
+    const clientUserId = user?._id ? String(user._id) : null;
+    const expertId = activeConsultation?.expert ? String(activeConsultation.expert?._id || activeConsultation.expert) : null;
+    const uniqueSenders = new Set(messages.map(m => String(m.sender?._id || m.sender)));
+    const hasMultipleSenders = uniqueSenders.size >= 2;
+
+    const hasExpertReply = messages.some(m => {
+      const senderId = String(m.sender?._id || m.sender);
+      return (
+        m.senderModel === 'Expert' ||
+        (expertId && senderId === expertId) ||
+        (clientUserId && senderId !== clientUserId)
+      );
+    }) || hasMultipleSenders;
+
+    if (hasExpertReply || activeConsultation.chatStarted) {
+      chatStartedRef.current = true;
+      setChatStarted(true);
+      setActiveConsultation(prev => prev ? { ...prev, chatStarted: true, chatStartedAt: prev.chatStartedAt || new Date() } : prev);
+    }
+  }, [messages, activeConsultation, chatStarted, user]);
+
   // 1. Initial 2-minute countdown (120 seconds) while waiting for expert reply
   useEffect(() => {
-    if (!activeConsultation || chatStarted) return;
+    if (!activeConsultation || chatStarted || chatStartedRef.current) return;
+
+    const clientUserId = user?._id ? String(user._id) : null;
+    const expertId = activeConsultation?.expert ? String(activeConsultation.expert?._id || activeConsultation.expert) : null;
+    const uniqueSenders = new Set(messages?.map(m => String(m.sender?._id || m.sender)) || []);
+    const hasMultipleSenders = uniqueSenders.size >= 2;
+
+    const hasExpertReply = messages?.some(m => {
+      const senderId = String(m.sender?._id || m.sender);
+      return (
+        m.senderModel === 'Expert' ||
+        (expertId && senderId === expertId) ||
+        (clientUserId && senderId !== clientUserId)
+      );
+    }) || hasMultipleSenders || activeConsultation.chatStarted;
+
+    if (hasExpertReply) {
+      chatStartedRef.current = true;
+      setChatStarted(true);
+      return;
+    }
 
     const waitTimer = setInterval(() => {
       setWaitingCountdown(prev => {
+        if (chatStartedRef.current) {
+          clearInterval(waitTimer);
+          return 0;
+        }
         if (prev <= 1) {
           clearInterval(waitTimer);
-          handleEndConsultation(false, "Expert did not respond within 2 minutes. Session automatically cancelled.");
+          if (!isEndingRef.current && !chatStartedRef.current) {
+            handleEndConsultation(false, "Expert did not respond within 2 minutes. Session automatically cancelled.");
+          }
           return 0;
         }
         return prev - 1;
@@ -306,7 +380,7 @@ function Messages() {
     }, 1000);
 
     return () => clearInterval(waitTimer);
-  }, [activeConsultation, chatStarted]);
+  }, [activeConsultation, chatStarted, messages, user]);
 
   // 2. Active Session Seconds Timer & Inactivity Auto-End
   useEffect(() => {
@@ -323,12 +397,15 @@ function Messages() {
             return nextSeconds;
           }
         } else {
-          const currentSpent = nextSeconds * costPerSecond;
-          if (userWalletBalance > 0 && currentSpent >= userWalletBalance) {
-            clearInterval(timer);
-            setIsBalanceExhausted(true);
-            handleEndConsultation(false, "Wallet balance exhausted. Session ended.");
-            return nextSeconds;
+          // Check balance after 2 minutes have elapsed
+          if (nextSeconds >= 120) {
+            const currentSpent = nextSeconds * costPerSecond;
+            if (userWalletBalance > 0 && currentSpent > userWalletBalance) {
+              clearInterval(timer);
+              setIsBalanceExhausted(true);
+              handleEndConsultation(false, "Wallet balance exhausted. Session ended.");
+              return nextSeconds;
+            }
           }
         }
 
@@ -344,7 +421,7 @@ function Messages() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activeConsultation, chatStarted, lastMessageTime, userWalletBalance, costPerSecond, isFreeConsultation, freeTotalAllowedSeconds, freeDurationMins]);
+  }, [activeConsultation, chatStarted, lastMessageTime, userWalletBalance, costPerSecond, costPerMinWithGst, isFreeConsultation, freeTotalAllowedSeconds, freeDurationMins]);
 
   const handleEndConsultation = async (isManual = false, reason = '') => {
     if (isEndingRef.current || !activeConsultation) return;
@@ -352,27 +429,42 @@ function Messages() {
 
     try {
       const token = localStorage.getItem('token');
-      const actualDuration = Math.ceil(seconds / 60) || 1;
+      const usedSeconds = seconds;
+      const actualDuration = Number((usedSeconds / 60).toFixed(2)) || 0.01;
 
       await axios.post(
         getApiUrl(`/bookings/${activeConsultation._id}/end`),
         {
-          actualDuration: actualDuration,
+          actualDuration,
+          durationSeconds: usedSeconds,
           reason: reason || (isManual ? 'Chat ended by participant' : 'Session timeout')
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      const endedId = activeConsultation._id;
+      const endedExpertName = otherUser?.name || 'Expert';
+
       if (socket) {
         socket.emit('end_chat_session', {
           conversationId: activeConversation?._id,
-          consultationId: activeConsultation._id,
+          consultationId: endedId,
           reason: reason || 'Session ended'
         });
       }
 
       setActiveConsultation(null);
       setChatStarted(false);
+
+      // Trigger Review Modal for user
+      if (auth.user?.role === 'USER') {
+        setReviewModalData({
+          consultationId: endedId,
+          expertName: endedExpertName,
+          consultationType: 'Chat'
+        });
+        setShowReviewModal(true);
+      }
       if (reason) {
         setErrorMessage(reason);
       }
@@ -1021,7 +1113,7 @@ function Messages() {
               आपके वॉलेट में बैलेंस समाप्त हो गया है, इसलिए चैट सत्र समाप्त कर दिया गया है।
               <br />
               <span className="text-xs text-slate-500 mt-1 block font-medium">
-                Total Chat Duration: {Math.floor(seconds / 60)}m {seconds % 60}s | Deducted: ₹{(seconds * costPerSecond).toFixed(2)}
+                Total Chat Duration: {Math.floor(seconds / 60)}m {seconds % 60}s | Deducted: ₹{isUnderTwoMin ? '0.00' : currentBilled.toFixed(2)}
               </span>
             </p>
 
@@ -1073,6 +1165,24 @@ function Messages() {
             </button>
           </div>
         </div>
+      )}
+      {/* Post-Session Review Form Prompt */}
+      {showReviewModal && reviewModalData && (
+        <ReviewForm
+          consultationId={reviewModalData.consultationId}
+          expertName={reviewModalData.expertName}
+          consultationType={reviewModalData.consultationType || 'Chat'}
+          onSuccess={() => {
+            setTimeout(() => {
+              setShowReviewModal(false);
+              setReviewModalData(null);
+            }, 1800);
+          }}
+          onClose={() => {
+            setShowReviewModal(false);
+            setReviewModalData(null);
+          }}
+        />
       )}
     </UserLayout>
   );

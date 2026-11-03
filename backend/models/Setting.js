@@ -27,6 +27,9 @@ const settingSchema = new mongoose.Schema({
   enableFreeChat: { type: Boolean, default: true },
   freeChatDurationMinutes: { type: Number, default: 5 }, // Admin sets dynamic duration in minutes
   
+  // Geolocation & Proximity Settings (Dynamic Admin Control)
+  minimumExpertDistanceKm: { type: Number, default: 0 }, // Admin sets minimum required distance between user & expert in KM (0 = disabled)
+  
   // Security
   sessionTimeoutMinutes: { type: Number, default: 60 },
   requireEmailVerification: { type: Boolean, default: true },

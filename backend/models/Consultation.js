@@ -51,6 +51,14 @@ const consultationSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  commissionRate: {
+    type: Number, // Percentage applied for this consultation (e.g. 15 for 15%)
+    default: 20
+  },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category'
+  },
   meetingLink: {
     type: String, // e.g. a dynamic room URL for video calls
   },

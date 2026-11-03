@@ -16,10 +16,13 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 // Models
 const User = require('../models/User');
 const Expert = require('../models/Expert');
+const Category = require('../models/Category');
+const Admin = require('../models/Admin');
 const Consultation = require('../models/Consultation');
 const Review = require('../models/Review');
 const Notification = require('../models/Notification');
 const WalletTransaction = require('../models/WalletTransaction');
+const { getEffectiveCommission } = require('../utils/commissionHelper');
 
 let server;
 const JWT_TEST_SECRET = process.env.JWT_SECRET || 'security_test_jwt_secret_key_1234567890_abcdef';
@@ -128,11 +131,13 @@ async function runTests() {
     // Register routes
     app.use('/api/auth', require('../routes/authRoutes'));
     app.use('/api/experts', require('../routes/expertRoutes'));
+    app.use('/api/expert', require('../routes/expertProfileRoutes'));
     app.use('/api/bookings', require('../routes/bookingRoutes'));
     app.use('/api/payments', require('../routes/paymentRoutes'));
     app.use('/api/wallet', require('../routes/walletRoutes'));
     app.use('/api/notifications', require('../routes/notificationRoutes'));
     app.use('/api/reviews', require('../routes/reviewRoutes'));
+    app.use('/api/admin', require('../routes/adminRoutes'));
 
     server = http.createServer(app);
     await new Promise((resolve) => server.listen(0, resolve));
@@ -638,6 +643,437 @@ async function runTests() {
       statusResOverall.body.usedExpertIds.length >= 2,
       'Status endpoint accurately tracks today limit and all used expert IDs'
     );
+
+    // ==========================================
+    // TEST GROUP 8: BILLING SYSTEM MINIMUM RATES (CHAT >= 5, AUDIO >= 10, VIDEO >= 20)
+    // ==========================================
+    console.log('\n--- TEST GROUP 8: BILLING SYSTEM MINIMUM RATES (CHAT >= 5, AUDIO >= 10, VIDEO >= 20) ---');
+
+    const expertTokenForRates = jwt.sign(
+      { id: freeExpertA._id, role: 'EXPERT' },
+      JWT_TEST_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 8.1 Chat rate below ₹5 rejected (400)
+    const updateChatTooLow = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/expert/profile',
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${expertTokenForRates}`
+      }
+    }, {
+      rates: { chat: 4, audio: 15, video: 25 }
+    });
+    assert(updateChatTooLow.statusCode === 400, 'Expert setting chat rate below ₹5/min is rejected (400)');
+
+    // 8.2 Audio rate below ₹10 rejected (400)
+    const updateAudioTooLow = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/expert/profile',
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${expertTokenForRates}`
+      }
+    }, {
+      rates: { chat: 5, audio: 9, video: 25 }
+    });
+    assert(updateAudioTooLow.statusCode === 400, 'Expert setting audio rate below ₹10/min is rejected (400)');
+
+    // 8.3 Video rate below ₹20 rejected (400)
+    const updateVideoTooLow = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/expert/profile',
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${expertTokenForRates}`
+      }
+    }, {
+      rates: { chat: 5, audio: 10, video: 19 }
+    });
+    assert(updateVideoTooLow.statusCode === 400, 'Expert setting video rate below ₹20/min is rejected (400)');
+
+    // 8.4 Valid minimum rates accepted (200)
+    const updateValidMinRates = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/expert/profile',
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${expertTokenForRates}`
+      }
+    }, {
+      rates: { chat: 5, audio: 10, video: 20 }
+    });
+    assert(
+      updateValidMinRates.statusCode === 200 &&
+      updateValidMinRates.body.expert.rates.chat === 5 &&
+      updateValidMinRates.body.expert.rates.audio === 10 &&
+      updateValidMinRates.body.expert.rates.video === 20,
+      'Valid minimum rates (Chat: ₹5, Audio: ₹10, Video: ₹20) accepted successfully (200)'
+    );
+
+    // ==========================================
+    // TEST GROUP 9: DYNAMIC CATEGORY-WISE COMMISSION CONTROL
+    // ==========================================
+    console.log('\n--- TEST GROUP 9: DYNAMIC CATEGORY-WISE COMMISSION CONTROL ---');
+
+    // 9.1 Seed admin for category commission management
+    const adminUser = await Admin.create({
+      name: 'Super Admin',
+      email: `admin_${Date.now()}@experthub.test`,
+      password: 'password123',
+      role: 'ADMIN'
+    });
+    const adminToken = jwt.sign(
+      { id: adminUser._id, role: 'ADMIN' },
+      JWT_TEST_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 9.2 Reject invalid category commission rates (< 0 or > 100)
+    const invalidHighCommRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/admin/categories',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      }
+    }, {
+      name: `Invalid High Cat ${testRunId}`,
+      slug: `inv-high-${testRunId}`,
+      commissionRate: 110
+    });
+    assert(invalidHighCommRes.statusCode === 400, 'Category creation with commission > 100% rejected (400)');
+
+    const invalidNegativeCommRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/admin/categories',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      }
+    }, {
+      name: `Invalid Neg Cat ${testRunId}`,
+      slug: `inv-neg-${testRunId}`,
+      commissionRate: -10
+    });
+    assert(invalidNegativeCommRes.statusCode === 400, 'Category creation with negative commission rejected (400)');
+
+    // 9.3 Create Category with custom 15% dynamic commission
+    const catCreateRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/admin/categories',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      }
+    }, {
+      name: `Astro Dynamic ${testRunId}`,
+      slug: `astro-dynamic-${testRunId}`,
+      description: 'Astrology consultations with 15% custom fee',
+      commissionRate: 15
+    });
+    assert(catCreateRes.statusCode === 201 && catCreateRes.body.category.commissionRate === 15, 'Admin created category with dynamic 15% commission (201)');
+    const customCategory = catCreateRes.body.category;
+
+    // 9.4 Create Category with null/default commission
+    const defaultCatCreateRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/admin/categories',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      }
+    }, {
+      name: `General Dynamic ${testRunId}`,
+      slug: `general-dynamic-${testRunId}`,
+      description: 'Category inheriting platform default take'
+    });
+    assert(defaultCatCreateRes.statusCode === 201 && (defaultCatCreateRes.body.category.commissionRate === null || defaultCatCreateRes.body.category.commissionRate === undefined), 'Category without custom rate defaults to null/inherited (201)');
+    const defaultCategory = defaultCatCreateRes.body.category;
+
+    // 9.5 Verify helper resolves custom rate for Category A vs global default for Category B
+    const commA = await getEffectiveCommission({ categoryId: customCategory._id });
+    assert(commA.percentage === 15 && commA.rate === 0.15 && commA.source === 'CATEGORY', 'Category-specific dynamic commission correctly resolved (15%)');
+
+    const commB = await getEffectiveCommission({ categoryId: defaultCategory._id });
+    assert(commB.percentage === 20 && commB.rate === 0.20 && commB.source === 'GLOBAL', 'Fallback to platform global default (20%) when category commission is null');
+
+    // 9.6 Dynamic update by Admin: change category commission from 15% to 10%
+    const catUpdateRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/admin/categories/${customCategory._id}`,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      }
+    }, {
+      commissionRate: 10
+    });
+    assert(catUpdateRes.statusCode === 200 && catUpdateRes.body.category.commissionRate === 10, 'Admin dynamically changed category commission from 15% to 10% (200)');
+
+    const commAUpdated = await getEffectiveCommission({ categoryId: customCategory._id });
+    assert(commAUpdated.percentage === 10 && commAUpdated.rate === 0.10, 'Effective commission immediately reflects updated dynamic rate (10%)');
+
+    // 9.7 End-to-end booking verification: verify platform fee and expert net earning calculation
+    const catExpert = await Expert.create({
+      name: 'Dynamic Comm Expert',
+      email: `dyn_expert_${Date.now()}@experthub.test`,
+      password: 'password123',
+      specialty: 'Astrology',
+      categoryId: customCategory._id,
+      rates: { chat: 10, audio: 15, video: 30 },
+      pricePerMinute: 10,
+      approvalStatus: 'approved',
+      isVerified: true
+    });
+
+    const userWithBalance = await User.create({
+      name: 'Comm Test User',
+      email: `comm_user_${Date.now()}@experthub.test`,
+      password: 'password123',
+      status: 'ACTIVE',
+      walletBalance: 500
+    });
+    const userTokenComm = jwt.sign({ id: userWithBalance._id, role: 'USER' }, JWT_TEST_SECRET, { expiresIn: '1h' });
+
+    // Book 10 min chat session (Base = ₹10/min * 10 = ₹100, Commission = 10% = ₹10, Total = ₹110)
+    const bookingRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/bookings',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userTokenComm}`
+      }
+    }, {
+      expertId: catExpert._id.toString(),
+      type: 'chat',
+      duration: 10
+    });
+    assert(
+      bookingRes.statusCode === 201 &&
+      bookingRes.body.platformFee === 10 &&
+      bookingRes.body.cost === 110 &&
+      bookingRes.body.commissionRate === 10,
+      'Consultation booking applies exact category-wise 10% platform fee (₹10 on ₹100 base)'
+    );
+
+    // Clean up test documents created during Test Group 9
+    await Admin.deleteMany({ _id: adminUser._id });
+    await Category.deleteMany({ _id: { $in: [customCategory._id, defaultCategory._id] } });
+    await Expert.deleteMany({ _id: catExpert._id });
+    await User.deleteMany({ _id: userWithBalance._id });
+    if (bookingRes.body?._id) {
+      await Consultation.deleteMany({ _id: bookingRes.body._id });
+    }
+
+    // ==========================================
+    // TEST GROUP 10: BANK DETAILS, PASSBOOK IMAGE & DYNAMIC VERIFICATION
+    // ==========================================
+    console.log('\n--- TEST GROUP 10: BANK DETAILS, PASSBOOK IMAGE & DYNAMIC VERIFICATION ---');
+
+    // 10.1 Create an expert and admin for bank verification testing
+    const bankExpert = await Expert.create({
+      name: 'Bank Verified Expert',
+      email: `bank_expert_${Date.now()}@experthub.test`,
+      password: 'password123',
+      specialty: 'Finance',
+      rates: { chat: 10, audio: 15, video: 30 },
+      pricePerMinute: 10,
+      approvalStatus: 'approved',
+      isVerified: true,
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        ifscCode: '',
+        bankName: '',
+        passbookImage: '',
+        verificationStatus: 'NOT_SUBMITTED'
+      }
+    });
+
+    const bankExpertToken = jwt.sign(
+      { id: bankExpert._id, role: 'EXPERT' },
+      JWT_TEST_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    const bankAdmin = await Admin.create({
+      name: 'Bank Verifier Admin',
+      email: `bank_admin_${Date.now()}@experthub.test`,
+      password: 'password123',
+      role: 'ADMIN'
+    });
+    const bankAdminToken = jwt.sign(
+      { id: bankAdmin._id, role: 'ADMIN' },
+      JWT_TEST_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 10.2 Submitting bank details WITHOUT passbook image is rejected (400)
+    const missingPassbookRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/experts/settings',
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankExpertToken}`
+      }
+    }, {
+      bankDetails: {
+        accountName: 'Ramesh Sharma',
+        bankName: 'HDFC Bank',
+        accountNumber: '123456789012',
+        ifscCode: 'HDFC0001234',
+        passbookImage: '' // Missing!
+      }
+    });
+    assert(missingPassbookRes.statusCode === 400, 'Submitting bank details without Passbook image is rejected (400)');
+
+    // 10.3 Valid bank details with passbook image is accepted and sets verificationStatus to PENDING (200)
+    const validBankRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/experts/settings',
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankExpertToken}`
+      }
+    }, {
+      bankDetails: {
+        accountName: 'Ramesh Sharma',
+        bankName: 'HDFC Bank',
+        accountNumber: '123456789012',
+        ifscCode: 'HDFC0001234',
+        passbookImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+      }
+    });
+    assert(
+      validBankRes.statusCode === 200 &&
+      validBankRes.body.expert.bankDetails.verificationStatus === 'PENDING' &&
+      validBankRes.body.expert.bankDetails.passbookImage.length > 0,
+      'Valid bank details with Passbook image saved with status PENDING for Admin verification (200)'
+    );
+
+    // 10.4 Requesting payout while bank details are PENDING is blocked (400)
+    const payoutBlockedRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/expert/payouts/request',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankExpertToken}`
+      }
+    }, {});
+    assert(
+      payoutBlockedRes.statusCode === 400 &&
+      payoutBlockedRes.body.code === 'BANK_NOT_VERIFIED',
+      'Payout request blocked while bank verification status is PENDING (400 BANK_NOT_VERIFIED)'
+    );
+
+    // 10.5 Admin approves expert bank details (200)
+    const adminApproveBankRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/admin/experts/${bankExpert._id}/bank/approve`,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankAdminToken}`
+      }
+    }, {});
+    assert(
+      adminApproveBankRes.statusCode === 200 &&
+      adminApproveBankRes.body.expert.bankDetails.verificationStatus === 'APPROVED',
+      'Admin successfully approves bank details and passbook (200 APPROVED)'
+    );
+
+    // 10.6 Expert can now request payout once bank details are APPROVED
+    const payoutAllowedRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/expert/payouts/request',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankExpertToken}`
+      }
+    }, {});
+    assert(payoutAllowedRes.statusCode === 200, 'Payout request succeeds after Admin approval (200)');
+
+    // 10.7 DYNAMIC RE-VERIFICATION: Expert edits account number -> automatically reverts to PENDING
+    const editBankRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/experts/settings',
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankExpertToken}`
+      }
+    }, {
+      bankDetails: {
+        accountName: 'Ramesh Sharma',
+        bankName: 'ICICI Bank',
+        accountNumber: '999988887777', // Changed!
+        ifscCode: 'ICIC0009999'
+        // passbookImage will reuse existing
+      }
+    });
+    assert(
+      editBankRes.statusCode === 200 &&
+      editBankRes.body.expert.bankDetails.verificationStatus === 'PENDING' &&
+      editBankRes.body.expert.bankDetails.accountNumber === '999988887777',
+      'Editing bank details automatically reverts status back to PENDING for Admin re-verification (200)'
+    );
+
+    // 10.8 Admin rejects bank details with reason
+    const adminRejectBankRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/admin/experts/${bankExpert._id}/bank/reject`,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bankAdminToken}`
+      }
+    }, {
+      reason: 'Passbook account number does not match submitted account number'
+    });
+    assert(
+      adminRejectBankRes.statusCode === 200 &&
+      adminRejectBankRes.body.expert.bankDetails.verificationStatus === 'REJECTED' &&
+      adminRejectBankRes.body.expert.bankDetails.rejectionReason.includes('Passbook account number'),
+      'Admin rejects bank details with recorded reason (200 REJECTED)'
+    );
+
+    // Clean up test documents
+    await Expert.deleteMany({ _id: bankExpert._id });
+    await Admin.deleteMany({ _id: bankAdmin._id });
 
     // Clean up test documents created during this run
     await User.deleteMany({ _id: { $in: [activeUser._id, suspendedUser._id, freeUser._id] } });

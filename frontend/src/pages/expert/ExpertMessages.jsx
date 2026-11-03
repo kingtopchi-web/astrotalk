@@ -56,6 +56,7 @@ function ExpertMessages() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isEndingRef = useRef(false);
+  const chatStartedRef = useRef(false);
   const messagesEndRef = useRef(null);
   const moreMenuRef = useRef(null);
 
@@ -154,6 +155,11 @@ function ExpertMessages() {
         if (prev.find(m => m._id === msg._id)) return prev;
         return [...prev, msg];
       });
+      // If message is from expert, chat has officially started
+      if (msg.senderModel === 'Expert' || (expert?._id && (msg.sender === expert._id || msg.sender?._id === expert._id))) {
+        setChatStarted(true);
+        setActiveConsultation(prev => prev ? { ...prev, chatStarted: true, chatStartedAt: prev.chatStartedAt || new Date() } : prev);
+      }
       setConversations(prev => prev.map(conv => {
         if (conv._id === msg.conversationId || conv._id === msg.conversation) {
           return { ...conv, lastMessage: msg.text, lastMessageAt: msg.createdAt };
@@ -263,15 +269,76 @@ function ExpertMessages() {
   const freeTotalAllowedSeconds = freeDurationMins * 60;
   const freeRemainingSeconds = Math.max(0, freeTotalAllowedSeconds - seconds);
 
+  // Keep chatStartedRef in sync
+  useEffect(() => {
+    chatStartedRef.current = chatStarted;
+  }, [chatStarted]);
+
+  // Auto-detect if messages already contain a reply from the expert or multiple senders
+  useEffect(() => {
+    if (chatStarted || !activeConsultation || !messages?.length) return;
+    const clientUser = getOtherParticipant(activeConversation);
+    const clientId = clientUser?._id ? String(clientUser._id) : null;
+    const expertId = expert?._id ? String(expert._id) : null;
+    const consultationExpertId = activeConsultation?.expert ? String(activeConsultation.expert?._id || activeConsultation.expert) : null;
+
+    const uniqueSenders = new Set(messages.map(m => String(m.sender?._id || m.sender)));
+    const hasMultipleSenders = uniqueSenders.size >= 2;
+
+    const hasExpertReply = messages.some(m => {
+      const senderId = String(m.sender?._id || m.sender);
+      return (
+        m.senderModel === 'Expert' ||
+        (expertId && senderId === expertId) ||
+        (consultationExpertId && senderId === consultationExpertId) ||
+        (clientId && senderId !== clientId)
+      );
+    }) || hasMultipleSenders;
+
+    if (hasExpertReply || activeConsultation.chatStarted) {
+      chatStartedRef.current = true;
+      setChatStarted(true);
+      setActiveConsultation(prev => prev ? { ...prev, chatStarted: true, chatStartedAt: prev.chatStartedAt || new Date() } : prev);
+    }
+  }, [messages, activeConsultation, chatStarted, expert, activeConversation]);
+
   // 1. Initial 2-minute countdown (120 seconds) for expert to reply
   useEffect(() => {
-    if (!activeConsultation || chatStarted) return;
+    if (!activeConsultation || chatStarted || chatStartedRef.current) return;
+
+    const clientUser = getOtherParticipant(activeConversation);
+    const clientId = clientUser?._id ? String(clientUser._id) : null;
+    const expertId = expert?._id ? String(expert._id) : null;
+    const consultationExpertId = activeConsultation?.expert ? String(activeConsultation.expert?._id || activeConsultation.expert) : null;
+
+    const uniqueSenders = new Set(messages?.map(m => String(m.sender?._id || m.sender)) || []);
+    const hasMultipleSenders = uniqueSenders.size >= 2;
+
+    const hasExpertReply = messages?.some(m => {
+      const senderId = String(m.sender?._id || m.sender);
+      return (
+        m.senderModel === 'Expert' ||
+        (expertId && senderId === expertId) ||
+        (consultationExpertId && senderId === consultationExpertId) ||
+        (clientId && senderId !== clientId)
+      );
+    }) || hasMultipleSenders || activeConsultation.chatStarted;
+
+    if (hasExpertReply) {
+      chatStartedRef.current = true;
+      setChatStarted(true);
+      return;
+    }
 
     const waitTimer = setInterval(() => {
       setWaitingCountdown(prev => {
+        if (chatStartedRef.current) {
+          clearInterval(waitTimer);
+          return 0;
+        }
         if (prev <= 1) {
           clearInterval(waitTimer);
-          if (!isEndingRef.current) {
+          if (!isEndingRef.current && !chatStartedRef.current) {
             isEndingRef.current = true;
             handleEndConsultation(true, 0, 'You did not reply within 2 minutes. The chat session has expired.');
           }
@@ -282,7 +349,7 @@ function ExpertMessages() {
     }, 1000);
 
     return () => clearInterval(waitTimer);
-  }, [activeConsultation, chatStarted]);
+  }, [activeConsultation, chatStarted, messages, expert, activeConversation]);
 
   // 2. Timer when chat is active
   useEffect(() => {
@@ -319,6 +386,7 @@ function ExpertMessages() {
 
       await axios.post(getApiUrl(`/bookings/${activeConsultation._id}/end`), {
         actualDuration,
+        durationSeconds: usedSeconds,
         reason: reason || (autoDisconnected ? 'Expert did not reply within 2 minutes' : 'Session ended')
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -387,6 +455,14 @@ function ExpertMessages() {
 
     socket.emit('send_message', messageData);
     setInputText('');
+
+    // Expert has replied! Immediately mark chat started to stop waiting countdown!
+    chatStartedRef.current = true;
+    if (!chatStarted) {
+      setChatStarted(true);
+      setActiveConsultation(prev => prev ? { ...prev, chatStarted: true, chatStartedAt: prev.chatStartedAt || new Date() } : prev);
+      setSeconds(0);
+    }
   };
 
   // Selection & Deletion Handlers

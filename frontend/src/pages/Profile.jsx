@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
 import { compressAvatar, saveAvatarToDB } from '../utils/avatarStorage';
+import { compressAvatarImage } from '../utils/imageCompressor';
 import { getApiUrl } from '../utils/apiConfig';
 
 function Profile({ autoEdit = false }) {
@@ -174,7 +175,8 @@ function Profile({ autoEdit = false }) {
     const file = e.target.files[0];
     if (file) {
       try {
-        const compressedDataUrl = await compressAvatar(file, 200, 0.75);
+        const compressedResult = await compressAvatarImage(file);
+        const compressedDataUrl = compressedResult?.dataUrl;
         if (compressedDataUrl) {
           setForm(prev => ({ ...prev, profileImage: compressedDataUrl }));
           saveAvatarToDB(compressedDataUrl);

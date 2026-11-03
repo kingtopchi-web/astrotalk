@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { getApiUrl } from '../utils/apiConfig';
+import { createSocket } from '../utils/socket';
 import { 
   saveAvatarToDB, 
   getAvatarFromDB, 
@@ -150,6 +151,29 @@ export const AuthProvider = ({ children }) => {
       return merged;
     });
   };
+
+  // Real-time socket sync for expert bank verification updates
+  useEffect(() => {
+    if (!user?._id || user.role !== 'EXPERT') return;
+    let socket = null;
+    try {
+      socket = createSocket();
+      socket.emit('join_user', user._id);
+      socket.on('bank_status_updated', (data) => {
+        if (data?.bankDetails) {
+          updateUser({ bankDetails: data.bankDetails });
+        }
+      });
+    } catch (err) {
+      console.warn('AuthContext socket error:', err);
+    }
+    return () => {
+      if (socket) {
+        socket.off('bank_status_updated');
+        socket.disconnect();
+      }
+    };
+  }, [user?._id, user?.role]);
 
   const auth = {
     token: localStorage.getItem('token'),

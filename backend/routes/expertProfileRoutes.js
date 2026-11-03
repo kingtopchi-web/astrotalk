@@ -11,6 +11,10 @@ const {
   getEarnings,
   requestPayout
 } = require('../controllers/expertController');
+const {
+  getMyExpertDocuments,
+  uploadMyExpertDocument
+} = require('../controllers/documentController');
 
 // All expert routes require authentication and EXPERT role
 router.use(protect);
@@ -24,5 +28,9 @@ router.get('/consultations', getConsultations);
 router.patch('/consultations/:id/status', updateConsultationStatus);
 router.patch('/profile', updateMyExpertProfile);
 router.post('/resubmit', resubmitVerification);
+
+// Document management for expert
+router.get('/documents', getMyExpertDocuments);
+router.post('/documents/upload', uploadMyExpertDocument);
 
 module.exports = router;

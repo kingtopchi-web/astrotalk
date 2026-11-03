@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
-import { Search, Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X } from 'lucide-react';
+import { Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X, Globe, MapPin } from 'lucide-react';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
+import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
+import ThemeToggle from '../components/ThemeToggle';
 
 function Home() {
   const { user } = useAuth();
@@ -85,11 +87,13 @@ function Home() {
   };
 
   const currentDomainData = domainData[selectedDomain] || domainData.astrology;
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [experts, setExperts] = useState([]);
+  // Top Online / Recommended Experts (always all online experts across all categories - unaffected by categories below)
+  const [topOnlineExperts, setTopOnlineExperts] = useState([]);
+  const [loadingTopExperts, setLoadingTopExperts] = useState(true);
+  const experts = topOnlineExperts; // preserve existing references
+
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
   const [dbCategories, setDbCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentHeroImgIndex, setCurrentHeroImgIndex] = useState(0);
   const [platformStats, setPlatformStats] = useState({ usersCount: 0, verifiedExpertsCount: 0 });
   const [freeChatModalOpen, setFreeChatModalOpen] = useState(false);
@@ -97,7 +101,6 @@ function Home() {
   const [startingFreeChat, setStartingFreeChat] = useState(false);
   const [freeChatNotice, setFreeChatNotice] = useState(null);
   const navigate = useNavigate();
-  const expertScrollRef = useRef(null);
   const categoryScrollRef = useRef(null);
 
   const scrollCategory = (direction) => {
@@ -221,33 +224,6 @@ function Home() {
     if (distance < -45) handlePrevTestimonial();
     setTestimonialTouchStart(null);
     setTestimonialTouchEnd(null);
-  };
-
-  const [activeExpertIndex, setActiveExpertIndex] = useState(0);
-
-  const handleExpertScroll = () => {
-    if (expertScrollRef.current) {
-      const container = expertScrollRef.current;
-      const card = container.querySelector('.snap-center, .snap-start');
-      const cardWidth = card ? card.offsetWidth : 300;
-      const gap = 16;
-      const newIndex = Math.round(container.scrollLeft / (cardWidth + gap));
-      setActiveExpertIndex(Math.max(0, Math.min(newIndex, experts.length - 1)));
-    }
-  };
-
-  const scrollExperts = (direction) => {
-    if (expertScrollRef.current) {
-      const container = expertScrollRef.current;
-      const card = container.querySelector('.snap-center, .snap-start');
-      const cardWidth = card ? card.offsetWidth : 300;
-      const gap = 16;
-      const scrollAmount = cardWidth + gap;
-      container.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
   };
 
   // Load free chat settings on mount
@@ -417,30 +393,36 @@ function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // 1. Fetch Top Online Experts (Runs on mount, ALWAYS independent of category selection)
   useEffect(() => {
-    const fetchExperts = async () => {
-      setLoading(true);
+    const fetchTopOnlineExperts = async (coords) => {
+      setLoadingTopExperts(true);
       try {
-        let url = getApiUrl('/public/experts?onlineStatus=online');
-        if (activeCategory !== 'all') {
-          url += `&categoryId=${activeCategory}`;
+        const userLoc = coords || getCachedUserLocation();
+        let url = getApiUrl('/public/experts?onlineStatus=online&limit=30');
+        if (userLoc?.lat && userLoc?.lng) {
+          url += `&latitude=${userLoc.lat}&longitude=${userLoc.lng}`;
         }
         const res = await axios.get(url);
         if (res.data && res.data.data) {
           const onlineOnly = res.data.data.filter(exp => exp.onlineStatus === 'online');
-          setExperts(onlineOnly);
+          setTopOnlineExperts(onlineOnly.length > 0 ? onlineOnly : res.data.data);
         } else {
-          setExperts([]);
+          setTopOnlineExperts([]);
         }
       } catch (err) {
-        console.error('Failed to fetch experts', err);
-        setExperts([]);
+        console.error('Failed to fetch top online experts', err);
+        setTopOnlineExperts([]);
       } finally {
-        setLoading(false);
+        setLoadingTopExperts(false);
       }
     };
-    fetchExperts();
-  }, [activeCategory]);
+
+    fetchTopOnlineExperts();
+    requestUserLocation((freshCoords) => {
+      fetchTopOnlineExperts(freshCoords);
+    });
+  }, []);
 
   useEffect(() => {
     const fetchSaved = async () => {
@@ -517,6 +499,16 @@ function Home() {
             <div className="flex flex-col md:flex-row items-center gap-5 md:gap-8 pt-1 sm:pt-2 pb-2 sm:pb-3 px-1 sm:px-2">
               {/* Left Content */}
               <div className="flex-1 space-y-3.5 text-center md:text-left">
+                <div className="flex items-center gap-2.5 justify-center md:justify-start mb-1">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Verified Expert Network
+                  </span>
+                  <div className="inline-flex md:hidden">
+                    <ThemeToggle variant="segmented" />
+                  </div>
+                </div>
+
                 <h1 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.15] text-on-background">
                   India's most accurate <br />
                   <span className="text-primary">
@@ -535,13 +527,24 @@ function Home() {
                   </div>
                 </div>
 
-                <div className="pt-2 sm:pt-3">
+                <div className="pt-2 sm:pt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
                   <button 
                     onClick={handleStartFreeChatClick}
-                    className="px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 mx-auto md:mx-0 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
+                    className="px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
                   >
                     Free Audio call for tension free <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
+
+                  {/* Become an Expert button - Hidden if already logged in as an Expert */}
+                  {user?.role !== 'EXPERT' && (
+                    <button 
+                      onClick={() => navigate('/expert/register')}
+                      className="px-5 py-2.5 sm:px-6 sm:py-3 bg-surface-card text-on-surface border-2 border-primary/40 hover:border-primary hover:bg-primary/10 rounded-full font-heading font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-primary text-[20px]">workspace_premium</span>
+                      Become an Expert
+                    </button>
+                  )}
                 </div>
 
                 {/* Statistics */}
@@ -586,16 +589,16 @@ function Home() {
                     let positionClass = '';
 
                     if (idx === currentHeroImgIndex) {
-                      positionClass = 'w-40 h-52 sm:w-48 sm:h-64 md:w-56 md:h-72 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_12px_32px_rgba(247,200,60,0.3)] opacity-100 scale-100';
+                      positionClass = 'w-40 h-52 sm:w-48 sm:h-64 md:w-56 md:h-72 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_12px_32px_rgba(247,200,60,0.35)] opacity-100 scale-100';
                     } else if (idx === (currentHeroImgIndex + 1) % heroImages.length) {
-                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 translate-x-20 sm:translate-x-28 md:translate-x-32 border-2 border-primary/35 shadow-lg opacity-85 scale-95';
+                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 translate-x-20 sm:translate-x-28 md:translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
                     } else {
-                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 -translate-x-20 sm:-translate-x-28 md:-translate-x-32 border-2 border-primary/35 shadow-lg opacity-85 scale-95';
+                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 -translate-x-20 sm:-translate-x-28 md:-translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
                     }
 
                     return (
-                      <div key={idx} className={`absolute rounded-[50%] overflow-hidden transition-all duration-700 ease-in-out ${positionClass}`}>
-                        <img src={img} alt={`Expert ${idx}`} className="w-full h-full object-cover rounded-[50%]" />
+                      <div key={idx} className={`absolute rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-700 ease-in-out ${positionClass}`}>
+                        <img src={img} alt={`Expert ${idx}`} className="w-full h-full object-cover" />
                       </div>
                     );
                   })}
@@ -608,44 +611,25 @@ function Home() {
         {/* POPULAR EXPERTS SECTION (RECOMMENDED EXPERTS) */}
         {user?.role !== 'EXPERT' && (
           <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6">
-            <div className="flex items-center justify-between mb-3.5 sm:mb-4">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div>
                 <h2 className="font-heading font-bold text-xl sm:text-2xl md:text-3xl text-on-background">Recommended Experts</h2>
                 <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Top-rated professionals ready to help you.</p>
               </div>
-              <div className="flex items-center gap-2">
-                {experts.length > 1 && (
-                  <div className="flex items-center gap-1.5 mr-1 sm:mr-2">
-                    <button
-                      type="button"
-                      onClick={() => scrollExperts('left')}
-                      className="w-8 h-8 rounded-full bg-surface-muted hover:bg-primary/20 text-on-surface border border-border flex items-center justify-center transition-colors cursor-pointer"
-                      aria-label="Scroll left"
-                      title="Scroll left"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollExperts('right')}
-                      className="w-8 h-8 rounded-full bg-surface-muted hover:bg-primary/20 text-on-surface border border-border flex items-center justify-center transition-colors cursor-pointer"
-                      aria-label="Scroll right"
-                      title="Scroll right"
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                )}
-                <button onClick={() => navigate('/experts')} className="hidden md:flex px-4 py-1.5 bg-primary/15 text-primary rounded-full font-semibold text-xs sm:text-sm hover:bg-primary hover:text-background transition-colors">
-                  See All Experts
-                </button>
-              </div>
+              <button 
+                type="button"
+                onClick={() => navigate('/experts')} 
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary/15 text-primary hover:bg-primary hover:text-white rounded-full font-bold text-xs sm:text-sm transition-all shadow-xs cursor-pointer"
+              >
+                <span>View All ({experts.length})</span>
+                <ChevronRight size={16} />
+              </button>
             </div>
 
-            {loading ? (
-              <div className="flex items-stretch gap-4 sm:gap-5 overflow-x-hidden pb-4">
-                {[1, 2, 3, 4].map(n => (
-                  <div key={n} className="w-[calc(100vw-2.5rem)] max-w-[360px] sm:w-[280px] shrink-0 bg-surface-muted rounded-2xl p-5 border border-border shadow-xs animate-pulse">
+            {loadingTopExperts ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                  <div key={n} className="bg-surface-muted rounded-2xl p-5 border border-border shadow-xs animate-pulse">
                     <div className="w-20 h-20 bg-surface-card rounded-full mx-auto mb-3"></div>
                     <div className="h-4 bg-surface-card rounded w-2/3 mx-auto mb-2"></div>
                     <div className="h-3 bg-surface-card rounded w-1/2 mx-auto mb-4"></div>
@@ -660,17 +644,13 @@ function Home() {
               </div>
             ) : (
               <>
-                <div 
-                  ref={expertScrollRef}
-                  onScroll={handleExpertScroll}
-                  className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory px-1 sm:px-0 hide-scrollbar"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  {experts.map((expert) => (
+                {/* 4 Cards per row responsive grid (showing 3 to 5 rows = up to 16 experts) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                  {experts.slice(0, 16).map((expert) => (
                     <div 
                       key={expert._id} 
                       onClick={() => navigate(`/expert/${expert._id}`)} 
-                      className="w-[calc(100vw-2.5rem)] max-w-[360px] sm:w-[280px] shrink-0 snap-center sm:snap-start bg-surface-muted rounded-2xl border border-border shadow-xs hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group flex flex-col overflow-hidden relative mx-auto sm:mx-0"
+                      className="w-full bg-surface-muted rounded-2xl border border-border shadow-xs hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group flex flex-col overflow-hidden relative"
                     >
 
                       {/* Heart Save Button */}
@@ -737,13 +717,36 @@ function Home() {
                           )}
                         </div>
 
-                        <div className="flex items-center justify-center gap-1.5 text-xs mb-3.5 w-full">
+                        <div className="flex items-center justify-center gap-1.5 text-xs mb-2 w-full">
                           <div className="flex items-center gap-1 bg-warning/15 text-warning px-2.5 py-0.5 rounded-full font-bold">
                             <Star size={11} className="fill-warning text-warning" />
                             <span className="text-xs">{expert.rating || '4.9'}</span>
                           </div>
                           <span className="text-on-surface-variant text-[11px] font-medium">
                             ({expert.reviewsCount || 0} reviews)
+                          </span>
+                        </div>
+
+                        {/* Distance Badge & Consultation Languages */}
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-3 w-full px-1">
+                          {typeof expert.distanceKm === 'number' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200/60" title={`Calculated distance: ${expert.distanceKm} KM`}>
+                              <MapPin size={11} className="text-emerald-600 shrink-0" />
+                              <span>{Math.round(expert.distanceKm)} km away</span>
+                            </span>
+                          )}
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-0.5 rounded-full border border-slate-200/60 transition-colors truncate max-w-full"
+                            title={Array.isArray(expert.languages) && expert.languages.length > 0 ? expert.languages.join(', ') : 'English, Hindi'}
+                          >
+                            <Globe size={11} className="text-amber-500 shrink-0" />
+                            <span className="truncate">
+                              {Array.isArray(expert.languages) && expert.languages.length > 0 
+                                ? (expert.languages.length <= 2 
+                                    ? expert.languages.join(', ') 
+                                    : `${expert.languages.slice(0, 2).join(', ')} +${expert.languages.length - 2}`)
+                                : 'English, Hindi'}
+                            </span>
                           </span>
                         </div>
 
@@ -754,7 +757,7 @@ function Home() {
                               <MessageCircle size={10} className="text-primary shrink-0" /> Chat
                             </span>
                             <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
-                              ₹{expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10)}
+                              ₹{Math.max(5, expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 5))}
                               <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
                             </span>
                           </div>
@@ -763,7 +766,7 @@ function Home() {
                               <Phone size={10} className="text-success shrink-0" /> Audio
                             </span>
                             <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
-                              ₹{expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 15)}
+                              ₹{Math.max(10, expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10))}
                               <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
                             </span>
                           </div>
@@ -772,7 +775,7 @@ function Home() {
                               <Video size={10} className="text-warning shrink-0" /> Video
                             </span>
                             <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
-                              ₹{expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20)}
+                              ₹{Math.max(20, expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20))}
                               <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
                             </span>
                           </div>
@@ -806,45 +809,19 @@ function Home() {
                   ))}
                 </div>
 
-                {/* Mobile Carousel Indicators */}
-                {experts.length > 1 && (
-                  <div className="flex sm:hidden items-center justify-between mt-2 px-1">
-                    <span className="text-[11px] font-medium text-on-surface-variant">
-                      {activeExpertIndex + 1} of {experts.length} recommended experts
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      {experts.map((_, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            if (expertScrollRef.current) {
-                              const container = expertScrollRef.current;
-                              const card = container.querySelector('.snap-center, .snap-start');
-                              const cardWidth = card ? card.offsetWidth : 300;
-                              container.scrollTo({
-                                left: idx * (cardWidth + 16),
-                                behavior: 'smooth'
-                              });
-                            }
-                          }}
-                          aria-label={`Go to expert ${idx + 1}`}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${
-                            activeExpertIndex === idx ? 'w-5 bg-primary' : 'w-1.5 bg-border hover:bg-on-surface-variant/40'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* View All Experts Bottom CTA */}
+                <div className="mt-8 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/experts')}
+                    className="px-8 py-3.5 bg-gradient-to-r from-amber-500 via-[#F5B52E] to-amber-500 hover:from-amber-600 hover:to-amber-600 text-slate-950 font-bold rounded-2xl text-xs sm:text-sm transition-all shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                  >
+                    <span>View All Experts ({experts.length})</span>
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
               </>
             )}
-
-            <div className="mt-5 text-center md:hidden">
-              <button onClick={() => navigate('/experts')} className="px-5 py-2.5 bg-background border border-border text-on-background rounded-full font-semibold text-xs sm:text-sm hover:border-primary transition-colors w-full shadow-xs">
-                View All Experts
-              </button>
-            </div>
           </section>
         )}
 
@@ -1148,63 +1125,42 @@ function Home() {
               >
                 {/* 'All' category button */}
                 <button 
-                  onClick={() => setActiveCategory('all')}
-                  className={`flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer ${
-                    activeCategory === 'all' 
-                      ? 'bg-primary/10 border-primary ring-2 ring-primary/30 shadow-sm' 
-                      : 'bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm'
-                  }`}
+                  type="button"
+                  onClick={() => navigate('/category/all')}
+                  className="flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm"
                 >
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 transition-all duration-300 ${
-                    activeCategory === 'all' 
-                      ? 'border-primary ring-4 ring-primary/30 scale-105' 
-                      : 'border-border/80 group-hover:border-primary/60 group-hover:scale-105'
-                  }`}>
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 border-border/80 group-hover:border-primary/60 group-hover:scale-105 transition-all duration-300">
                     <img 
                       src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=300&q=80" 
                       alt="All Categories" 
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className={`text-xs sm:text-sm font-bold text-center leading-snug transition-colors ${
-                    activeCategory === 'all' ? 'text-primary' : 'text-on-surface group-hover:text-primary'
-                  }`}>
+                  <span className="text-xs sm:text-sm font-bold text-center leading-snug text-on-surface group-hover:text-primary transition-colors">
                     All
                   </span>
                 </button>
 
                 {/* Database Categories */}
-                {dbCategories.map((cat) => {
-                  const isActive = activeCategory === cat._id;
-                  return (
-                    <button 
-                      key={cat._id} 
-                      onClick={() => setActiveCategory(cat._id)}
-                      className={`flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer ${
-                        isActive 
-                          ? 'bg-primary/10 border-primary ring-2 ring-primary/30 shadow-sm' 
-                          : 'bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 transition-all duration-300 ${
-                        isActive 
-                          ? 'border-primary ring-4 ring-primary/30 scale-105' 
-                          : 'border-border/80 group-hover:border-primary/60 group-hover:scale-105'
-                      }`}>
-                        <img 
-                          src={getCatImage(cat)} 
-                          alt={cat.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <span className={`text-xs sm:text-sm font-bold text-center leading-snug line-clamp-2 max-w-[130px] transition-colors ${
-                        isActive ? 'text-primary' : 'text-on-surface group-hover:text-primary'
-                      }`}>
-                        {cat.name}
-                      </span>
-                    </button>
-                  );
-                })}
+                {dbCategories.map((cat) => (
+                  <button 
+                    key={cat._id} 
+                    type="button"
+                    onClick={() => navigate(`/category/${cat._id}`)}
+                    className="flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm"
+                  >
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 border-border/80 group-hover:border-primary/60 group-hover:scale-105 transition-all duration-300">
+                      <img 
+                        src={getCatImage(cat)} 
+                        alt={cat.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold text-center leading-snug line-clamp-2 max-w-[130px] text-on-surface group-hover:text-primary transition-colors">
+                      {cat.name}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           </section>
@@ -1711,9 +1667,17 @@ function Home() {
                             <p className="text-xs text-on-surface-variant">
                               {expert.specialty || expert.categoryId?.name || 'Verified Expert'}
                             </p>
-                            <div className="flex items-center gap-1 text-[11px] text-amber-500 font-bold mt-0.5">
-                              <Star size={11} className="fill-amber-500" />
-                              <span>{expert.rating ? expert.rating.toFixed(1) : '5.0'}</span>
+                            <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 mt-0.5">
+                              <span className="flex items-center gap-0.5 text-amber-500 font-bold">
+                                <Star size={11} className="fill-amber-500" />
+                                <span>{expert.rating ? expert.rating.toFixed(1) : '5.0'}</span>
+                              </span>
+                              {expert.languages && expert.languages.length > 0 && (
+                                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 truncate max-w-[120px]">
+                                  <Globe size={10} className="text-amber-500 shrink-0" />
+                                  <span className="truncate">{expert.languages.slice(0, 2).join(', ')}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1773,6 +1737,8 @@ function Home() {
           </div>
         </div>
       )}
+      {/* Floating Theme Toggle Button for Home Page */}
+      <ThemeToggle variant="floating" />
     </div>
   );
 }

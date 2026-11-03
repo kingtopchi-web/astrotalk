@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight, Globe, MapPin } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
 import { useAuth } from '../context/AuthContext';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
+import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
 
 function ExpertDiscovery() {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ function ExpertDiscovery() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [userLocation, setUserLocation] = useState(getCachedUserLocation);
   
   // Admin-like toolbar state
   const [showSearch, setShowSearch] = useState(true);
@@ -52,6 +54,13 @@ function ExpertDiscovery() {
       }
     }).catch(() => {});
   }, [user]);
+
+  // Request actual user coordinates for accurate geographic distance filtering
+  useEffect(() => {
+    requestUserLocation((coords) => {
+      setUserLocation(coords);
+    });
+  }, []);
   
   // Modern Toast and Shortfall Prompt state
   const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' | 'info' }
@@ -171,10 +180,10 @@ function ExpertDiscovery() {
     
     const curBal = await fetchUserWallet();
     const rate = type === 'video' 
-      ? (expert.rates?.video || expert.pricePerMinute || 50)
+      ? Math.max(20, expert.rates?.video || expert.pricePerMinute || 20)
       : type === 'audio' 
-      ? (expert.rates?.audio || expert.pricePerMinute || 30)
-      : (expert.rates?.chat || expert.pricePerMinute || 20);
+      ? Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10)
+      : Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
 
     // If audio and user has free consultation eligibility for this expert today, allow starting without balance!
     const isFreeCallEligible = type === 'audio' && isExpertFreeEligible(expert._id);
@@ -194,11 +203,11 @@ function ExpertDiscovery() {
   };
 
   const getPerMinuteRate = () => {
-    if (!selectedExpert) return 30;
-    if (callType === 'video') return selectedExpert.rates?.video || selectedExpert.pricePerMinute || 50;
-    if (callType === 'audio') return selectedExpert.rates?.audio || selectedExpert.pricePerMinute || 30;
-    if (callType === 'chat') return selectedExpert.rates?.chat || selectedExpert.pricePerMinute || 20;
-    return 30;
+    if (!selectedExpert) return 20;
+    if (callType === 'video') return Math.max(20, selectedExpert.rates?.video || selectedExpert.pricePerMinute || 20);
+    if (callType === 'audio') return Math.max(10, selectedExpert.rates?.audio || selectedExpert.pricePerMinute || 10);
+    if (callType === 'chat') return Math.max(5, selectedExpert.rates?.chat || selectedExpert.pricePerMinute || 5);
+    return 20;
   };
 
   const executeSessionBookingAndPayment = async () => {
@@ -304,6 +313,10 @@ function ExpertDiscovery() {
       if (selectedCategory) params.categoryId = selectedCategory;
       if (selectedSubCategory) params.subCategoryId = selectedSubCategory;
       if (activeSearch && activeSearch.trim()) params.search = activeSearch.trim();
+      if (userLocation?.lat && userLocation?.lng) {
+        params.latitude = userLocation.lat;
+        params.longitude = userLocation.lng;
+      }
 
       const res = await axios.get(getApiUrl('/public/experts'), {
         params
@@ -326,7 +339,9 @@ function ExpertDiscovery() {
     }
   }, [searchParam]);
 
-  useEffect(() => { fetchExperts(searchParam); }, [page, selectedCategory, selectedSubCategory, searchParam]);
+  useEffect(() => { 
+    fetchExperts(searchParam); 
+  }, [page, selectedCategory, selectedSubCategory, searchParam, userLocation]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -477,18 +492,38 @@ function ExpertDiscovery() {
                       <div className="min-w-0">
                         <h3 className="font-bold text-on-surface text-sm truncate">{expert.name}</h3>
                         <p className="text-xs text-on-surface/60 truncate">{expert.categoryId?.name || expert.specialty}</p>
-                        {expert.subCategoryId && (
-                          <span className="inline-block text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full mt-1">
-                            {expert.subCategoryId.name}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                          {expert.subCategoryId && (
+                            <span className="inline-block text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
+                              {expert.subCategoryId.name}
+                            </span>
+                          )}
+                          {typeof expert.distanceKm === 'number' && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200/70 font-semibold px-2 py-0.5 rounded-full" title={`Distance from your location: ${expert.distanceKm} KM`}>
+                              <MapPin size={10} className="text-emerald-600 shrink-0" />
+                              <span>{Math.round(expert.distanceKm)} km</span>
+                            </span>
+                          )}
+                          {expert.languages && expert.languages.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 bg-slate-100 font-medium px-2 py-0.5 rounded-full" title={expert.languages.join(', ')}>
+                              <Globe size={10} className="text-amber-500 shrink-0" />
+                              <span className="truncate max-w-[120px]">{expert.languages.slice(0, 2).join(', ')}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Details */}
                     <div className={viewMode === 'list' ? 'flex-1 hidden sm:block px-4' : ''}>
                       {expert.experience && (
-                        <p className="text-xs text-on-surface/60 mb-2">📅 {expert.experience} exp</p>
+                        <p className="text-xs text-on-surface/60 mb-1">📅 {expert.experience} exp</p>
+                      )}
+                      {expert.languages && expert.languages.length > 0 && (
+                        <p className="text-xs text-slate-600 mb-1 flex items-center gap-1.5 font-medium">
+                          <Globe size={12} className="text-amber-500 shrink-0" />
+                          <span>Languages: {expert.languages.join(', ')}</span>
+                        </p>
                       )}
                       {expert.specialization && (
                         <p className="text-xs text-on-surface/80 mb-2 line-clamp-2">{expert.specialization}</p>
@@ -507,7 +542,7 @@ function ExpertDiscovery() {
                             </div>
                             <div className="text-right">
                               <span className="text-sm font-bold text-on-surface">
-                                ₹{Number(expert.rates?.chat || expert.pricePerMinute || 0).toFixed(2)}
+                                ₹{Number(Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5)).toFixed(2)}
                               </span>
                               <span className="text-xs text-on-surface/50">/min</span>
                             </div>
