@@ -48,7 +48,7 @@ function ExpertEarnings() {
         <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Earnings & Payouts</h2>
         <button
           onClick={handleRequestPayout}
-          disabled={earnings.availablePayout <= 0}
+          disabled={earnings.availablePayout < (earnings.minPayoutAmount || 100)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 self-start sm:self-auto"
         >
           <CreditCard size={16} />
@@ -83,7 +83,7 @@ function ExpertEarnings() {
             </div>
           </div>
           <div className="mt-3 text-xs text-slate-500">
-            Funds ready to be withdrawn to your bank
+            Funds ready to be withdrawn (Min request: ₹{earnings.minPayoutAmount || 100})
           </div>
         </div>
       </div>

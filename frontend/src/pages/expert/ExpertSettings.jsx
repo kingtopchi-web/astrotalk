@@ -280,8 +280,12 @@ const ExpertSettings = () => {
   };
 
   const handleChange = (e, section) => {
-    const { name, value, type, checked } = e.target;
+    let { name, value, type, checked } = e.target;
     
+    if (name === 'ifscCode') {
+      value = (value || '').toUpperCase().replace(/\s+/g, '');
+    }
+
     if (section) {
       setFormData(prev => ({
         ...prev,
@@ -326,12 +330,27 @@ const ExpertSettings = () => {
           setLoading(false);
           return;
         }
+        const cleanIfsc = (b.ifscCode || '').replace(/\s+/g, '').toUpperCase();
+        const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+        if (!ifscRegex.test(cleanIfsc)) {
+          setStatusMessage({
+            type: 'error',
+            text: 'Invalid IFSC Code format. An IFSC must be an 11-character code (e.g. HDFC0001234, SBIN0000691, or test IFSC RAZR0000001).'
+          });
+          setLoading(false);
+          return;
+        }
         if (!b.passbookImage) {
           setStatusMessage({ type: 'error', text: 'Bank Passbook / Cheque image is strictly required for verification.' });
           setLoading(false);
           return;
         }
-        payload = { bankDetails: formData.bankDetails };
+        payload = {
+          bankDetails: {
+            ...formData.bankDetails,
+            ifscCode: cleanIfsc
+          }
+        };
       }
 
       const res = await axios.put(getApiUrl('/experts/settings'), payload, {
@@ -884,8 +903,11 @@ const ExpertSettings = () => {
                     value={formData.bankDetails.ifscCode} 
                     onChange={(e) => handleChange(e, 'bankDetails')} 
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 outline-none text-slate-800 uppercase" 
-                    placeholder="e.g. HDFC0001234" 
+                    placeholder="e.g. HDFC0001234 or RAZR0000001" 
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    11-digit code (e.g. HDFC0001234). For Razorpay test mode, use test IFSC: <code className="text-amber-700 font-bold">RAZR0000001</code>
+                  </p>
                 </div>
 
                 {/* Bank Passbook Image Upload (Required) */}

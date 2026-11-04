@@ -9,6 +9,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { sanitize: mongoSanitize } = require('express-mongo-sanitize');
 const jwt = require('jsonwebtoken');
 
 const app = express();
@@ -107,12 +108,27 @@ app.use('/api/auth/', authLimiter);
 
 // Parse JSON with raw body capture for webhook signature verification
 app.use(express.json({
-  limit: '10mb',
+  limit: '60mb',
   verify: (req, res, buf) => {
     req.rawBody = buf.toString('utf8');
   }
 }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '60mb' }));
+
+// Sanitize user-supplied data to prevent MongoDB Operator Injection ($ and . stripping)
+// Express 5 compatible in-place sanitization (preserves read-only req.query getter)
+app.use((req, res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    mongoSanitize(req.body);
+  }
+  if (req.params && typeof req.params === 'object') {
+    mongoSanitize(req.params);
+  }
+  if (req.query && typeof req.query === 'object') {
+    mongoSanitize(req.query);
+  }
+  next();
+});
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -131,10 +147,14 @@ const videoRoutes = require('./routes/videoRoutes');
 app.use('/api/experts', expertRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/razorpay', require('./routes/adminRazorpayRoutes'));
+app.use('/api/admin/marketplace', require('./routes/adminMarketplaceRoutes'));
+app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
 app.use('/api/user', userRoutes);
 app.use('/api/expert', expertProfileRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/support', supportRoutes);

@@ -132,6 +132,14 @@ router.put('/settings', protect, authorizeRoles('EXPERT'), async (req, res) => {
           return res.status(400).json({ message: 'Account Holder Name, Account Number, Bank Name, and IFSC Code are all required.' });
         }
 
+        const cleanIfsc = ifscCode.replace(/\s+/g, '').toUpperCase();
+        const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+        if (!ifscRegex.test(cleanIfsc)) {
+          return res.status(400).json({
+            message: 'Invalid IFSC Code format. IFSC must be an 11-character code (e.g. HDFC0001234 or test IFSC RAZR0000001).'
+          });
+        }
+
         // Passbook image is strictly required for verification
         const existingPassbook = expert.bankDetails?.passbookImage;
         const finalPassbook = (passbookImage && typeof passbookImage === 'string' && passbookImage.trim()) ? passbookImage.trim() : existingPassbook;
@@ -144,7 +152,7 @@ router.put('/settings', protect, authorizeRoles('EXPERT'), async (req, res) => {
           accountName: accountName.trim(),
           accountNumber: accountNumber.trim(),
           bankName: bankName.trim(),
-          ifscCode: ifscCode.trim().toUpperCase(),
+          ifscCode: cleanIfsc,
           passbookImage: finalPassbook,
           verificationStatus: 'PENDING',
           rejectionReason: '',

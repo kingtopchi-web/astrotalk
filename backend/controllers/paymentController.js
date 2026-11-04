@@ -1,17 +1,14 @@
-const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Payment = require('../models/Payment');
 const Consultation = require('../models/Consultation');
 const Expert = require('../models/Expert');
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || '',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || ''
-});
+const paymentService = require('../services/RazorpayPaymentService');
+const webhookService = require('../services/RazorpayWebhookService');
+const sendEmail = require('../utils/sendEmail');
 
 exports.createOrder = async (req, res) => {
   try {
-    const { consultationId, useWallet } = req.body;
+    const { consultationId, useWallet, accountCode } = req.body;
     
     const consultation = await Consultation.findById(consultationId);
     if (!consultation) {
@@ -39,41 +36,51 @@ exports.createOrder = async (req, res) => {
 
     const amountInPaise = Math.round(remainingAmount * 100);
 
-    const options = {
+    // Route order creation through multi-account RazorpayPaymentService
+    const order = await paymentService.createOrder({
       amount: amountInPaise,
       currency: 'INR',
       receipt: `receipt_${consultation._id}`,
-      payment_capture: 1
-    };
+      notes: {
+        consultationId: consultation._id.toString(),
+        userId: req.user._id.toString()
+      },
+      accountCode: accountCode || null
+    });
 
-    const order = await razorpay.orders.create(options);
+    const internalTransactionId = `PAY_${Date.now()}_${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     const payment = new Payment({
       user: req.user._id,
       expert: consultation.expert,
       consultation: consultation._id,
-      razorpayOrderId: order.id,
+      razorpayOrderId: order.orderId,
+      providerOrderId: order.orderId,
+      razorpayAccountId: order.keyId,
+      accountCode: order.accountCode,
+      transactionType: 'PAYMENT',
+      internalTransactionId,
       amount: amountInPaise,
-      currency: 'INR',
+      currency: order.currency,
       status: 'PENDING',
+      mode: order.mode,
       walletUsed: walletAmountToUse
     });
     
     await payment.save();
 
     res.status(200).json({
-      orderId: order.id,
+      orderId: order.orderId,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || ''
+      keyId: order.keyId,
+      accountCode: order.accountCode
     });
   } catch (error) {
     console.error('Create order error:', error);
-    res.status(500).json({ message: 'Failed to create order' });
+    res.status(500).json({ message: error.message || 'Failed to create order' });
   }
 };
-
-const sendEmail = require('../utils/sendEmail');
 
 exports.verifyPayment = async (req, res) => {
   try {
@@ -83,24 +90,21 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Missing required payment verification fields' });
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) {
-      return res.status(500).json({ message: 'Payment gateway secret not configured' });
-    }
+    // Verify signature using the exact account that created the order
+    const verifyResult = await paymentService.verifyPaymentSignature({
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature
+    });
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(body.toString())
-      .digest('hex');
-
-    const isAuthentic = expectedSignature === razorpay_signature;
-
-    if (isAuthentic) {
-      const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id }).populate('user').populate('expert');
+    if (verifyResult.isAuthentic) {
+      const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id }).populate('user expert');
+      
       if (payment && payment.status !== 'SUCCESS') {
         payment.razorpayPaymentId = razorpay_payment_id;
+        payment.providerPaymentId = razorpay_payment_id;
         payment.razorpaySignature = razorpay_signature;
+        payment.accountCode = verifyResult.accountCode;
         payment.status = 'SUCCESS';
         payment.paidAt = new Date();
         await payment.save();
@@ -148,7 +152,7 @@ exports.verifyPayment = async (req, res) => {
             await sendEmail({
               email: payment.user.email,
               subject: 'Payment Successful & Consultation Confirmed',
-              message: `Your payment of ₹${payment.amount / 100} was successful. Your consultation with ${payment.expert?.name || 'the expert'} is now confirmed. Order ID: ${payment.razorpayOrderId}`
+              message: `Your payment of ₹${payment.amount / 100} was successful via ${payment.accountCode}. Your consultation with ${payment.expert?.name || 'the expert'} is now confirmed. Order ID: ${payment.razorpayOrderId}`
             });
           } catch (err) {
             console.error('Email sending failed:', err);
@@ -156,148 +160,27 @@ exports.verifyPayment = async (req, res) => {
         }
       }
 
-      res.status(200).json({ message: 'Payment verified successfully' });
+      res.status(200).json({ message: 'Payment verified successfully', accountCode: verifyResult.accountCode });
     } else {
       res.status(400).json({ message: 'Invalid signature' });
     }
   } catch (error) {
     console.error('Verify payment error:', error);
-    res.status(500).json({ message: 'Failed to verify payment' });
+    res.status(500).json({ message: error.message || 'Failed to verify payment' });
   }
 };
 
+/**
+ * Account-aware Webhook handler
+ * Supports /webhook and /webhook/:accountCode
+ */
 exports.webhook = async (req, res) => {
   try {
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
-    const signature = req.headers['x-razorpay-signature'];
-
-    if (!secret || !signature) {
-      return res.status(400).json({ message: 'Missing webhook configuration or signature header' });
-    }
-
-    const payloadToVerify = req.rawBody || JSON.stringify(req.body);
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(payloadToVerify)
-      .digest('hex');
-
-    if (expectedSignature !== signature) {
-      return res.status(400).json({ message: 'Invalid webhook signature' });
-    }
-
-    const { event, payload } = req.body;
-
-    if (event === 'payment.captured' || event === 'payment.authorized') {
-      const paymentData = payload.payment.entity;
-      const orderId = paymentData.order_id;
-      
-      const payment = await Payment.findOne({ razorpayOrderId: orderId }).populate('user').populate('expert');
-      if (payment && payment.status !== 'SUCCESS') {
-        payment.status = 'SUCCESS';
-        payment.razorpayPaymentId = paymentData.id;
-        payment.paidAt = new Date();
-        await payment.save();
-
-        const consultation = await Consultation.findByIdAndUpdate(payment.consultation, {
-          paymentStatus: 'paid',
-          status: 'scheduled'
-        });
-
-        // Handle partial wallet payment deduction
-        if (payment.walletUsed > 0) {
-          const User = require('../models/User');
-          const WalletTransaction = require('../models/WalletTransaction');
-          const user = await User.findById(payment.user._id);
-          
-          if (user) {
-            const balanceBefore = user.walletBalance;
-            const balanceAfter = balanceBefore - payment.walletUsed;
-            user.walletBalance = balanceAfter;
-            await user.save();
-
-            const tx = new WalletTransaction({
-              user: user._id,
-              type: 'DEBIT',
-              amount: payment.walletUsed,
-              status: 'SUCCESS',
-              balanceBefore,
-              balanceAfter,
-              description: `Partial payment for consultation with ${payment.expert?.name || 'expert'}`,
-              consultation: consultation ? consultation._id : null,
-              completedAt: new Date()
-            });
-            await tx.save();
-          }
-        }
-
-        if (payment.user && payment.user.email && payment.user.notificationPreferences?.email?.payment !== false) {
-          await sendEmail({
-            email: payment.user.email,
-            subject: 'Payment Successful',
-            message: `Your payment of ₹${payment.amount / 100} was captured via webhook. Order ID: ${orderId}`
-          }).catch(console.error);
-        }
-      } else {
-        // Check if it's a Wallet Top-up
-        const WalletTransaction = require('../models/WalletTransaction');
-        const User = require('../models/User');
-        const walletTx = await WalletTransaction.findOne({ razorpayOrderId: orderId }).populate('user');
-        if (walletTx && walletTx.status !== 'SUCCESS') {
-           const user = await User.findOneAndUpdate(
-             { _id: walletTx.user._id },
-             { $inc: { walletBalance: walletTx.amount } },
-             { new: false }
-           );
-           if (user) {
-             const balanceBefore = user.walletBalance;
-             const balanceAfter = balanceBefore + walletTx.amount;
-
-             walletTx.status = 'SUCCESS';
-             walletTx.razorpayPaymentId = paymentData.id;
-             walletTx.balanceBefore = balanceBefore;
-             walletTx.balanceAfter = balanceAfter;
-             walletTx.completedAt = new Date();
-             await walletTx.save();
-
-             if (user.email && user.notificationPreferences?.email?.wallet !== false) {
-               await sendEmail({
-                 email: user.email,
-                 subject: 'Wallet Top-up Successful',
-                 message: `Your wallet top-up of ₹${walletTx.amount} was captured via webhook.`
-               }).catch(console.error);
-             }
-           }
-        }
-      }
-    } else if (event === 'payment.failed') {
-      const paymentData = payload.payment.entity;
-      const orderId = paymentData.order_id;
-      
-      const payment = await Payment.findOne({ razorpayOrderId: orderId }).populate('user');
-      if (payment && payment.status !== 'FAILED') {
-        payment.status = 'FAILED';
-        await payment.save();
-
-        if (payment.user && payment.user.email) {
-          await sendEmail({
-            email: payment.user.email,
-            subject: 'Payment Failed',
-            message: `Your payment of ₹${payment.amount / 100} has failed. Order ID: ${orderId}`
-          }).catch(console.error);
-        }
-      } else {
-        const WalletTransaction = require('../models/WalletTransaction');
-        const walletTx = await WalletTransaction.findOne({ razorpayOrderId: orderId }).populate('user');
-        if (walletTx && walletTx.status !== 'FAILED' && walletTx.status !== 'SUCCESS') {
-          walletTx.status = 'FAILED';
-          await walletTx.save();
-        }
-      }
-    }
-
-    res.status(200).send('OK');
+    const explicitAccountCode = req.params?.accountCode || null;
+    const { statusCode, result } = await webhookService.handleWebhook(req, explicitAccountCode);
+    return res.status(statusCode).json(result);
   } catch (error) {
     console.error('Webhook error:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 };

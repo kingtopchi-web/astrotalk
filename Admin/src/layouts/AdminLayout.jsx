@@ -6,7 +6,7 @@ import {
   MessageSquare, Video, Bell, CreditCard, ArrowLeftRight, RefreshCw,
   TrendingUp, Star, Settings, User as UserIcon, LogOut, Menu, X,
   Search, ChevronDown, ChevronRight, CalendarClock, CheckCircle,
-  XCircle, Clock, Mail
+  XCircle, Clock, Mail, ShoppingBag, ShieldCheck
 } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 import AdminSearchBar from '../components/AdminSearchBar';
@@ -65,6 +65,14 @@ const buildNav = (stats = {}) => [
     items: [
       { name: 'Transactions', path: '/transactions', icon: ArrowLeftRight },
       { name: 'Revenue', path: '/revenue', icon: TrendingUp },
+      { name: 'Razorpay Accounts', path: '/razorpay-accounts', icon: CreditCard },
+    ],
+  },
+  {
+    section: 'MARKETPLACE',
+    icon: ShoppingBag,
+    items: [
+      { name: 'Digital Marketplace', path: '/marketplace-management', icon: ShoppingBag },
     ],
   },
   {
@@ -79,6 +87,7 @@ const buildNav = (stats = {}) => [
     icon: UserIcon,
     items: [
       { name: 'Admin Profile', path: '/profile', icon: UserIcon },
+      { name: 'Administrators', path: '/administrators', icon: ShieldCheck },
     ],
   },
 ];
@@ -476,7 +485,7 @@ function AdminLayout() {
       <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'md:ml-[60px]' : 'md:ml-64'}`}>
 
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-10 h-14 flex items-center px-4 gap-3">
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-30 h-14 flex items-center px-4 gap-3">
 
           {/* Collapse toggle (desktop) / Menu (mobile) */}
           <button

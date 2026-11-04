@@ -2,14 +2,9 @@ const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 const Consultation = require('../models/Consultation');
 const Expert = require('../models/Expert');
-const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || '',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || ''
-});
+const paymentService = require('../services/RazorpayPaymentService');
 
 exports.getWallet = async (req, res) => {
   try {
@@ -71,22 +66,23 @@ exports.getTransactions = async (req, res) => {
 
 exports.addMoney = async (req, res) => {
   try {
-    const { amount } = req.body; // amount in INR
+    const { amount, accountCode } = req.body; // amount in INR
     if (!amount || amount < 10) return res.status(400).json({ message: 'Invalid amount' });
 
     const amountInPaise = Math.round(amount * 100);
 
-    const options = {
+    const order = await paymentService.createOrder({
       amount: amountInPaise,
       currency: 'INR',
       receipt: `wallet_${req.user._id}_${Date.now()}`,
       notes: {
         type: 'wallet_topup',
         userId: req.user._id.toString()
-      }
-    };
+      },
+      accountCode: accountCode || null
+    });
 
-    const order = await razorpay.orders.create(options);
+    const internalTransactionId = `TOPUP_${Date.now()}_${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     // Initial dummy balanceBefore/After, real ones updated on success
     const transaction = new WalletTransaction({
@@ -97,20 +93,27 @@ exports.addMoney = async (req, res) => {
       balanceBefore: 0, 
       balanceAfter: 0,
       description: 'Wallet Top-up',
-      razorpayOrderId: order.id,
+      razorpayOrderId: order.orderId,
+      providerOrderId: order.orderId,
+      razorpayAccountId: order.keyId,
+      accountCode: order.accountCode,
+      transactionType: 'TOPUP',
+      internalTransactionId,
+      mode: order.mode
     });
     
     await transaction.save();
 
     res.json({
-      orderId: order.id,
+      orderId: order.orderId,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || ''
+      keyId: order.keyId,
+      accountCode: order.accountCode
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 };
 
@@ -122,18 +125,14 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Missing payment verification details' });
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) {
-      return res.status(500).json({ message: 'Payment gateway configuration error' });
-    }
+    // Verify using the exact merchant account that created the order
+    const verifyResult = await paymentService.verifyPaymentSignature({
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature
+    });
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(body.toString())
-      .digest('hex');
-
-    if (expectedSignature !== razorpay_signature) {
+    if (!verifyResult.isAuthentic) {
       const io = req.app.get('io');
       const { sendNotification } = require('../utils/notificationDispatcher');
       sendNotification({
@@ -150,27 +149,39 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid signature' });
     }
 
-    const transaction = await WalletTransaction.findOne({ razorpayOrderId: razorpay_order_id });
-    if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
-    
-    if (transaction.status === 'SUCCESS') {
-      return res.json({ message: 'Already verified' });
+    // Atomic conditional lock: only ONE request can transition a PENDING topup to PROCESSING
+    const transaction = await WalletTransaction.findOneAndUpdate(
+      { razorpayOrderId: razorpay_order_id, status: 'PENDING' },
+      { $set: { status: 'PROCESSING', razorpayPaymentId: razorpay_payment_id, providerPaymentId: razorpay_payment_id, accountCode: verifyResult.accountCode } },
+      { new: true }
+    );
+
+    if (!transaction) {
+      // Check if already completed
+      const existing = await WalletTransaction.findOne({ razorpayOrderId: razorpay_order_id });
+      if (existing && existing.status === 'SUCCESS') {
+        return res.json({ message: 'Already verified' });
+      }
+      return res.status(400).json({ message: 'Transaction already processed or in progress' });
     }
 
-    // Atomic update
+    // Atomic update of user wallet balance
     const user = await User.findOneAndUpdate(
       { _id: transaction.user },
       { $inc: { walletBalance: transaction.amount } },
       { new: false }
     );
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      transaction.status = 'FAILED';
+      await transaction.save();
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     const balanceBefore = user.walletBalance;
     const balanceAfter = balanceBefore + transaction.amount;
 
-    // Update transaction
+    // Finalize transaction status to SUCCESS
     transaction.status = 'SUCCESS';
-    transaction.razorpayPaymentId = razorpay_payment_id;
     transaction.balanceBefore = balanceBefore;
     transaction.balanceAfter = balanceAfter;
     transaction.completedAt = new Date();
@@ -333,18 +344,31 @@ exports.createCallOrder = async (req, res) => {
       }
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await paymentService.createOrder({
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: `call_${req.user._id}_${Date.now()}`,
+      notes: {
+        type: 'direct_call',
+        userId: req.user._id.toString(),
+        expertId: expertId.toString(),
+        minutes: minutes.toString(),
+        callType: type
+      },
+      accountCode: req.body.accountCode || null
+    });
 
     res.json({
-      orderId: order.id,
+      orderId: order.orderId,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || '',
+      keyId: order.keyId,
+      accountCode: order.accountCode,
       expertName: expert.name
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 };
 
@@ -356,19 +380,25 @@ exports.verifyCallPayment = async (req, res) => {
       return res.status(400).json({ message: 'Missing required call payment verification fields' });
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) {
-      return res.status(500).json({ message: 'Payment gateway configuration error' });
+    const verifyResult = await paymentService.verifyPaymentSignature({
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature
+    });
+
+    if (!verifyResult.isAuthentic) {
+      return res.status(400).json({ message: 'Invalid signature' });
     }
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(body.toString())
-      .digest('hex');
-
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: 'Invalid signature' });
+    // Idempotency check: prevent duplicate consultation & debit creation on replay or double-submission
+    const existingTx = await WalletTransaction.findOne({ razorpayOrderId: razorpay_order_id });
+    if (existingTx) {
+      const existingConsultation = await Consultation.findOne({ user: req.user._id, cost: existingTx.amount }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        message: 'Payment already verified and consultation created',
+        consultation: existingConsultation,
+        accountCode: verifyResult.accountCode
+      });
     }
 
     const expert = await Expert.findById(expertId);
@@ -393,6 +423,8 @@ exports.verifyCallPayment = async (req, res) => {
 
     // We do NOT credit the expert here. We wait until the consultation completes to calculate pro-rata.
 
+    const internalTransactionId = `CALL_${Date.now()}_${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
     // Create a transaction record for the user debit (paid via gateway)
     const userTransaction = new WalletTransaction({
       user: req.user._id,
@@ -403,7 +435,13 @@ exports.verifyCallPayment = async (req, res) => {
       balanceAfter: 0,
       description: `Direct payment for ${type} with ${expert.name}`,
       razorpayOrderId: razorpay_order_id,
+      providerOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
+      providerPaymentId: razorpay_payment_id,
+      accountCode: verifyResult.accountCode,
+      transactionType: 'PAYMENT',
+      internalTransactionId,
+      mode: verifyResult.mode,
       completedAt: new Date()
     });
     await userTransaction.save();
@@ -424,6 +462,23 @@ exports.verifyCallPayment = async (req, res) => {
       category: commission.categoryId || expert.categoryId || null
     });
     await consultation.save();
+
+    // Emit live incoming call alert to expert if audio or video call
+    const io = req.app.get('io');
+    if (io) {
+      const isCall = type === 'call' || type === 'audio' || type === 'video';
+      const callType = type === 'video' ? 'video' : 'audio';
+      if (isCall) {
+        io.to(`user_${expertId}`).emit('VIDEO_USER_WAITING', {
+          consultationId: consultation._id,
+          type: callType,
+          userId: req.user._id,
+          userName: req.user.name || 'Client',
+          expertId: expertId,
+          serviceName: `${callType === 'video' ? 'Video' : 'Audio'} Consultation`
+        });
+      }
+    }
 
     res.json({ success: true, message: 'Payment verified and added to expert wallet', consultationId: consultation._id });
   } catch (error) {
@@ -513,6 +568,22 @@ exports.payCallWithWallet = async (req, res) => {
     // Dynamic Notifications
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
+
+    // Emit live incoming call alert to expert if audio or video call
+    if (io) {
+      const isCall = type === 'call' || type === 'audio' || type === 'video';
+      const callType = type === 'video' ? 'video' : 'audio';
+      if (isCall) {
+        io.to(`user_${expert._id}`).emit('VIDEO_USER_WAITING', {
+          consultationId: consultation._id,
+          type: callType,
+          userId: user._id,
+          userName: user.name || 'Client',
+          expertId: expert._id,
+          serviceName: `${callType === 'video' ? 'Video' : 'Audio'} Consultation`
+        });
+      }
+    }
 
     // 1. User Notification
     sendNotification({

@@ -49,6 +49,13 @@ function Profile({ autoEdit = false }) {
   const [connectionsCount, setConnectionsCount] = useState(84);
   const [savedCount, setSavedCount] = useState(4);
 
+  // If an expert visits /profile, route them smoothly to /expert/profile
+  useEffect(() => {
+    if (user?.role === 'EXPERT' || user?.role === 'expert') {
+      navigate('/expert/profile', { replace: true });
+    }
+  }, [user]);
+
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({ 

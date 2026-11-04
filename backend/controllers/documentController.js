@@ -734,15 +734,21 @@ exports.getDocumentFile = async (req, res) => {
     const fileBuffer = Buffer.from(base64Content, 'base64');
     const safeFileName = (doc.fileName || `${doc.docKey}.pdf`).replace(/[^a-zA-Z0-9_.-]/g, '_');
 
+    // Secure CSP & CORS: restrict framing and cross-origin reads strictly to authorized application origins
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://experthub.nextgoodtechnologies.in,http://localhost:5173,http://localhost:5174,http://localhost:3000').split(',').map(s => s.trim());
+    const requestOrigin = req.headers.origin || '';
+    if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+      res.setHeader('Vary', 'Origin');
+    }
+
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Length', fileBuffer.length);
     res.setHeader('Content-Disposition', `inline; filename="${safeFileName}"`);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-    res.removeHeader('X-Frame-Options');
-    res.setHeader('Content-Security-Policy', "frame-ancestors *");
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://experthub.nextgoodtechnologies.in http://localhost:5173 http://localhost:5174 http://localhost:3000");
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
 
     res.send(fileBuffer);
   } catch (error) {

@@ -9,7 +9,7 @@ export const ThemeToggle = ({ variant = 'segmented', className = '' }) => {
   if (variant === 'segmented') {
     return (
       <div 
-        className={`inline-flex items-center p-1 rounded-full bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-slate-700 shadow-inner transition-colors ${className}`}
+        className={`shrink-0 inline-flex items-center p-1 rounded-full bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-slate-700 shadow-inner transition-colors ${className}`}
         role="group"
         aria-label="Theme selector"
       >
@@ -78,7 +78,7 @@ export const ThemeToggle = ({ variant = 'segmented', className = '' }) => {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`p-2 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
+      className={`shrink-0 p-2 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
         isDark
           ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
           : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'

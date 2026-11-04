@@ -41,6 +41,46 @@ const walletTransactionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Consultation',
   },
+  currency: {
+    type: String,
+    default: 'INR',
+  },
+  // Multi-Razorpay Account tracking
+  razorpayAccountId: {
+    type: String,
+  },
+  accountCode: {
+    type: String,
+    enum: ['RAZORPAY_1', 'RAZORPAY_2', 'RAZORPAY_3', 'UNKNOWN'],
+    default: 'RAZORPAY_1',
+    index: true,
+  },
+  transactionType: {
+    type: String,
+    default: 'TOPUP',
+    index: true,
+  },
+  internalTransactionId: {
+    type: String,
+    index: true,
+  },
+  providerOrderId: {
+    type: String,
+    index: true,
+  },
+  providerPaymentId: {
+    type: String,
+    index: true,
+  },
+  providerPayoutId: {
+    type: String,
+    index: true,
+  },
+  mode: {
+    type: String,
+    enum: ['test', 'live', 'unknown'],
+    default: 'test',
+  },
   completedAt: {
     type: Date,
   }

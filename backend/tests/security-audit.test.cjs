@@ -516,6 +516,7 @@ async function runTests() {
       specialty: 'Astrology',
       pricePerMinute: 30,
       approvalStatus: 'approved',
+      verificationStatus: 'APPROVED',
       isVerified: true
     });
 
@@ -527,6 +528,7 @@ async function runTests() {
       specialty: 'Tarot',
       pricePerMinute: 40,
       approvalStatus: 'approved',
+      verificationStatus: 'APPROVED',
       isVerified: true
     });
 
@@ -844,6 +846,7 @@ async function runTests() {
       rates: { chat: 10, audio: 15, video: 30 },
       pricePerMinute: 10,
       approvalStatus: 'approved',
+      verificationStatus: 'APPROVED',
       isVerified: true
     });
 
@@ -930,6 +933,19 @@ async function runTests() {
       JWT_TEST_SECRET,
       { expiresIn: '1h' }
     );
+
+    // Create completed consultation to provide available payout balance (₹500 >= ₹100 minimum)
+    await Consultation.create({
+      user: activeUser._id,
+      expert: bankExpert._id,
+      type: 'chat',
+      cost: 500,
+      expertEarning: 400,
+      durationInMinutes: 20,
+      startTime: new Date(),
+      status: 'completed',
+      paymentStatus: 'paid'
+    });
 
     // 10.2 Submitting bank details WITHOUT passbook image is rejected (400)
     const missingPassbookRes = await request({

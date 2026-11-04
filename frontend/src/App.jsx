@@ -58,6 +58,17 @@ import ExpertSettings from './pages/expert/ExpertSettings';
 import ExpertNotifications from './pages/expert/ExpertNotifications';
 import IncomingConsultationAlert from './components/IncomingConsultationAlert';
 
+// Marketplace Context & Pages
+import { CartProvider } from './context/CartContext';
+import MarketplaceHome from './pages/marketplace/MarketplaceHome';
+import MarketplaceCatalog from './pages/marketplace/MarketplaceCatalog';
+import ProductDetails from './pages/marketplace/ProductDetails';
+import Cart from './pages/marketplace/Cart';
+import OrderSuccess from './pages/marketplace/OrderSuccess';
+import MyPurchases from './pages/marketplace/MyPurchases';
+import SellerDashboard from './pages/marketplace/SellerDashboard';
+import AddProduct from './pages/marketplace/AddProduct';
+
 import './index.css';
 
 
@@ -83,11 +94,12 @@ function App() {
     <AuthProvider>
       <PlatformSettingsProvider>
         <Router>
-          <ThemeProvider>
-            <ScrollToTop />
-            <PlatformHeaderManager />
-          <IncomingConsultationAlert />
-        <Routes>
+          <CartProvider>
+            <ThemeProvider>
+              <ScrollToTop />
+              <PlatformHeaderManager />
+              <IncomingConsultationAlert />
+              <Routes>
           {/* Guest-Only Auth Routes (Logged-in users automatically redirected to dashboard) */}
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<Login />} />
@@ -118,6 +130,21 @@ function App() {
           <Route path="/community" element={<Community />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+
+          {/* Digital Marketplace - Public Browsing */}
+          <Route path="/marketplace" element={<MarketplaceHome />} />
+          <Route path="/marketplace/catalog" element={<MarketplaceCatalog />} />
+          <Route path="/marketplace/products/:slugOrId" element={<ProductDetails />} />
+
+          {/* Digital Marketplace - Unified User & Expert Commerce */}
+          <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT']} />}>
+            <Route path="/marketplace/cart" element={<Cart />} />
+            <Route path="/marketplace/order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="/marketplace/purchases" element={<MyPurchases />} />
+            <Route path="/marketplace/seller" element={<SellerDashboard />} />
+            <Route path="/marketplace/sell" element={<AddProduct />} />
+            <Route path="/marketplace/edit/:id" element={<AddProduct />} />
+          </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT', 'ADMIN']} />}>
             <Route path="/experts" element={<Experts />} />
@@ -163,7 +190,8 @@ function App() {
           </Route>
 
         </Routes>
-          </ThemeProvider>
+            </ThemeProvider>
+          </CartProvider>
         </Router>
       </PlatformSettingsProvider>
     </AuthProvider>

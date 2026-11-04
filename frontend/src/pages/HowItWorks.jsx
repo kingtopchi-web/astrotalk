@@ -131,7 +131,7 @@ export default function HowItWorks() {
         </section>
 
         {/* 4 Steps Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section className="py-20 px-3 sm:px-5 lg:px-6 max-w-screen-2xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Step-by-Step Experience</h2>
             <p className="text-slate-500 mt-2">Transparent, private, and instantaneous consultation from anywhere.</p>
@@ -170,7 +170,7 @@ export default function HowItWorks() {
 
         {/* Consultation Modes */}
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white border-y border-slate-200/80">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
             <div className="text-center mb-16">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200/60">
                 Choose Your Medium

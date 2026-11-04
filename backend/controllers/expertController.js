@@ -1,6 +1,10 @@
 const Expert = require('../models/Expert');
 const Consultation = require('../models/Consultation');
 const Message = require('../models/Message');
+const PayoutTransaction = require('../models/PayoutTransaction');
+const Setting = require('../models/Setting');
+const crypto = require('crypto');
+const accountService = require('../services/RazorpayAccountService');
 
 // GET /api/expert/profile
 exports.getMyExpertProfile = async (req, res) => {
@@ -272,12 +276,24 @@ exports.getEarnings = async (req, res) => {
 
     const totalEarnings = history.reduce((sum, item) => sum + item.amount, 0);
 
-    // Mock available payout for now
-    const availablePayout = totalEarnings;
+    // Compute payouts already requested or processed
+    const existingPayouts = await PayoutTransaction.find({
+      expert: expertId,
+      status: { $in: ['PENDING', 'QUEUED', 'PROCESSING', 'PROCESSED'] }
+    });
+    const totalWithdrawnOrPending = existingPayouts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const availablePayout = Math.max(0, Number((totalEarnings - totalWithdrawnOrPending).toFixed(2)));
+
+    const globalSetting = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    const minPayoutAmount = (globalSetting && typeof globalSetting.minPayoutAmount === 'number' && globalSetting.minPayoutAmount > 0)
+      ? Number(globalSetting.minPayoutAmount)
+      : 100;
 
     res.json({
       totalEarnings,
       availablePayout,
+      minPayoutAmount,
+      totalWithdrawn: totalWithdrawnOrPending,
       history
     });
   } catch (error) {
@@ -306,20 +322,105 @@ exports.requestPayout = async (req, res) => {
       });
     }
 
+    const holderName = (expert.bankDetails.accountName || expert.bankDetails.accountHolderName || expert.name || '').trim();
+
+    if (!expert.bankDetails.accountNumber || !expert.bankDetails.ifscCode || !holderName) {
+      return res.status(400).json({
+        message: 'Bank details are incomplete. Please verify account number, IFSC code, and account holder name.'
+      });
+    }
+
+    // Check existing pending payout request to avoid duplicate concurrent pending requests
+    const activePending = await PayoutTransaction.findOne({
+      expert: expert._id,
+      status: { $in: ['PENDING', 'QUEUED', 'PROCESSING'] }
+    });
+    if (activePending) {
+      return res.status(400).json({
+        message: `You already have an active pending payout request of ₹${activePending.amount} (Ref: ${activePending.internalTransactionId}). Please wait for it to be processed.`
+      });
+    }
+
+    // Compute available balance
+    const completedConsultations = await Consultation.find({
+      expert: expert._id,
+      status: 'completed'
+    });
+    const totalEarnings = completedConsultations.reduce((sum, c) => {
+      if (c.isFree) return sum;
+      return sum + Number(c.expertEarning !== undefined ? c.expertEarning : (c.cost * 0.8) || 0);
+    }, 0);
+
+    const existingPayouts = await PayoutTransaction.find({
+      expert: expert._id,
+      status: { $in: ['PENDING', 'QUEUED', 'PROCESSING', 'PROCESSED'] }
+    });
+
+    const totalWithdrawnOrPending = existingPayouts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const availablePayout = Math.max(0, Math.floor(totalEarnings - totalWithdrawnOrPending));
+
+    const globalSetting = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
+    const minPayoutAmount = (globalSetting && typeof globalSetting.minPayoutAmount === 'number' && globalSetting.minPayoutAmount > 0)
+      ? Number(globalSetting.minPayoutAmount)
+      : 100;
+
+    if (availablePayout < minPayoutAmount) {
+      return res.status(400).json({
+        message: `Minimum payout request amount is ₹${minPayoutAmount}. Current available balance is ₹${availablePayout}.`,
+        minPayoutAmount,
+        availablePayout
+      });
+    }
+
+    const defaultPayoutAccount = globalSetting?.defaultPayoutAccount || 'RAZORPAY_1';
+
+    const internalTransactionId = `PAYOUT_${Date.now()}_${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const idempotencyKey = `IDEMP_${expert._id}_${availablePayout}_${Date.now()}`;
+
+    // Create PayoutTransaction record in database
+    const payoutRecord = new PayoutTransaction({
+      expert: expert._id,
+      amount: availablePayout,
+      currency: 'INR',
+      accountCode: defaultPayoutAccount,
+      status: 'PENDING',
+      internalTransactionId,
+      idempotencyKey,
+      bankDetails: {
+        accountHolderName: holderName,
+        accountNumber: expert.bankDetails.accountNumber,
+        ifscCode: expert.bankDetails.ifscCode,
+        bankName: expert.bankDetails.bankName,
+        upiId: expert.bankDetails.upiId
+      },
+      notes: {
+        requestedVia: 'expert_dashboard',
+        expertName: expert.name
+      }
+    });
+
+    await payoutRecord.save();
+
+    // Dispatch real-time notification to Administrator
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
     sendNotification({
       recipientRole: 'ADMIN',
       recipientModel: 'Admin',
       title: 'Expert Payout Request',
-      message: `Expert ${expert.name || 'Expert'} has requested a payout of earnings.`,
-      actionText: 'Process payout',
-      link: '/transactions',
+      message: `${expert.name || 'Expert'} has requested a payout of ₹${availablePayout} to bank account ending with ****${expert.bankDetails.accountNumber.slice(-4)}.`,
+      actionText: 'Review & Approve Payout',
+      link: '/razorpay-accounts',
       type: 'payout_request',
       badge: 'Payout'
     }, io).catch(e => console.error(e));
 
-    res.json({ message: 'Payout requested successfully', bankVerificationStatus: expert.bankDetails.verificationStatus });
+    res.json({
+      success: true,
+      message: `Payout request of ₹${availablePayout} submitted successfully!`,
+      payoutId: payoutRecord.internalTransactionId,
+      amount: availablePayout
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

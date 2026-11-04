@@ -35,7 +35,12 @@ const {
   getRevenue,
   getSettings,
   updateSettings,
-  globalSearch
+  globalSearch,
+  getAdministrators,
+  createAdministrator,
+  updateAdministratorStatus,
+  updateAdministratorPassword,
+  deleteAdministrator
 } = require('../controllers/adminController');
 
 const {
@@ -64,6 +69,13 @@ router.patch('/profile', updateAdminProfile);
 // Settings
 router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
+
+// Administrators Management
+router.get('/administrators', getAdministrators);
+router.post('/administrators', createAdministrator);
+router.patch('/administrators/:id/status', updateAdministratorStatus);
+router.patch('/administrators/:id/password', updateAdministratorPassword);
+router.delete('/administrators/:id', deleteAdministrator);
 
 // Sidebar stats (lightweight)
 router.get('/sidebar-stats', getSidebarStats);

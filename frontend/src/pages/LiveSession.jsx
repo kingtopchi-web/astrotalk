@@ -5,6 +5,7 @@ import { createSocket } from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
 import ReviewForm from '../components/ReviewForm';
 import { soundService } from '../utils/soundService';
+import { getApiUrl } from '../utils/apiConfig';
 
 function LiveSession() {
   const { id: consultationId } = useParams();
@@ -90,14 +91,14 @@ function LiveSession() {
     try {
       const token = localStorage.getItem('token');
       // Fetch consultation details
-      const res = await axios.get(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}`, {
+      const res = await axios.get(getApiUrl(`/bookings/${consultationId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setConsultation(res.data);
       setRemoteUser(isExpert ? res.data.user : res.data.expert);
 
       // Fetch video session status
-      const statusRes = await axios.get(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/status`, {
+      const statusRes = await axios.get(getApiUrl(`/video/sessions/${consultationId}/status`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -129,17 +130,17 @@ function LiveSession() {
       // If incoming, don't join until accepted!
       if (!incomingFlag) {
         if (isExpert) {
-           await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
-           await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(getApiUrl(`/video/expert/sessions/${consultationId}/join`), {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(getApiUrl(`/video/expert/sessions/${consultationId}/start`), {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
         } else {
-           await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+           await axios.post(getApiUrl(`/video/sessions/${consultationId}/join`), {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
         }
       }
       
       // Fetch user wallet balance for pay-as-you-go live metering
       if (!isExpert) {
         try {
-          const wRes = await axios.get('https://experthub.nextgoodtechnologies.in/api/wallet', {
+          const wRes = await axios.get(getApiUrl('/wallet'), {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (wRes.data && typeof wRes.data.balance === 'number') {
@@ -163,7 +164,7 @@ function LiveSession() {
       soundService.stopRing();
       const token = localStorage.getItem('token');
       // Verify consultation has not ended before accepting
-      const checkRes = await axios.get(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}`, {
+      const checkRes = await axios.get(getApiUrl(`/bookings/${consultationId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (checkRes.data?.status === 'completed' || checkRes.data?.status === 'cancelled') {
@@ -173,10 +174,10 @@ function LiveSession() {
         return;
       }
       if (isExpert) {
-         await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
-         await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/start`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(getApiUrl(`/video/expert/sessions/${consultationId}/join`), {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(getApiUrl(`/video/expert/sessions/${consultationId}/start`), {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
       } else {
-         await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+         await axios.post(getApiUrl(`/video/sessions/${consultationId}/join`), {}, { headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
       }
       setCallAccepted(true);
     } catch (err) {
@@ -226,6 +227,9 @@ function LiveSession() {
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
         peerConnectionRef.current = null;
+      }
+      if (!isEndingRef.current) {
+        endCall(false, seconds);
       }
       if (!isExpert) {
         setShowEndModal(false);
@@ -566,7 +570,7 @@ function LiveSession() {
     // Heartbeat
     const heartbeat = setInterval(() => {
        const token = localStorage.getItem('token');
-       axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/heartbeat`, {}, {
+       axios.post(getApiUrl(`/video/sessions/${consultationId}/heartbeat`), {}, {
          headers: { Authorization: `Bearer ${token}` }
        }).catch(() => {});
     }, 15000);
@@ -610,17 +614,17 @@ function LiveSession() {
       const actualDuration = Number((usedSeconds / 60).toFixed(2)) || 0.01;
 
       if (isExpert) {
-        await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/expert/sessions/${consultationId}/end`, {}, {
+        await axios.post(getApiUrl(`/video/expert/sessions/${consultationId}/end`), {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(()=>{});
       } else {
-        await axios.post(`https://experthub.nextgoodtechnologies.in/api/video/sessions/${consultationId}/leave`, {}, {
+        await axios.post(getApiUrl(`/video/sessions/${consultationId}/leave`), {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(()=>{});
       }
 
       // Call end endpoint to deduct actual duration from wallet
-      await axios.post(`https://experthub.nextgoodtechnologies.in/api/bookings/${consultationId}/end`, {
+      await axios.post(getApiUrl(`/bookings/${consultationId}/end`), {
         actualDuration,
         durationSeconds: usedSeconds
       }, {

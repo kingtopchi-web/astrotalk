@@ -55,9 +55,11 @@ const IncomingConsultationAlert = () => {
     // 1. Incoming Audio/Video Call
     socket.on('VIDEO_USER_WAITING', (data) => {
       console.log('[IncomingAlert] Received VIDEO_USER_WAITING:', data);
+      const rawType = String(data.type || 'audio').toLowerCase();
+      const isVideo = rawType === 'video';
       setIncomingAlert({
         kind: 'call',
-        type: data.type === 'video' ? 'video' : 'audio',
+        type: isVideo ? 'video' : 'audio',
         consultationId: data.consultationId,
         sessionId: data.sessionId,
         userId: data.userId,
@@ -67,14 +69,20 @@ const IncomingConsultationAlert = () => {
       soundService.playIncomingRing();
     });
 
-    // 2. Incoming Chat Consultation Request
+    // 2. Incoming Consultation Request (Dynamically checks if Chat, Audio Call, or Video Call)
     socket.on('new_chat_consultation', (data) => {
       console.log('[IncomingAlert] Received new_chat_consultation:', data);
+      const rawType = String(data.type || data.consultation?.type || 'chat').toLowerCase();
+      const isVideo = rawType === 'video';
+      const isAudio = rawType === 'audio' || rawType === 'call';
+      const isCall = isVideo || isAudio;
+
       setIncomingAlert({
-        kind: 'chat',
-        type: 'chat',
-        consultationId: data.consultationId,
-        partnerId: data.partnerId || data.consultation?.user,
+        kind: isCall ? 'call' : 'chat',
+        type: isVideo ? 'video' : isAudio ? 'audio' : 'chat',
+        consultationId: data.consultationId || data.consultation?._id,
+        partnerId: data.partnerId || data.consultation?.user?._id || data.consultation?.user,
+        userId: data.partnerId || data.consultation?.user?._id || data.consultation?.user,
         userName: data.userName || data.consultation?.user?.name || 'Client',
         conversationId: data.conversationId,
         isFree: Boolean(data.consultation?.isFree)
@@ -121,11 +129,16 @@ const IncomingConsultationAlert = () => {
     const alert = incomingAlert;
     setIncomingAlert(null);
 
-    if (alert.kind === 'call' || alert.type === 'video' || alert.type === 'audio') {
-      const callType = alert.type === 'video' ? 'video' : 'audio';
+    const rawType = String(alert.type || '').toLowerCase();
+    const isVideoCall = rawType === 'video';
+    const isAudioCall = rawType === 'audio' || rawType === 'call';
+    const isCallSession = alert.kind === 'call' || isVideoCall || isAudioCall;
+
+    if (isCallSession) {
+      const callType = isVideoCall ? 'video' : 'audio';
       navigate(`/live/${alert.consultationId}?type=${callType}&incoming=true`);
-    } else if (alert.kind === 'chat') {
-      const targetUser = alert.partnerId;
+    } else {
+      const targetUser = alert.partnerId || alert.userId;
       navigate(targetUser ? `/expert/messages?user=${targetUser}` : '/expert/messages');
     }
   };
@@ -137,19 +150,22 @@ const IncomingConsultationAlert = () => {
 
     if (!alert) return;
 
+    const rawType = String(alert.type || '').toLowerCase();
+    const isCallSession = alert.kind === 'call' || rawType === 'video' || rawType === 'audio' || rawType === 'call';
+
     // Real-time socket broadcast to immediately update caller's screen
     try {
       if (socketRef.current) {
-        if (alert.kind === 'call') {
+        if (isCallSession) {
           socketRef.current.emit('reject_call', {
             consultationId: alert.consultationId,
-            userId: alert.userId,
+            userId: alert.userId || alert.partnerId,
             reason: 'Call was declined by expert'
           });
         } else {
           socketRef.current.emit('reject_chat', {
             consultationId: alert.consultationId,
-            userId: alert.partnerId,
+            userId: alert.partnerId || alert.userId,
             reason: 'Chat consultation was declined by expert'
           });
         }
@@ -173,8 +189,11 @@ const IncomingConsultationAlert = () => {
     }
   };
 
-  const isVideo = incomingAlert.type === 'video';
-  const isChat = incomingAlert.kind === 'chat';
+  const rawType = String(incomingAlert.type || '').toLowerCase();
+  const isVideo = rawType === 'video';
+  const isAudio = rawType === 'audio' || rawType === 'call';
+  const isCall = isVideo || isAudio || incomingAlert.kind === 'call';
+  const isChat = !isCall;
 
   return (
     <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] w-[92vw] max-w-xl animate-in fade-in slide-in-from-top-4 duration-300">
@@ -183,7 +202,7 @@ const IncomingConsultationAlert = () => {
         {/* Left Pulse Icon */}
         <div className="w-10 h-10 sm:w-11 sm:h-11 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center shrink-0 border border-emerald-500/30 shadow-inner">
           <span className="material-symbols-outlined text-xl sm:text-2xl animate-pulse">
-            {isChat ? 'chat' : isVideo ? 'videocam' : 'call'}
+            {isVideo ? 'videocam' : isAudio ? 'call' : 'chat'}
           </span>
         </div>
 
@@ -191,17 +210,21 @@ const IncomingConsultationAlert = () => {
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center gap-2">
             <h4 className="font-bold text-white text-sm sm:text-base tracking-tight truncate">
-              {isChat
-                ? 'Incoming Chat Request'
-                : isVideo
+              {isVideo
                 ? 'Incoming Video Call'
-                : 'Incoming Audio Call'}
+                : isAudio
+                ? 'Incoming Audio Call'
+                : 'Incoming Chat Request'}
             </h4>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
           </div>
           <p className="text-xs sm:text-sm text-slate-300 truncate mt-0.5">
             <span className="font-semibold text-white">{incomingAlert.userName}</span>{' '}
-            {isChat ? 'is requesting a chat consultation.' : 'is calling for a consultation.'}
+            {isVideo
+              ? 'is calling you (Video Call).'
+              : isAudio
+              ? 'is calling you (Audio Call).'
+              : 'is requesting a chat consultation.'}
           </p>
         </div>
 
@@ -212,9 +235,11 @@ const IncomingConsultationAlert = () => {
             className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-900/40 flex items-center gap-1.5 sm:gap-2 transition-transform active:scale-95 cursor-pointer text-xs sm:text-sm"
           >
             <span className="material-symbols-outlined text-base sm:text-lg">
-              {isChat ? 'chat' : isVideo ? 'videocam' : 'call'}
+              {isVideo ? 'videocam' : isAudio ? 'call' : 'chat'}
             </span>
-            <span>{isChat ? 'Accept Chat' : 'Accept Call'}</span>
+            <span>
+              {isVideo ? 'Accept Video' : isAudio ? 'Accept Call' : 'Accept Chat'}
+            </span>
           </button>
 
           <button

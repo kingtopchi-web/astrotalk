@@ -56,7 +56,7 @@ function Categories() {
       <Header />
 
       <main className="flex-1 w-full pt-20 md:pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
           
           {/* Breadcrumb / Back Navigation */}
           <div className="flex items-center gap-2 mb-6">

@@ -23,6 +23,15 @@ const settingSchema = new mongoose.Schema({
   autoApproveExperts: { type: Boolean, default: false },
   enableInstantBooking: { type: Boolean, default: true },
   
+  // Digital Products Marketplace Settings
+  marketplaceCommissionRate: { type: Number, default: 10 }, // percentage (e.g. 10%)
+  marketplaceAllowedExtensions: {
+    type: [String],
+    default: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg', 'zip', 'rar', 'csv', 'txt', 'mp3', 'mp4']
+  },
+  marketplaceMaxFileSizeMb: { type: Number, default: 50 },
+  marketplaceAutoApprove: { type: Boolean, default: false },
+  
   // Free Chat Settings (Dynamic Admin Control)
   enableFreeChat: { type: Boolean, default: true },
   freeChatDurationMinutes: { type: Number, default: 5 }, // Admin sets dynamic duration in minutes
@@ -42,11 +51,46 @@ const settingSchema = new mongoose.Schema({
   smsSessionReminders: { type: Boolean, default: true },
   adminAlertWeeklyDigest: { type: Boolean, default: true },
   
-  // Payments
+  // Payments & Multi-Razorpay Account Management
   paymentGateway: { type: String, default: 'Razorpay' },
   gatewayMode: { type: String, default: 'test' },
   payoutCycle: { type: String, default: 'weekly' },
   minPayoutAmount: { type: Number, default: 1000 },
+  defaultPaymentAccount: {
+    type: String,
+    enum: ['RAZORPAY_1', 'RAZORPAY_2', 'RAZORPAY_3'],
+    default: 'RAZORPAY_1'
+  },
+  defaultPayoutAccount: {
+    type: String,
+    enum: ['RAZORPAY_1', 'RAZORPAY_2', 'RAZORPAY_3'],
+    default: 'RAZORPAY_1'
+  },
+  enablePaymentFallback: {
+    type: Boolean,
+    default: false
+  },
+  razorpayAccounts: [
+    {
+      accountCode: {
+        type: String,
+        enum: ['RAZORPAY_1', 'RAZORPAY_2', 'RAZORPAY_3'],
+        required: true
+      },
+      displayName: { type: String, default: '' },
+      isEnabled: { type: Boolean, default: true },
+      payoutEnabled: { type: Boolean, default: false },
+      updatedAt: { type: Date, default: Date.now }
+    }
+  ],
+  razorpayAuditLogs: [
+    {
+      action: { type: String },
+      changedBy: { type: String },
+      details: { type: mongoose.Schema.Types.Mixed },
+      timestamp: { type: Date, default: Date.now }
+    }
+  ],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Setting', settingSchema);

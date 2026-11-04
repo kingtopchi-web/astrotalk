@@ -1054,3 +1054,149 @@ exports.globalSearch = async (req, res) => {
   }
 };
 
+// ==========================================
+// ADMINISTRATORS MANAGEMENT CONTROLLERS
+// ==========================================
+
+// GET /api/admin/administrators
+exports.getAdministrators = async (req, res) => {
+  try {
+    const admins = await Admin.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.json(admins);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching administrators', error: error.message });
+  }
+};
+
+// POST /api/admin/administrators
+exports.createAdministrator = async (req, res) => {
+  try {
+    const { name, email, password, mobile, role } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Administrator full name is required' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: 'Email address (e.g. Gmail) is required' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const existingAdmin = await Admin.findOne({ email: normalizedEmail });
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'An administrator with this email already exists' });
+    }
+
+    const newAdmin = new Admin({
+      name: name.trim(),
+      email: normalizedEmail,
+      password, // hashed automatically by Admin pre('save') hook
+      mobile: mobile ? mobile.trim() : '',
+      role: role && ['ADMIN', 'SUPER_ADMIN'].includes(role) ? role : 'ADMIN',
+      status: 'ACTIVE'
+    });
+
+    await newAdmin.save();
+
+    const created = await Admin.findById(newAdmin._id).select('-password');
+    res.status(201).json({
+      message: 'Administrator account created successfully. They can now log in to the admin panel with these credentials.',
+      admin: created
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating administrator', error: error.message });
+  }
+};
+
+// PATCH /api/admin/administrators/:id/status
+exports.updateAdministratorStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['ACTIVE', 'SUSPENDED'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Must be ACTIVE or SUSPENDED.' });
+    }
+
+    // Safety: Admin cannot suspend themselves
+    if (req.user && req.user._id && req.user._id.toString() === id.toString()) {
+      return res.status(400).json({ message: 'You cannot suspend your own administrator account' });
+    }
+
+    const admin = await Admin.findByIdAndUpdate(
+      id,
+      { $set: { status } },
+      { new: true }
+    ).select('-password');
+
+    if (!admin) {
+      return res.status(404).json({ message: 'Administrator not found' });
+    }
+
+    res.json({ message: `Administrator status updated to ${status}`, admin });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating administrator status', error: error.message });
+  }
+};
+
+// PATCH /api/admin/administrators/:id/password
+exports.updateAdministratorPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Administrator not found' });
+    }
+
+    admin.password = newPassword; // hashed automatically on save
+    await admin.save();
+
+    res.json({ message: 'Administrator password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating password', error: error.message });
+  }
+};
+
+// DELETE /api/admin/administrators/:id
+exports.deleteAdministrator = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Safety: Admin cannot delete themselves
+    if (req.user && req.user._id && req.user._id.toString() === id.toString()) {
+      return res.status(400).json({ message: 'You cannot delete your own administrator account' });
+    }
+
+    // Safety: Ensure at least one active admin remains in system
+    const activeAdminCount = await Admin.countDocuments({ status: 'ACTIVE' });
+    const targetAdmin = await Admin.findById(id);
+    if (targetAdmin?.status === 'ACTIVE' && activeAdminCount <= 1) {
+      return res.status(400).json({ message: 'Cannot delete the only remaining active administrator in the system' });
+    }
+
+    const deleted = await Admin.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Administrator not found' });
+    }
+
+    res.json({ message: 'Administrator account deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting administrator', error: error.message });
+  }
+};
+
+

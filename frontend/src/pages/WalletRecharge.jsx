@@ -99,7 +99,7 @@ function WalletRecharge() {
 
       // 2. Open Razorpay
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.keyId || 'rzp_test_YourTestKey',
+        key: orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_YourTestKey',
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'ExpertHub Wallet',

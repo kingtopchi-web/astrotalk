@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Settings as SettingsIcon, Sliders,
   Save, CheckCircle, RefreshCw, Mail, Phone,
-  Percent, Clock, AlertCircle, MapPin
+  Percent, Clock, AlertCircle, MapPin, CreditCard, ArrowRight
 } from 'lucide-react';
 import { LOCAL_API_URL, PROD_API_URL, isLocalhost } from '../utils/apiConfig';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('general');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -29,6 +31,7 @@ export default function Settings() {
     enableFreeChat: true,
     freeChatDurationMinutes: '5',
     minimumExpertDistanceKm: '0',
+    minPayoutAmount: '100',
     
     // Security
     sessionTimeoutMinutes: '60',
@@ -126,6 +129,7 @@ export default function Settings() {
   const tabs = [
     { id: 'general', label: 'General', icon: Sliders },
     { id: 'consultation', label: 'Consultations & Rates', icon: Percent },
+    { id: 'razorpay', label: 'Razorpay Multi-Account', icon: CreditCard },
   ];
 
   return (
@@ -337,6 +341,32 @@ export default function Settings() {
                   </p>
                 </div>
 
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard size={16} className="text-emerald-600" />
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Minimum Expert Payout (₹)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-600">₹</span>
+                    <input
+                      type="number"
+                      name="minPayoutAmount"
+                      value={formData.minPayoutAmount ?? '100'}
+                      onChange={handleChange}
+                      min="1"
+                      step="10"
+                      placeholder="e.g. 100"
+                      className="w-36 px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                    />
+                    <span className="text-sm text-slate-500">Minimum balance required for withdrawal</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Minimum earnings threshold an expert must reach before they are allowed to submit a payout request.
+                  </p>
+                </div>
+
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-800">Auto-Approve Expert Applications</p>
@@ -416,6 +446,46 @@ export default function Settings() {
                     />
                     <span className="text-xs font-bold text-slate-600">Minutes</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. RAZORPAY MULTI-ACCOUNT TAB */}
+          {activeTab === 'razorpay' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Multi-Razorpay Account Management</h2>
+                <p className="text-sm text-slate-500">
+                  Manage up to 3 independent merchant accounts, configure default routing for customer payments vs expert payouts, test connections, and view account-wise volume reports.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/60 to-indigo-50/60 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">
+                      <CreditCard size={13} />
+                      <span>Dedicated Management Center</span>
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mt-2">
+                      Full-Featured Razorpay Routing & Reporting
+                    </h3>
+                    <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
+                      Configure and test all 3 merchant accounts (RAZORPAY_1, RAZORPAY_2, RAZORPAY_3), select payment vs payout routing, inspect live connection latency, view webhook endpoints, and inspect transaction volume analytics.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/razorpay-accounts')}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
+                  >
+                    <span>Open Razorpay Accounts Dashboard</span>
+                    <ArrowRight size={16} />
+                  </button>
                 </div>
               </div>
             </div>

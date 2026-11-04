@@ -1,3 +1,4 @@
+const { escapeRegex } = require('../utils/searchHelper');
 const ContactInquiry = require('../models/ContactInquiry');
 const Setting = require('../models/Setting');
 const { sendNotification } = require('../utils/notificationDispatcher');
@@ -159,7 +160,7 @@ exports.getInquiries = async (req, res) => {
     }
 
     if (search && search.trim()) {
-      const s = search.trim();
+      const s = escapeRegex(search);
       query.$or = [
         { name: { $regex: s, $options: 'i' } },
         { email: { $regex: s, $options: 'i' } },

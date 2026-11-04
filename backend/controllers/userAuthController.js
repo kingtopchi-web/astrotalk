@@ -424,14 +424,18 @@ const sendAuthOtp = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    // Save or update OTP in database
+    // Save or update OTP in database with reset attempts counter
     await Otp.findOneAndUpdate(
       { email: normalizedEmail, purpose: cleanPurpose.toUpperCase() },
-      { otp, expiresAt },
+      { otp, expiresAt, attempts: 0 },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    console.log(`🔐 [AUTH OTP] Generated OTP for ${normalizedEmail} [${cleanPurpose.toUpperCase()}]: ${otp}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🔐 [AUTH OTP DEV] Generated OTP for ${normalizedEmail} [${cleanPurpose.toUpperCase()}]: ${otp}`);
+    } else {
+      console.log(`🔐 [AUTH OTP] Dispatched verification code to ${normalizedEmail} [${cleanPurpose.toUpperCase()}]`);
+    }
 
     const isRegister = cleanPurpose === 'register';
     const emailSubject = isRegister
@@ -501,15 +505,25 @@ const verifyOtpLogin = async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
     const cleanOtp = String(otp).trim();
 
-    const otpRecord = await Otp.findOne({
+    const activeOtp = await Otp.findOne({
       email: normalizedEmail,
       purpose: 'LOGIN',
-      otp: cleanOtp,
       expiresAt: { $gt: new Date() }
     });
 
-    if (!otpRecord) {
-      return res.status(400).json({ message: 'Invalid or expired OTP. Please enter the correct OTP or request a new one.' });
+    if (!activeOtp) {
+      return res.status(400).json({ message: 'No active verification code found or code expired. Please request a new OTP.' });
+    }
+
+    if (activeOtp.otp !== cleanOtp) {
+      activeOtp.attempts = (activeOtp.attempts || 0) + 1;
+      if (activeOtp.attempts >= 5) {
+        await Otp.deleteMany({ email: normalizedEmail, purpose: 'LOGIN' });
+        return res.status(429).json({ message: 'Too many incorrect attempts. This OTP has been invalidated for security. Please request a new one.' });
+      }
+      await activeOtp.save();
+      const attemptsLeft = 5 - activeOtp.attempts;
+      return res.status(400).json({ message: `Invalid verification code. ${attemptsLeft} attempt(s) remaining.` });
     }
 
     // Delete verified OTP
@@ -575,15 +589,25 @@ const verifyOtpRegister = async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
     const cleanOtp = String(otp).trim();
 
-    const otpRecord = await Otp.findOne({
+    const activeOtp = await Otp.findOne({
       email: normalizedEmail,
       purpose: 'REGISTER',
-      otp: cleanOtp,
       expiresAt: { $gt: new Date() }
     });
 
-    if (!otpRecord) {
-      return res.status(400).json({ message: 'Invalid or expired OTP. Please enter the correct OTP or request a new one.' });
+    if (!activeOtp) {
+      return res.status(400).json({ message: 'No active verification code found or code expired. Please request a new OTP.' });
+    }
+
+    if (activeOtp.otp !== cleanOtp) {
+      activeOtp.attempts = (activeOtp.attempts || 0) + 1;
+      if (activeOtp.attempts >= 5) {
+        await Otp.deleteMany({ email: normalizedEmail, purpose: 'REGISTER' });
+        return res.status(429).json({ message: 'Too many incorrect attempts. This OTP has been invalidated for security. Please request a new one.' });
+      }
+      await activeOtp.save();
+      const attemptsLeft = 5 - activeOtp.attempts;
+      return res.status(400).json({ message: `Invalid verification code. ${attemptsLeft} attempt(s) remaining.` });
     }
 
     // Delete verified OTP

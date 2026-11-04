@@ -29,5 +29,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Uploads & User files
+uploads/
+**/uploads/
+
 # Test files (scratch)
 backend/test-sockets.js

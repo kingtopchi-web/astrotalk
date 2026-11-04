@@ -265,7 +265,7 @@ function Blog() {
             Actionable advice, guides, and insights to help you make informed decisions across life, career, and wellbeing.
           </p>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pb-16">
           {blogContent}
         </div>
       </main>

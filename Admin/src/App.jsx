@@ -24,6 +24,9 @@ import Refunds from './pages/Refunds';
 import Revenue from './pages/Revenue';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
+import RazorpayManagement from './pages/RazorpayManagement';
+import MarketplaceManagement from './pages/MarketplaceManagement';
+import Administrators from './pages/Administrators';
 
 function App() {
   React.useEffect(() => {
@@ -71,12 +74,17 @@ function App() {
           <Route path="/transactions" element={<TransactionsList />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/revenue" element={<Revenue />} />
+          <Route path="/razorpay-accounts" element={<RazorpayManagement />} />
+
+          {/* MARKETPLACE */}
+          <Route path="/marketplace-management" element={<MarketplaceManagement />} />
 
           {/* SYSTEM */}
           <Route path="/settings" element={<Settings />} />
 
           {/* ADMIN */}
           <Route path="/profile" element={<AdminProfile />} />
+          <Route path="/administrators" element={<Administrators />} />
 
           {/* Default */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

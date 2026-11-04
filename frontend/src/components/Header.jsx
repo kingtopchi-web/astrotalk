@@ -6,9 +6,11 @@ import NotificationDropdown from './NotificationDropdown';
 import LogoutModal from './LogoutModal';
 import { getApiUrl } from '../utils/apiConfig';
 import ThemeToggle from './ThemeToggle';
+import { useCart } from '../context/CartContext';
 
 function Header() {
   const { auth, logout } = useAuth();
+  const { totalItems } = useCart();
   const { platformName, supportEmail, contactPhone } = usePlatformSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,6 +40,22 @@ function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Close mobile menu on route change & prevent background scroll
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   const dropdownRef = useRef(null);
   const [categories, setCategories] = useState([]);
@@ -88,11 +106,25 @@ function Header() {
       ]
     };
 
+    // Digital Products Marketplace Dropdown
+    const marketplaceMenu = {
+      name: 'Marketplace',
+      path: '/marketplace',
+      dropdown: [
+        { name: 'Marketplace Home', path: '/marketplace', icon: 'storefront' },
+        { name: 'Browse Digital Products', path: '/marketplace/catalog', icon: 'apps' },
+        { name: 'Sell a Digital Product', path: '/marketplace/sell', icon: 'sell' },
+        { name: 'Seller Hub', path: '/marketplace/seller', icon: 'inventory_2' },
+        { name: 'My Purchases', path: '/marketplace/purchases', icon: 'cloud_download' },
+      ]
+    };
+
     // Core public links (without login)
     const publicLinks = [
       { name: 'Find Experts', path: '/experts' },
       categoriesMenu,
       consultationsMenu,
+      marketplaceMenu,
       { name: 'Free Services', path: '/free-services' },
       { name: 'Blog / Resources', path: '/blog' },
       { name: 'Contact', path: '/contact' },
@@ -107,6 +139,7 @@ function Header() {
         { name: 'Scheduled Consultations', path: '/expert/consultations' },
         { name: 'Upcoming Consultations', path: '/expert/consultations' },
         { name: 'Earnings', path: '/expert/earnings' },
+        marketplaceMenu,
         { name: 'Blog / Resources', path: '/blog' },
       ];
     }
@@ -124,6 +157,7 @@ function Header() {
       { name: 'Find Experts', path: '/experts' },
       categoriesMenu,
       consultationsMenu,
+      marketplaceMenu,
       { name: 'Free Services', path: '/free-services' },
       { name: 'Blog / Resources', path: '/blog' },
     ];
@@ -133,28 +167,28 @@ function Header() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 glass-panel-dark border-b border-border transition-all duration-300">
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 h-[72px] flex items-center justify-between">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 h-[72px] flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo & Mobile Back to Home */}
-        <div className="flex items-center flex-1 gap-2.5">
+        <div className="flex items-center shrink-0 gap-2 sm:gap-2.5">
           {location.pathname !== '/' && (
             <Link
               to="/"
-              className="md:hidden flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
+              className="lg:hidden flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
               title="Back to Home"
             >
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span>Home</span>
+              <span className="hidden sm:inline">Home</span>
             </Link>
           )}
-          <Link to="/" className="flex items-center gap-3 group select-none py-1">
-            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+          <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group select-none py-1 shrink-0">
+            <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
               <img 
                 src="/logo.png" 
                 alt={`${platformName || 'ExpertHub'} Logo`} 
                 className="w-full h-full object-cover" 
               />
             </div>
-            <span className="font-heading font-black text-xl sm:text-2xl text-on-background tracking-tight group-hover:text-primary transition-colors flex items-center gap-1">
+            <span className="font-heading font-black text-lg sm:text-xl xl:text-2xl text-on-background tracking-tight group-hover:text-primary transition-colors flex items-center gap-1 shrink-0">
               {platformName ? (
                 platformName
               ) : (
@@ -168,35 +202,35 @@ function Header() {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-8" ref={dropdownRef}>
+        <nav className="hidden lg:flex items-center justify-center gap-3 xl:gap-5 2xl:gap-7 whitespace-nowrap mx-1 xl:mx-3 min-w-0" ref={dropdownRef}>
           {navLinks.map((link, idx) => (
-            <div key={idx} className="relative group h-full flex items-center">
+            <div key={idx} className="relative group h-full flex items-center shrink-0">
               {link.dropdown ? (
                 <button 
                   onClick={() => setDropdownOpen(dropdownOpen === link.name ? null : link.name)}
-                  className="flex items-center font-body font-medium text-sm text-on-surface hover:text-primary transition-colors focus:outline-none h-full py-4"
+                  className="flex items-center gap-1 font-body font-medium text-xs xl:text-sm text-on-surface hover:text-primary transition-colors focus:outline-none h-full py-4 whitespace-nowrap cursor-pointer"
                 >
-                  {link.name} 
+                  <span>{link.name}</span>
                   <span className={`material-symbols-outlined text-[16px] align-middle transition-transform group-hover:rotate-180`}>
                     keyboard_arrow_down
                   </span>
                 </button>
               ) : (
-                <Link to={link.path} className="font-body font-medium text-sm text-on-surface hover:text-primary transition-colors h-full flex items-center py-4">
+                <Link to={link.path} className="font-body font-medium text-xs xl:text-sm text-on-surface hover:text-primary transition-colors h-full flex items-center py-4 whitespace-nowrap">
                   {link.name}
                 </Link>
               )}
               
               {/* Dropdown Menu */}
               {link.dropdown && (
-                <div className="absolute top-[80%] pt-2 left-1/2 -translate-x-1/2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="absolute top-[80%] pt-2 left-1/2 -translate-x-1/2 w-64 xl:w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="bg-surface-card border border-border rounded-2xl shadow-card py-2">
                     {link.dropdown.map((dropItem, dIdx) => (
                       <Link 
                         key={dIdx} 
                         to={dropItem.path} 
                         onClick={() => setDropdownOpen(null)}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface"
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface"
                       >
                         <span className="material-symbols-outlined text-[18px] text-primary">{dropItem.icon}</span>
                         {dropItem.name}
@@ -210,29 +244,53 @@ function Header() {
         </nav>
 
         {/* Right Section (Auth / Profile) */}
-        <div className="hidden md:flex items-center justify-end gap-3.5 flex-1">
+        <div className="hidden lg:flex items-center justify-end gap-2.5 xl:gap-3.5 shrink-0">
           {/* Theme Toggle Button (Only on Home Page) */}
-          {isHomePage && <ThemeToggle variant="segmented" />}
+          {isHomePage && (
+            <div className="shrink-0 flex items-center">
+              <div className="hidden 2xl:block">
+                <ThemeToggle variant="segmented" />
+              </div>
+              <div className="2xl:hidden">
+                <ThemeToggle variant="button" />
+              </div>
+            </div>
+          )}
           
           {!auth.token ? (
-            <div className="flex items-center gap-3">
-              <Link to="/login" className="font-body font-bold text-sm bg-primary text-background hover:bg-primary-light transition-colors px-6 py-2 rounded-full shadow-sm flex items-center gap-2">
+            <div className="flex items-center gap-2 xl:gap-3 shrink-0">
+              <Link to="/login" className="shrink-0 font-body font-bold text-xs xl:text-sm bg-primary text-background hover:bg-primary-light transition-colors px-4 xl:px-6 py-2 rounded-full shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                 <span className="material-symbols-outlined text-[18px]">person</span>
                 Login
               </Link>
             </div>
           ) : (
-             <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+             <div className="flex items-center gap-2 xl:gap-3 shrink-0 relative" ref={dropdownRef}>
 
-               
+               {/* Marketplace Cart */}
+               <Link
+                 to="/marketplace/cart"
+                 className="shrink-0 relative p-2 rounded-full hover:bg-surface-muted text-on-surface hover:text-primary transition-colors flex items-center justify-center"
+                 title="Marketplace Cart"
+               >
+                 <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+                 {totalItems > 0 && (
+                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-indigo-600 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow">
+                     {totalItems > 9 ? '9+' : totalItems}
+                   </span>
+                 )}
+               </Link>
+
                {/* Notifications */}
-               <NotificationDropdown 
-                 role={auth.user?.role || 'USER'} 
-                 viewAllPath={auth.user?.role === 'EXPERT' ? '/expert/notifications' : '/notifications'} 
-               />
+               <div className="shrink-0">
+                 <NotificationDropdown 
+                   role={auth.user?.role || 'USER'} 
+                   viewAllPath={auth.user?.role === 'EXPERT' ? '/expert/notifications' : '/notifications'} 
+                 />
+               </div>
                
                {/* Profile Dropdown Trigger */}
-               <div className="relative group h-full flex items-center">
+               <div className="relative group h-full flex items-center shrink-0">
                  <button 
                    onClick={() => setDropdownOpen(dropdownOpen === 'profile' ? null : 'profile')}
                    className="flex items-center gap-2 focus:outline-none py-4"
@@ -264,6 +322,12 @@ function Header() {
                          <Link to="/expert/dashboard" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
                            <span className="material-symbols-outlined text-[18px] text-primary">dashboard</span> Dashboard
                          </Link>
+                         <Link to="/marketplace/seller" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
+                           <span className="material-symbols-outlined text-[18px] text-primary">inventory_2</span> Marketplace Seller Hub
+                         </Link>
+                         <Link to="/marketplace/purchases" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
+                           <span className="material-symbols-outlined text-[18px] text-primary">cloud_download</span> My Purchased Products
+                         </Link>
                          <Link to="/expert/profile" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
                            <span className="material-symbols-outlined text-[18px] text-primary">person</span> My Profile
                          </Link>
@@ -282,6 +346,12 @@ function Header() {
                          </Link>
                          <Link to="/profile" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
                            <span className="material-symbols-outlined text-[18px] text-primary">person</span> My Profile
+                         </Link>
+                         <Link to="/marketplace/purchases" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
+                           <span className="material-symbols-outlined text-[18px] text-primary">cloud_download</span> My Purchases
+                         </Link>
+                         <Link to="/marketplace/seller" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
+                           <span className="material-symbols-outlined text-[18px] text-primary">inventory_2</span> Marketplace Seller Hub
                          </Link>
                          <Link to="/profile?edit=true" onClick={() => setDropdownOpen(null)} className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-on-surface">
                            <span className="material-symbols-outlined text-[18px] text-primary">edit</span> Edit Profile
@@ -311,19 +381,35 @@ function Header() {
         </div>
 
         {/* Mobile Menu Toggle & Theme */}
-        <div className="md:hidden flex items-center gap-1.5">
-          {isHomePage && <ThemeToggle variant="button" className="p-1.5" />}
+        <div className="lg:hidden flex items-center gap-1.5 shrink-0">
+          {isHomePage && <ThemeToggle variant="button" className="shrink-0 p-1.5" />}
+          
+          <Link
+            to="/marketplace/cart"
+            className="shrink-0 relative p-1.5 rounded-full text-on-surface hover:text-primary transition-colors flex items-center justify-center"
+            title="Cart"
+          >
+            <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 bg-indigo-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                {totalItems > 9 ? '9+' : totalItems}
+              </span>
+            )}
+          </Link>
           
           {auth.token && (
-            <NotificationDropdown 
-              role={auth.user?.role || 'USER'} 
-              viewAllPath={auth.user?.role === 'EXPERT' ? '/expert/notifications' : '/notifications'} 
-            />
+            <div className="shrink-0">
+              <NotificationDropdown 
+                role={auth.user?.role || 'USER'} 
+                viewAllPath={auth.user?.role === 'EXPERT' ? '/expert/notifications' : '/notifications'} 
+              />
+            </div>
           )}
 
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-on-surface-variant p-2 -mr-2"
+            className="shrink-0 text-on-surface-variant p-2 -mr-1 cursor-pointer"
+            aria-label="Toggle navigation menu"
           >
             <span className="material-symbols-outlined text-[28px]">
               {isMobileMenuOpen ? 'close' : 'menu'}
@@ -334,7 +420,7 @@ function Header() {
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-surface border-b border-border shadow-card pt-4 px-4 pb-28 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+        <div className="lg:hidden absolute top-full left-0 w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-surface border-b border-border shadow-card pt-4 px-4 pb-28 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
           {/* Mobile Theme Switcher (Only on Home Page) */}
           {isHomePage && (
             <div className="flex items-center justify-between p-2.5 mb-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">

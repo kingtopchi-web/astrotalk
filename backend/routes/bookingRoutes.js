@@ -170,23 +170,37 @@ const handleStartFreeConsultation = async (req, res) => {
     const { sendNotification } = require('../utils/notificationDispatcher');
 
     if (io) {
-      io.to(`user_${req.user._id}`).emit('new_chat_consultation', {
-        consultationId: consultation._id,
-        type: sessionType,
-        partnerId: expert._id,
-        partnerModel: 'Expert',
-        consultation,
-        conversationId
-      });
-      io.to(`user_${expert._id}`).emit('new_chat_consultation', {
-        consultationId: consultation._id,
-        type: sessionType,
-        partnerId: req.user._id,
-        partnerModel: 'User',
-        userName: req.user.name || 'Client',
-        consultation,
-        conversationId
-      });
+      const isCall = sessionType === 'call' || sessionType === 'audio' || sessionType === 'video';
+      const callType = sessionType === 'video' ? 'video' : 'audio';
+
+      if (isCall) {
+        io.to(`user_${expert._id}`).emit('VIDEO_USER_WAITING', {
+          consultationId: consultation._id,
+          type: callType,
+          userId: req.user._id,
+          userName: req.user.name || 'Client',
+          expertId: expert._id,
+          serviceName: 'Free Audio Consultation'
+        });
+      } else {
+        io.to(`user_${req.user._id}`).emit('new_chat_consultation', {
+          consultationId: consultation._id,
+          type: 'chat',
+          partnerId: expert._id,
+          partnerModel: 'Expert',
+          consultation,
+          conversationId
+        });
+        io.to(`user_${expert._id}`).emit('new_chat_consultation', {
+          consultationId: consultation._id,
+          type: 'chat',
+          partnerId: req.user._id,
+          partnerModel: 'User',
+          userName: req.user.name || 'Client',
+          consultation,
+          conversationId
+        });
+      }
     }
 
     const isAudioCall = sessionType === 'call';
@@ -372,21 +386,35 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
 
     // Emit live socket event to both user and expert so their chat UI auto-refreshes instantly!
     if (io) {
-      io.to(`user_${req.user._id}`).emit('new_chat_consultation', {
-        consultationId: consultation._id,
-        type: schemaType,
-        partnerId: expert._id,
-        partnerModel: 'Expert',
-        consultation
-      });
-      io.to(`user_${expert._id}`).emit('new_chat_consultation', {
-        consultationId: consultation._id,
-        type: schemaType,
-        partnerId: req.user._id,
-        partnerModel: 'User',
-        userName: req.user.name || 'Client',
-        consultation
-      });
+      const isCall = schemaType === 'call' || schemaType === 'audio' || schemaType === 'video';
+      const callType = schemaType === 'video' ? 'video' : 'audio';
+
+      if (isCall) {
+        io.to(`user_${expert._id}`).emit('VIDEO_USER_WAITING', {
+          consultationId: consultation._id,
+          type: callType,
+          userId: req.user._id,
+          userName: req.user.name || 'Client',
+          expertId: expert._id,
+          serviceName: `${callType === 'video' ? 'Video' : 'Audio'} Consultation`
+        });
+      } else {
+        io.to(`user_${req.user._id}`).emit('new_chat_consultation', {
+          consultationId: consultation._id,
+          type: 'chat',
+          partnerId: expert._id,
+          partnerModel: 'Expert',
+          consultation
+        });
+        io.to(`user_${expert._id}`).emit('new_chat_consultation', {
+          consultationId: consultation._id,
+          type: 'chat',
+          partnerId: req.user._id,
+          partnerModel: 'User',
+          userName: req.user.name || 'Client',
+          consultation
+        });
+      }
     }
 
     // 1. Dynamic Notification to User: Booking Confirmed (non-blocking)
@@ -645,7 +673,9 @@ router.post('/:id/end', protect, async (req, res) => {
 
     // Server-side bounds check: never allow client-manipulated duration to exceed elapsed time
     let maxAllowedMinutes = consultation.durationInMinutes || 60;
-    const sessionStartTime = consultation.chatStartedAt || consultation.startTime;
+    const VideoSession = require('../models/VideoSession');
+    const videoSession = await VideoSession.findOne({ consultationId: consultation._id });
+    const sessionStartTime = videoSession?.startedAt || consultation.chatStartedAt || consultation.startTime;
     if (sessionStartTime) {
       const elapsedMs = Date.now() - new Date(sessionStartTime).getTime();
       const elapsedMinutes = Math.max(0.01, elapsedMs / (60 * 1000));
@@ -913,7 +943,6 @@ router.post('/:id/end', protect, async (req, res) => {
     });
 
     // Mark associated VideoSession as COMPLETED
-    const VideoSession = require('../models/VideoSession');
     await VideoSession.updateMany(
       { consultationId: consultation._id },
       { $set: { status: 'COMPLETED', endedAt: new Date() } }

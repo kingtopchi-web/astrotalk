@@ -57,6 +57,7 @@ const notificationSchema = new mongoose.Schema({
       'expert_approved',
       'expert_rejected',
       'expert_reapproval',
+      'consultation_completed',
       'complaint_report',
       'system_alert',
       'general'

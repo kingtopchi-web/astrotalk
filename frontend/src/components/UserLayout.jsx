@@ -37,6 +37,21 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
     document.documentElement.classList.add('light-theme');
   }, []);
 
+  React.useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  React.useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isSidebarOpen]);
+
   const handleLogout = () => {
     setShowLogoutModal(true);
   };

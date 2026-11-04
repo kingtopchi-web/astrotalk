@@ -14,7 +14,12 @@ const ProtectedRoute = ({ allowedRoles }) => {
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // If they are logged in but don't have the right role, redirect to their dashboard or home
     if (user.role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
-    if (user.role === 'EXPERT') return <Navigate to="/expert/dashboard" replace />;
+    if (user.role === 'EXPERT') {
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/profile')) {
+        return <Navigate to="/expert/profile" replace />;
+      }
+      return <Navigate to="/expert/dashboard" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

@@ -22,7 +22,8 @@ import {
   X,
   HelpCircle,
   Mail,
-  Phone
+  Phone,
+  ShoppingBag
 } from 'lucide-react';
 import NotificationDropdown from '../components/NotificationDropdown';
 import LogoutModal from '../components/LogoutModal';
@@ -39,7 +40,24 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
   useEffect(() => {
     // Expert dashboard must never have black background theme
     document.documentElement.classList.add('light-theme');
+  }, []);
 
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -85,6 +103,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
     { name: 'Messages', path: '/expert/messages', icon: <MessageSquare size={20} /> },
     { name: 'Earnings', path: '/expert/earnings', icon: <CreditCard size={20} /> },
     { name: 'Clients', path: '/expert/clients', icon: <Users size={20} /> },
+    { name: 'Marketplace Seller Hub', path: '/marketplace/seller', icon: <ShoppingBag size={20} /> },
   ];
 
   // We don't block render on loading anymore so sidebar appears instantly
