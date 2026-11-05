@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
-import { Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X, Globe, MapPin, Bell } from 'lucide-react';
+import { Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X, Globe, MapPin, Bell, Wallet, MessageSquare } from 'lucide-react';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
 import ThemeToggle from '../components/ThemeToggle';
@@ -102,6 +102,16 @@ function Home() {
   const [freeChatStatus, setFreeChatStatus] = useState(null);
   const [startingFreeChat, setStartingFreeChat] = useState(false);
   const [freeChatNotice, setFreeChatNotice] = useState(null);
+
+  // Direct Consultation / Call Modal states
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [selectedExpert, setSelectedExpert] = useState(null);
+  const [callType, setCallType] = useState('audio'); // 'chat' | 'audio' | 'video'
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [showShortfallModal, setShowShortfallModal] = useState(false);
+  const [shortfallData, setShortfallData] = useState(null);
   const navigate = useNavigate();
   const categoryScrollRef = useRef(null);
 
@@ -476,6 +486,149 @@ function Home() {
     }
   };
 
+  const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
+  const isExpertFreeEligible = (expertId) => {
+    if (!user || user.role !== 'USER' || !expertId) return false;
+    if (!isFreeChatEnabled) return false;
+    const usedList = freeChatStatus?.usedExpertIds || [];
+    const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
+    if (hasUsedToday) return false;
+    if (usedList.includes(expertId)) return false;
+    return true;
+  };
+
+  const isSelectedExpertFree = Boolean(
+    callType === 'audio' && selectedExpert && isExpertFreeEligible(selectedExpert._id)
+  );
+  const isSelectedExpertClaimed = Boolean(
+    selectedExpert && (freeChatStatus?.usedExpertIds || []).includes(selectedExpert._id)
+  );
+  const isDailyLimitReached = Boolean(freeChatStatus?.hasUsedToday);
+  const freeDurationMinutes = freeChatStatus?.freeChatDurationMinutes || 1;
+
+  const fetchUserWallet = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return 0;
+    try {
+      setLoadingWallet(true);
+      const res = await axios.get(getApiUrl('/wallet'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const bal = Number(res.data?.balance || 0);
+      setWalletBalance(bal);
+      return bal;
+    } catch (err) {
+      console.error('Wallet fetch error:', err);
+      return 0;
+    } finally {
+      setLoadingWallet(false);
+    }
+  };
+
+  const getPerMinuteRate = () => {
+    if (!selectedExpert) return 20;
+    if (callType === 'video') return Math.max(20, selectedExpert.rates?.video || selectedExpert.pricePerMinute || 20);
+    if (callType === 'audio') return Math.max(10, selectedExpert.rates?.audio || selectedExpert.pricePerMinute || 10);
+    if (callType === 'chat') return Math.max(5, selectedExpert.rates?.chat || selectedExpert.pricePerMinute || 5);
+    return 20;
+  };
+
+  const openCallModal = async (expert, type) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    if (expert.onlineStatus !== 'online') {
+      setNotifyToast(`${expert.name || 'Expert'} is currently offline. Please send a connect notification.`);
+      setTimeout(() => setNotifyToast(''), 3500);
+      return;
+    }
+
+    setSelectedExpert(expert);
+    setCallType(type);
+    
+    const curBal = await fetchUserWallet();
+    const rate = type === 'video' 
+      ? Math.max(20, expert.rates?.video || expert.pricePerMinute || 20)
+      : type === 'audio' 
+      ? Math.max(10, expert.rates?.audio || expert.pricePerMinute || 10)
+      : Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5);
+
+    // If audio and user has free consultation eligibility for this expert today, allow starting without balance!
+    const isFreeCallEligible = type === 'audio' && isExpertFreeEligible(expert._id);
+
+    // Require at least 1 minute rate to start (only for paid sessions)
+    if (!isFreeCallEligible && curBal < rate) {
+      setShortfallData({
+        currentBalance: curBal,
+        neededAmount: rate,
+        shortfall: Math.ceil(rate - curBal)
+      });
+      setShowShortfallModal(true);
+      return;
+    }
+
+    setShowCallModal(true);
+  };
+
+  const executeSessionBookingAndPayment = async () => {
+    if (!selectedExpert) return;
+    try {
+      setProcessingPayment(true);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const isFreeCall = callType === 'audio' && isExpertFreeEligible(selectedExpert._id);
+
+      // 1. Create booking (Free if eligible, or Pay-As-You-Go with NO upfront deduction)
+      const bookingRes = await axios.post(
+        getApiUrl('/bookings'),
+        {
+          expertId: selectedExpert._id,
+          date: new Date().toISOString(),
+          type: callType === 'audio' ? 'Audio' : callType === 'chat' ? 'Chat' : 'Video',
+          duration: 60,
+          isInstant: true,
+          isFree: isFreeCall
+        },
+        { headers }
+      );
+
+      if (isFreeCall) {
+        setFreeChatStatus(prev => ({
+          ...(prev || {}),
+          usedExpertIds: [...(prev?.usedExpertIds || []), selectedExpert._id],
+          hasUsedToday: true,
+          hasUsedFreeChat: true
+        }));
+      }
+
+      const consultationId = bookingRes.data._id;
+
+      setShowCallModal(false);
+      setShowShortfallModal(false);
+
+      // Instant redirect
+      if (callType === 'chat') {
+        axios.post(
+          getApiUrl('/messages/conversations'),
+          { expertId: selectedExpert._id },
+          { headers }
+        ).catch(() => {});
+        navigate('/messages');
+      } else {
+        navigate(`/live/${consultationId}?type=${callType}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || 'Connection failed');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
   useEffect(() => {
     const fetchSaved = async () => {
       const token = localStorage.getItem('token');
@@ -823,7 +976,19 @@ function Home() {
 
                         {/* Dynamic Consultation Rates */}
                         <div className="grid grid-cols-3 gap-1 w-full mb-4 py-2 px-1 bg-surface-card rounded-xl border border-border/70 text-center">
-                          <div className="flex flex-col items-center justify-center py-0.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (expert.onlineStatus === 'online') {
+                                openCallModal(expert, 'chat');
+                              } else {
+                                handleNotifyExpert(expert._id, expert.name, e);
+                              }
+                            }}
+                            className="flex flex-col items-center justify-center py-0.5 cursor-pointer hover:bg-primary/10 rounded-lg transition-colors"
+                            title="Start Chat Consultation"
+                          >
                             <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                               <MessageCircle size={10} className="text-primary shrink-0" /> Chat
                             </span>
@@ -831,8 +996,20 @@ function Home() {
                               ₹{Math.max(5, expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 5))}
                               <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
                             </span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center py-0.5 border-x border-border/60">
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (expert.onlineStatus === 'online') {
+                                openCallModal(expert, 'audio');
+                              } else {
+                                handleNotifyExpert(expert._id, expert.name, e);
+                              }
+                            }}
+                            className="flex flex-col items-center justify-center py-0.5 border-x border-border/60 cursor-pointer hover:bg-success/10 rounded-lg transition-colors"
+                            title="Start Audio Call Consultation"
+                          >
                             <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                               <Phone size={10} className="text-success shrink-0" /> Audio
                             </span>
@@ -840,8 +1017,20 @@ function Home() {
                               ₹{Math.max(10, expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10))}
                               <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
                             </span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center py-0.5">
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (expert.onlineStatus === 'online') {
+                                openCallModal(expert, 'video');
+                              } else {
+                                handleNotifyExpert(expert._id, expert.name, e);
+                              }
+                            }}
+                            className="flex flex-col items-center justify-center py-0.5 cursor-pointer hover:bg-warning/10 rounded-lg transition-colors"
+                            title="Start Video Call Consultation"
+                          >
                             <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                               <Video size={10} className="text-warning shrink-0" /> Video
                             </span>
@@ -849,7 +1038,7 @@ function Home() {
                               ₹{Math.max(20, expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20))}
                               <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
                             </span>
-                          </div>
+                          </button>
                         </div>
 
                         {/* Action Buttons */}
@@ -859,9 +1048,9 @@ function Home() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/expert/${expert._id}?action=chat`);
+                                openCallModal(expert, 'chat');
                               }}
-                              className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation"
+                              className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
                             >
                               <MessageCircle size={14} className="text-primary" /> Chat
                             </button>
@@ -869,9 +1058,9 @@ function Home() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/expert/${expert._id}?action=audio`);
+                                openCallModal(expert, 'audio');
                               }}
-                              className="flex items-center justify-center gap-1.5 py-2.5 bg-success/15 border border-success/30 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation"
+                              className="flex items-center justify-center gap-1.5 py-2.5 bg-success/15 border border-success/30 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
                             >
                               <Phone size={14} /> Call
                             </button>
@@ -1827,6 +2016,188 @@ function Home() {
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-500/50 text-xs sm:text-sm font-semibold flex items-center gap-2.5 animate-in slide-in-from-bottom-5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
           <span>{notifyToast}</span>
+        </div>
+      )}
+
+      {/* Direct Call / Chat Consultation Modal */}
+      {showCallModal && selectedExpert && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in backdrop-blur-xs">
+          <div className="bg-surface-card dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md overflow-hidden border border-border">
+            <div className="p-3.5 sm:p-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-bold text-base sm:text-lg text-on-background flex items-center gap-2">
+                {callType === 'video' ? (
+                  <Video size={18} className="text-warning"/>
+                ) : callType === 'audio' ? (
+                  <Phone size={18} className="text-emerald-500"/>
+                ) : (
+                  <MessageSquare size={18} className="text-primary" />
+                )}
+                <span>Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} with {selectedExpert.name}</span>
+              </h3>
+              <button 
+                onClick={() => setShowCallModal(false)} 
+                className="text-on-surface-variant hover:text-on-background p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-3.5 sm:p-5 space-y-2.5 sm:space-y-3">
+              {/* Pay as you go Rate Info or Free Chat Banner */}
+              {isSelectedExpertFree ? (
+                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-2.5 sm:p-3 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-0.5">
+                      🎁 1-Time Free Consultation
+                    </span>
+                    <p className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
+                      ₹0 <span className="text-xs sm:text-sm font-medium text-on-surface-variant">/ Free Call</span>
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-on-surface-variant mt-0.5">
+                      Admin limit: {freeDurationMinutes} min{freeDurationMinutes === 1 ? '' : 's'} • Zero wallet deduction
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                      100% Free
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-primary/10 rounded-xl p-2.5 sm:p-3 border border-primary/20 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] sm:text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Consultation Rate</p>
+                      <p className="text-lg sm:text-xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-xs sm:text-sm font-medium text-on-surface-variant"> / min</span></p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                        Per-Second Billing
+                      </span>
+                    </div>
+                  </div>
+                  {callType === 'audio' && (
+                    isSelectedExpertClaimed ? (
+                      <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        ℹ️ You have already used your 1-time free consultation with {selectedExpert?.name}. Regular per-minute rates apply.
+                      </div>
+                    ) : isDailyLimitReached ? (
+                      <div className="p-2 sm:p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-[11px] sm:text-xs text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        ℹ️ Daily free consultation limit reached (1/day). You can call {selectedExpert?.name} for free tomorrow, or continue now at regular rates.
+                      </div>
+                    ) : null
+                  )}
+                </>
+              )}
+              
+              {/* Wallet Status Info */}
+              <div className="bg-background border border-border rounded-xl p-2.5 sm:p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                    <Wallet size={16} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-on-surface-variant font-medium">Your Wallet Balance</p>
+                    <p className="text-xs sm:text-sm font-bold text-on-background">₹{walletBalance.toFixed(2)}</p>
+                  </div>
+                </div>
+                {(() => {
+                  const rate = getPerMinuteRate();
+                  const totalSecs = rate > 0 ? Math.floor((walletBalance / rate) * 60) : 0;
+                  const m = Math.floor(totalSecs / 60);
+                  const s = totalSecs % 60;
+                  const formattedTime = m > 0 ? (s > 0 ? `~${m}m ${s}s` : `~${m} mins`) : `~${s}s`;
+                  return (
+                    <div className="text-right">
+                      <p className="text-[10px] sm:text-xs text-on-surface-variant">{isSelectedExpertFree ? 'Session cost' : 'Estimated talk time'}</p>
+                      <p className="text-xs sm:text-sm font-bold text-emerald-600">{isSelectedExpertFree ? '₹0 (Free Session)' : formattedTime}</p>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* No Upfront payment guarantee notice */}
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 sm:p-3 text-[11px] sm:text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                <span className="text-sm mt-0.5">💡</span>
+                <div>
+                  <p className="font-bold text-[11px] sm:text-xs">{isSelectedExpertFree ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
+                  <p className="opacity-90 mt-0.5 text-[10px] sm:text-[11px] leading-tight">
+                    {isSelectedExpertFree 
+                      ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के ऑडियो कॉल कर सकते हैं। समय पूरा होते ही कॉल समाप्त हो जाएगी।`
+                      : 'कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।'}
+                  </p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={executeSessionBookingAndPayment}
+                disabled={processingPayment}
+                className="w-full bg-primary text-slate-950 font-bold py-2.5 sm:py-3 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer"
+              >
+                {processingPayment ? (
+                  'Connecting...'
+                ) : isSelectedExpertFree ? (
+                  <>
+                    <Phone size={16} />
+                    <span>Start Free Call ({freeDurationMinutes}m) / मुफ़्त कॉल शुरू करें (₹0)</span>
+                  </>
+                ) : (
+                  <>
+                    {callType === 'chat' ? <MessageSquare size={16} /> : <Phone size={16} />}
+                    <span>Start {callType === 'chat' ? 'Chat' : 'Call'} Now / अभी शुरू करें</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shortfall Modal */}
+      {showShortfallModal && shortfallData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-card dark:bg-slate-900 border border-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowShortfallModal(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-on-background p-1 rounded-lg cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mb-4">
+              <Wallet size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-on-background mb-1">Insufficient Wallet Balance</h3>
+            <p className="text-xs text-amber-600 font-semibold mb-3">अपर्याप्त बैलेंस</p>
+            <p className="text-sm text-on-surface-variant mb-4">
+              इस विशेषज्ञ से बात शुरू करने के लिए आपके वॉलेट में कम से कम 1 मिनट का बैलेंस (<span className="font-bold text-on-background">₹{shortfallData.neededAmount}</span>) होना आवश्यक है।
+            </p>
+            <div className="bg-background rounded-xl p-3.5 border border-border mb-5 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">वर्तमान वॉलेट बैलेंस:</span>
+                <span className="font-bold text-on-background">₹{shortfallData.currentBalance.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-2">
+                <span className="text-on-surface-variant">कम से कम जोड़ने योग्य राशि:</span>
+                <span className="font-black text-primary text-base">₹{shortfallData.shortfall}</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowShortfallModal(false)}
+                className="flex-1 py-3 px-4 border border-border rounded-xl font-bold text-on-surface-variant hover:bg-background transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowShortfallModal(false);
+                  navigate('/wallet');
+                }}
+                className="flex-1 py-3 px-4 bg-primary text-slate-950 rounded-xl font-bold hover:bg-primary-light transition-colors shadow-sm cursor-pointer"
+              >
+                Recharge Wallet
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
