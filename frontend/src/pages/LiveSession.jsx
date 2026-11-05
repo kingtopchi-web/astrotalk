@@ -22,7 +22,7 @@ function LiveSession() {
   const [showGiftTray, setShowGiftTray] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [userWalletBalance, setUserWalletBalance] = useState(0);
+  const [userWalletBalance, setUserWalletBalance] = useState(user?.walletBalance || 0);
   const [isBalanceExhausted, setIsBalanceExhausted] = useState(false);
   const isEndingRef = useRef(false);
   
@@ -55,9 +55,10 @@ function LiveSession() {
     return 10;
   };
 
+  const callTypeKey = isAudioOnly ? 'audio' : 'video';
   const rawExpertRate = consultation?.expert?.rates 
-    ? (consultation.expert.rates[consultation.type?.toLowerCase()] || consultation.expert.pricePerMinute || 30)
-    : (consultation?.cost && consultation?.durationInMinutes ? (consultation.cost / consultation.durationInMinutes) : 30);
+    ? (consultation.expert.rates[callTypeKey] || consultation.expert.rates[consultation.type?.toLowerCase()] || consultation.expert.pricePerMinute || 30)
+    : (consultation?.expert?.pricePerMinute || (consultation?.cost && consultation?.durationInMinutes ? (consultation.cost / consultation.durationInMinutes) : 30));
 
   const expertRatePerMin = Math.max(getMinRateForType(consultation?.type), rawExpertRate);
   
@@ -65,8 +66,8 @@ function LiveSession() {
   const freeDurationMins = Number(consultation?.freeChatDurationMinutes || consultation?.durationInMinutes) || 5;
   const freeMaxSeconds = freeDurationMins * 60;
 
-  const costPerMinWithGst = expertRatePerMin * 1.20;
-  const costPerSecond = isFreeSession ? 0 : Number((costPerMinWithGst / 60).toFixed(4));
+  // Exact per-second billing rate based on expert's rate per minute (e.g. ₹1500 / 60 = ₹25/sec)
+  const costPerSecond = isFreeSession ? 0 : Number((expertRatePerMin / 60).toFixed(4));
   const isUnderTwoMin = seconds < 120;
   const maxAllowedSeconds = isFreeSession
     ? freeMaxSeconds
@@ -837,9 +838,17 @@ function LiveSession() {
                 {remoteUser?.role === 'EXPERT' ? (remoteUser?.specialty || 'Expert Consultant') : 'Client Consultation'}
               </p>
 
-              <div className="mt-3 sm:mt-4 px-3 sm:px-4 py-1 sm:py-1.5 bg-slate-800/80 rounded-full border border-slate-700 text-xs font-mono font-bold text-emerald-400 inline-flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>{sessionStatus === 'LIVE' ? formatTime(seconds) : 'Connecting...'}</span>
+              <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-2">
+                <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-slate-800/80 rounded-full border border-slate-700 text-xs font-mono font-bold text-emerald-400 inline-flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>{sessionStatus === 'LIVE' ? formatTime(seconds) : 'Connecting...'}</span>
+                </div>
+                {!isExpert && sessionStatus === 'LIVE' && (
+                  <div className={`px-3 py-1 sm:py-1.5 rounded-full border text-xs font-mono font-bold inline-flex items-center gap-1.5 ${remainingSeconds < 60 ? 'bg-red-500/20 border-red-500/40 text-red-400 animate-pulse' : 'bg-slate-800/80 border-slate-700 text-amber-400'}`}>
+                    <span className="material-symbols-outlined text-[13px]">timer</span>
+                    <span>Left: {formatTime(remainingSeconds)}</span>
+                  </div>
+                )}
               </div>
 
               {toastMsg && (
@@ -948,8 +957,14 @@ function LiveSession() {
                   </span>
                   <span>Encrypted</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full pointer-events-auto border border-white/10 text-[10px] sm:text-xs text-white font-mono">
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full pointer-events-auto border border-white/10 text-[10px] sm:text-xs text-white font-mono">
                   <span>{sessionStatus === 'LIVE' ? formatTime(seconds) : 'Pre-Session'}</span>
+                  {!isExpert && sessionStatus === 'LIVE' && (
+                    <span className="text-amber-400 font-bold border-l border-white/20 pl-1.5 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">timer</span>
+                      <span>Left: {formatTime(remainingSeconds)}</span>
+                    </span>
+                  )}
                 </div>
               </div>
 

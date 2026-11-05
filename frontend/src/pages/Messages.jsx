@@ -296,11 +296,10 @@ function Messages() {
   const freeTotalAllowedSeconds = freeDurationMins * 60;
   const freeRemainingSeconds = Math.max(0, freeTotalAllowedSeconds - seconds);
 
-  const expertRatePerMin = activeConsultation?.cost && activeConsultation?.durationInMinutes
+  const expertRatePerMin = activeConsultation?.expert?.rates?.chat || activeConsultation?.expert?.pricePerMinute || (activeConsultation?.cost && activeConsultation?.durationInMinutes
     ? (activeConsultation.cost / activeConsultation.durationInMinutes)
-    : 30;
-  const costPerMinWithGst = expertRatePerMin * 1.20;
-  const costPerSecond = isFreeConsultation ? 0 : Number((costPerMinWithGst / 60).toFixed(4));
+    : 30);
+  const costPerSecond = isFreeConsultation ? 0 : Number((expertRatePerMin / 60).toFixed(4));
   const isUnderTwoMin = seconds < 120;
   const maxAllowedSeconds = isFreeConsultation
     ? freeTotalAllowedSeconds
@@ -421,7 +420,7 @@ function Messages() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activeConsultation, chatStarted, lastMessageTime, userWalletBalance, costPerSecond, costPerMinWithGst, isFreeConsultation, freeTotalAllowedSeconds, freeDurationMins]);
+  }, [activeConsultation, chatStarted, lastMessageTime, userWalletBalance, costPerSecond, expertRatePerMin, isFreeConsultation, freeTotalAllowedSeconds, freeDurationMins]);
 
   const handleEndConsultation = async (isManual = false, reason = '') => {
     if (isEndingRef.current || !activeConsultation) return;

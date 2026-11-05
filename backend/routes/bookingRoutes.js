@@ -331,7 +331,8 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       commission = await getEffectiveCommission({ expertId, expert, serviceId });
       const commissionRate = commission.rate;
       platformFee = Number((basePrice * commissionRate).toFixed(2));
-      amount = Number((basePrice + platformFee).toFixed(2));
+      const expertEarning = Number((basePrice - platformFee).toFixed(2));
+      amount = Number(basePrice.toFixed(2));
 
       // Check if user has at least 1 minute minimum balance in wallet to connect (PAID bookings only)
       const user = await User.findById(req.user._id);
@@ -368,7 +369,7 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       paymentStatus: isFreeBooking ? 'paid' : 'pending',
       type: schemaType,
       cost: amount,
-      expertEarning: basePrice,
+      expertEarning: isFreeBooking ? 0 : expertEarning,
       platformFee: platformFee,
       commissionRate: isFreeBooking ? 0 : (commission ? commission.percentage : 20),
       category: isFreeBooking ? (expert?.categoryId || null) : (commission?.categoryId || expert?.categoryId || null),
@@ -487,7 +488,7 @@ router.get('/:id', protect, async (req, res) => {
   try {
     const consultation = await Consultation.findById(req.params.id)
       .populate('user', 'name profileImage role phone email')
-      .populate('expert', 'name profileImage specialty specialization role phone email');
+      .populate('expert', 'name profileImage specialty specialization role phone email rates pricePerMinute');
       
     if (!consultation) {
       return res.status(404).json({ message: 'Consultation not found' });
@@ -800,9 +801,9 @@ router.post('/:id/end', protect, async (req, res) => {
     if (!isUnderTwoMinutes) {
       // Per-second pro-rata billing: billed strictly according to exact elapsed seconds!
       // (e.g. 2 min 8 sec = 128s, NOT rounded up to 3 full minutes!)
-      actualBasePrice = Number(((totalSeconds / 60) * ratePerMinute).toFixed(2));
-      actualPlatformFee = Number((actualBasePrice * commissionRate).toFixed(2));
-      actualTotalCost = Number((actualBasePrice + actualPlatformFee).toFixed(2));
+      actualTotalCost = Number(((totalSeconds / 60) * ratePerMinute).toFixed(2));
+      actualPlatformFee = Number((actualTotalCost * commissionRate).toFixed(2));
+      actualBasePrice = Number((actualTotalCost - actualPlatformFee).toFixed(2));
       finalEarning = actualBasePrice;
       finalPlatformFee = actualPlatformFee;
     }
