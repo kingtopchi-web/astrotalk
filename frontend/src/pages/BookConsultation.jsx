@@ -398,12 +398,17 @@ function BookConsultation() {
         
         {/* Back Link & Title */}
         <div className="mb-5 sm:mb-6">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors mb-3 sm:mb-4"
-          >
-            <ArrowLeft size={16} /> Back to Expert Profile
-          </button>
+          <div className="mb-3 sm:mb-4">
+            <button 
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+              title="Go Back"
+              aria-label="Go Back"
+            >
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            </button>
+          </div>
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
             <div>

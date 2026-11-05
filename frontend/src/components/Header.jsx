@@ -168,25 +168,8 @@ function Header() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 glass-panel-dark border-b border-border transition-all duration-300">
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 h-[72px] flex items-center justify-between gap-2 sm:gap-4">
-        {/* Logo & Mobile Back to Home */}
+        {/* Logo */}
         <div className="flex items-center shrink-0 gap-2 sm:gap-2.5">
-          {location.pathname !== '/' && (
-            <button
-              type="button"
-              onClick={() => {
-                if (window.history.length > 1) {
-                  navigate(-1);
-                } else {
-                  navigate('/');
-                }
-              }}
-              className="lg:hidden flex items-center justify-center w-8 h-8 rounded-full bg-surface-muted hover:bg-surface border border-border text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-              title="Go Back"
-              aria-label="Go Back"
-            >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            </button>
-          )}
           <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group select-none py-1 shrink-0">
             <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
               <img 

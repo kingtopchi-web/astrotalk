@@ -155,21 +155,6 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
         <header className="md:hidden bg-surface border-b border-border-color p-4 sticky top-0 z-20">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.history.length > 1) {
-                    navigate(-1);
-                  } else {
-                    navigate('/');
-                  }
-                }}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-muted hover:bg-surface border border-border text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-                title="Go Back"
-                aria-label="Go Back"
-              >
-                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              </button>
               <Link to="/" className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                   <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
@@ -375,8 +360,28 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-3.5 sm:p-5 md:p-6 w-full max-w-full min-w-0">
+        <div className="flex-1 p-3.5 sm:p-5 md:p-6 pb-28 sm:pb-32 md:pb-8 w-full max-w-full min-w-0">
           <div className="max-w-7xl mx-auto">
+            {/* Page Top-Left Back Arrow */}
+            {location.pathname !== '/' && (
+              <div className="mb-3 sm:mb-4 flex items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.history.length > 1) {
+                      navigate(-1);
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+                  title="Go Back"
+                  aria-label="Go Back"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                </button>
+              </div>
+            )}
             {title && (
               <div className={`mb-3 sm:mb-4 md:mb-5 ${hideTitleOnMobile ? 'hidden md:block' : ''}`}>
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">{title}</h1>

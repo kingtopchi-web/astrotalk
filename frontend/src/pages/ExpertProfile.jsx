@@ -321,7 +321,7 @@ function ExpertPublicProfile() {
       
       <main className="flex-1 max-w-screen-2xl mx-auto w-full px-3 sm:px-5 lg:px-6 py-4 md:py-8 pb-24 md:pb-8">
         
-        {/* Mobile Back to Home Navigation Bar */}
+        {/* Top-Left Back Button */}
         <div className="flex items-center justify-between mb-3.5 md:hidden">
           <button
             type="button"
@@ -329,10 +329,11 @@ function ExpertPublicProfile() {
               if (window.history.length > 1) navigate(-1);
               else navigate('/experts');
             }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-800 hover:text-amber-600 hover:border-amber-400 font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-on-surface hover:text-amber-600 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+            title="Go Back"
+            aria-label="Go Back"
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            Back
           </button>
           <Link
             to="/experts"

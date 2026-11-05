@@ -82,7 +82,7 @@ function ExpertDashboard() {
   const displayName = expert?.name || 'Expert';
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-5 pb-28 sm:pb-32 md:pb-8">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row items-center md:items-start gap-4 sm:gap-5">
         <div className="relative group">

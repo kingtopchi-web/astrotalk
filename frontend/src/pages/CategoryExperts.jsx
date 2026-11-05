@@ -317,15 +317,17 @@ export default function CategoryExperts() {
       <main className="flex-1 w-full pt-20 md:pt-24 pb-16">
         <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
           
-          {/* Breadcrumb & Navigation */}
+          {/* Top-Left Back Button & Breadcrumb */}
           <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-on-surface-variant">
+            <div className="flex items-center gap-2.5 text-xs sm:text-sm text-on-surface-variant">
               <button
                 type="button"
                 onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/categories')}
-                className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer font-medium"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+                title="Go Back"
+                aria-label="Go Back"
               >
-                <ArrowLeft size={16} /> Back
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               </button>
               <span>/</span>
               <button

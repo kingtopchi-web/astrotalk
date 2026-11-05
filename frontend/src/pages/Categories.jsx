@@ -57,16 +57,19 @@ function Categories() {
       <main className="flex-1 w-full pt-20 md:pt-24 pb-16">
         <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
           
-          {/* Breadcrumb / Back Navigation */}
+          {/* Top-Left Back Button */}
           <div className="flex items-center gap-2 mb-6">
             <button
+              type="button"
               onClick={() => {
                 if (window.history.length > 1) navigate(-1);
                 else navigate('/');
               }}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+              title="Go Back"
+              aria-label="Go Back"
             >
-              <ArrowLeft size={16} /> Back
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
           </div>
 
