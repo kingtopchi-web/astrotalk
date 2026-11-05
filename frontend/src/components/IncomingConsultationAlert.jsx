@@ -64,6 +64,7 @@ const IncomingConsultationAlert = () => {
         sessionId: data.sessionId,
         userId: data.userId,
         userName: data.userName || 'Client',
+        userProfileImage: data.userProfileImage || data.profileImage || '',
         serviceName: data.serviceName
       });
       soundService.playIncomingRing();
@@ -84,6 +85,7 @@ const IncomingConsultationAlert = () => {
         partnerId: data.partnerId || data.consultation?.user?._id || data.consultation?.user,
         userId: data.partnerId || data.consultation?.user?._id || data.consultation?.user,
         userName: data.userName || data.consultation?.user?.name || 'Client',
+        userProfileImage: data.userProfileImage || data.consultation?.user?.profileImage || '',
         conversationId: data.conversationId,
         isFree: Boolean(data.consultation?.isFree)
       });
@@ -199,10 +201,25 @@ const IncomingConsultationAlert = () => {
     <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] w-[92vw] max-w-xl animate-in fade-in slide-in-from-top-4 duration-300">
       <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 text-white px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center justify-between gap-3 sm:gap-4 ring-1 ring-emerald-500/20">
         
-        {/* Left Pulse Icon */}
-        <div className="w-10 h-10 sm:w-11 sm:h-11 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center shrink-0 border border-emerald-500/30 shadow-inner">
-          <span className="material-symbols-outlined text-xl sm:text-2xl animate-pulse">
-            {isVideo ? 'videocam' : isAudio ? 'call' : 'chat'}
+        {/* Left Pulse Icon / User Profile Avatar */}
+        <div className="relative shrink-0">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-slate-800 border-2 border-emerald-500/50 shadow-md flex items-center justify-center">
+            {incomingAlert.userProfileImage ? (
+              <img
+                src={incomingAlert.userProfileImage}
+                alt={incomingAlert.userName}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            ) : null}
+            <span className={`text-base font-bold text-white ${incomingAlert.userProfileImage ? 'hidden' : ''}`}>
+              {incomingAlert.userName ? incomingAlert.userName.charAt(0).toUpperCase() : 'U'}
+            </span>
+          </div>
+          <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-white border-2 border-slate-900 shadow">
+            <span className="material-symbols-outlined text-[13px]">
+              {isVideo ? 'videocam' : isAudio ? 'call' : 'chat'}
+            </span>
           </span>
         </div>
 

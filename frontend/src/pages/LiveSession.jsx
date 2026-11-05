@@ -29,6 +29,7 @@ function LiveSession() {
   const [consultation, setConsultation] = useState(null);
   const [remoteUser, setRemoteUser] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [remoteCamOn, setRemoteCamOn] = useState(true);
   
   const [isIncoming, setIsIncoming] = useState(new URLSearchParams(window.location.search).get('incoming') === 'true');
   const [callAccepted, setCallAccepted] = useState(!isIncoming);
@@ -44,6 +45,8 @@ function LiveSession() {
   const consType = (consultation?.type || '').toLowerCase();
   // Any consultation that isn't explicitly video is an audio call (e.g. 'call', 'audio', etc.)
   const isAudioOnly = searchType === 'audio' || searchType === 'call' || (searchType !== 'video' && consType !== 'video');
+  const currentUserAvatar = user?.profileImage || localStorage.getItem('user_avatar') || '';
+  const remoteAvatar = remoteUser?.profileImage || '';
   const getMinRateForType = (t) => {
     const l = (t || '').toLowerCase();
     if (l === 'chat') return 5;
@@ -242,6 +245,11 @@ function LiveSession() {
     socket.on('VIDEO_SESSION_ENDED', handleRemoteEnd);
     socket.on('session_ended', handleRemoteEnd);
     socket.on('VIDEO_USER_LEFT', handleRemoteEnd);
+    socket.on('remote_camera_toggle', (data) => {
+      if (data && typeof data.camOn === 'boolean') {
+        setRemoteCamOn(data.camOn);
+      }
+    });
 
     return () => {
       // Cleanup Socket
@@ -392,6 +400,13 @@ function LiveSession() {
           console.log("[WEBRTC] REMOTE TRACK RECEIVED", event.track.kind, event.track.id, event.track.readyState);
           
           remoteStream.addTrack(event.track);
+
+          if (event.track.kind === 'video') {
+            setRemoteCamOn(event.track.enabled && !event.track.muted);
+            event.track.onmute = () => setRemoteCamOn(false);
+            event.track.onunmute = () => setRemoteCamOn(true);
+            event.track.onended = () => setRemoteCamOn(false);
+          }
           
           if (remoteVideoRef.current) {
             if (remoteVideoRef.current.srcObject !== remoteStream) {
@@ -592,13 +607,23 @@ function LiveSession() {
   };
 
   const toggleCam = () => {
+    let nextCam = false;
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !camOn;
+        nextCam = videoTrack.enabled;
       }
+    } else {
+      nextCam = !camOn;
     }
-    setCamOn(!camOn);
+    setCamOn(nextCam);
+    if (socketRef.current) {
+      socketRef.current.emit('toggle_camera', {
+        roomId: consultationId,
+        camOn: nextCam
+      });
+    }
   };
 
   const endCall = async (isAutoDisconnect = false, finalSeconds = null) => {
@@ -726,13 +751,31 @@ function LiveSession() {
     <div className="bg-slate-900 font-sans text-background antialiased flex flex-col min-h-screen">
       <header className="fixed top-0 inset-x-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800">
         <div className="h-14 sm:h-16 px-3 sm:px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-             <h1 className="text-sm sm:text-base md:text-lg font-bold truncate max-w-[130px] sm:max-w-xs">
-               {isAudioOnly ? 'Audio Consultation' : 'Live Session'}
-             </h1>
-             {sessionStatus === 'LIVE' && (
-                 <span className="bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider animate-pulse shrink-0">Live</span>
-             )}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            {remoteUser && (
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0 shadow-md flex items-center justify-center">
+                {remoteAvatar ? (
+                  <img src={remoteAvatar} alt={remoteUser.name || 'User'} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                ) : null}
+                <span className={`text-xs sm:text-sm font-bold text-white ${remoteAvatar ? 'hidden' : ''}`}>
+                  {remoteUser.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+                </span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-xs sm:text-sm font-bold truncate max-w-[120px] sm:max-w-xs text-white flex items-center gap-1">
+                <span>{remoteUser?.name || (isAudioOnly ? 'Audio Call' : 'Video Call')}</span>
+                {remoteUser?.role === 'EXPERT' && (
+                  <span className="material-symbols-outlined text-[13px] text-blue-400 shrink-0">verified</span>
+                )}
+              </h1>
+              <p className="text-[10px] text-slate-400 truncate">
+                {isAudioOnly ? 'Audio Consultation' : 'Live Video Session'}
+              </p>
+            </div>
+            {sessionStatus === 'LIVE' && (
+              <span className="bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider animate-pulse shrink-0">Live</span>
+            )}
           </div>
           {!isExpert && sessionStatus === 'LIVE' && (
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -766,19 +809,32 @@ function LiveSession() {
             
             {/* Center Simple Audio Call Avatar & Details */}
             <div className="flex flex-col items-center my-auto w-full text-center">
-              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-3xl sm:text-5xl font-bold text-white shadow-xl mb-4">
-                {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+              <div className="relative mb-5">
+                <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-blue-600 to-emerald-500 opacity-25 blur-md animate-pulse"></div>
+                <div className="relative w-32 h-32 sm:w-44 sm:h-44 rounded-full overflow-hidden bg-slate-800 border-4 border-slate-700 shadow-2xl flex items-center justify-center ring-4 ring-emerald-500/20">
+                  {remoteAvatar ? (
+                    <img
+                      src={remoteAvatar}
+                      alt={remoteUser?.name || 'User'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : null}
+                  <span className={`text-4xl sm:text-6xl font-bold text-white ${remoteAvatar ? 'hidden' : ''}`}>
+                    {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                </div>
               </div>
 
-              <h2 className="text-lg sm:text-2xl font-bold text-white flex items-center justify-center gap-1.5">
+              <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center justify-center gap-1.5">
                 {remoteUser?.name || 'Remote User'}
                 {remoteUser?.role === 'EXPERT' && (
-                  <span className="material-symbols-outlined text-blue-400 text-base sm:text-lg" title="Verified Expert">verified</span>
+                  <span className="material-symbols-outlined text-blue-400 text-lg sm:text-xl" title="Verified Expert">verified</span>
                 )}
               </h2>
 
               <p className="text-slate-400 text-xs sm:text-sm mt-1">
-                {remoteUser?.role === 'EXPERT' ? 'Expert Consultant' : 'Client Consultation'}
+                {remoteUser?.role === 'EXPERT' ? (remoteUser?.specialty || 'Expert Consultant') : 'Client Consultation'}
               </p>
 
               <div className="mt-3 sm:mt-4 px-3 sm:px-4 py-1 sm:py-1.5 bg-slate-800/80 rounded-full border border-slate-700 text-xs font-mono font-bold text-emerald-400 inline-flex items-center gap-2">
@@ -843,13 +899,46 @@ function LiveSession() {
           <div className="flex flex-col w-full max-w-5xl mx-auto px-2.5 sm:px-4 flex-1">
             
             <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl bg-black h-[58vh] sm:h-[68vh] md:h-[72vh] flex items-center justify-center border border-slate-700/50 mt-2 sm:mt-4">
+              {/* Remote Video Stream */}
               <video 
                 ref={remoteVideoRef} 
                 autoPlay 
                 playsInline 
-                className="absolute inset-0 w-full h-full object-cover"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${(!remoteCamOn || !isConnected) ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
               />
               
+              {/* Remote Camera Off / Profile Overlay */}
+              {(!remoteCamOn || !isConnected) && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-5 text-center p-4">
+                  <div className="relative mb-4">
+                    <div className="absolute -inset-2 rounded-full bg-blue-500/20 blur-md"></div>
+                    <div className="relative w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden bg-slate-800 border-4 border-slate-700 shadow-2xl flex items-center justify-center ring-4 ring-blue-500/20">
+                      {remoteAvatar ? (
+                        <img 
+                          src={remoteAvatar} 
+                          alt={remoteUser?.name || 'User'} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      ) : null}
+                      <span className={`text-4xl sm:text-6xl font-bold text-white ${remoteAvatar ? 'hidden' : ''}`}>
+                        {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="text-base sm:text-xl font-bold text-white flex items-center justify-center gap-1.5">
+                    {remoteUser?.name || 'Remote User'}
+                    {remoteUser?.role === 'EXPERT' && (
+                      <span className="material-symbols-outlined text-blue-400 text-sm sm:text-base">verified</span>
+                    )}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1 flex items-center justify-center gap-1.5 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                    <span className="material-symbols-outlined text-[15px] text-amber-400">videocam_off</span>
+                    <span>Camera is turned off</span>
+                  </p>
+                </div>
+              )}
+
               {/* Overlays */}
               <div className="absolute top-3 sm:top-4 inset-x-3 sm:inset-x-4 flex items-center justify-between z-10 pointer-events-none">
                 <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full pointer-events-auto border border-white/10 text-[10px] sm:text-xs text-white">
@@ -872,7 +961,7 @@ function LiveSession() {
               </div>
 
               {/* Local Video Picture-in-Picture */}
-              <div className="absolute top-12 sm:top-14 right-3 sm:right-4 w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-48 rounded-xl overflow-hidden shadow-2xl z-20 bg-slate-800 border-2 border-slate-700/50">
+              <div className="absolute top-12 sm:top-14 right-3 sm:right-4 w-24 h-32 sm:w-32 sm:h-44 md:w-36 md:h-48 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl z-20 bg-slate-900 border-2 border-slate-700/70">
                 <video 
                   ref={localVideoRef} 
                   autoPlay 
@@ -881,11 +970,27 @@ function LiveSession() {
                   className={`w-full h-full object-cover ${!camOn ? 'hidden' : ''}`}
                 />
                 {!camOn && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-                    <span className="material-symbols-outlined text-2xl sm:text-3xl text-white/60">videocam_off</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 p-2 text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-slate-800 border-2 border-slate-600 shadow-md flex items-center justify-center mb-1">
+                      {currentUserAvatar ? (
+                        <img 
+                          src={currentUserAvatar} 
+                          alt={user?.name || 'You'} 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.target.style.display = 'none'; }} 
+                        />
+                      ) : null}
+                      <span className={`text-base sm:text-lg font-bold text-white ${currentUserAvatar ? 'hidden' : ''}`}>
+                        {user?.name ? user.name.charAt(0).toUpperCase() : 'Y'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-300 flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-[12px] text-amber-400">videocam_off</span>
+                      Cam Off
+                    </span>
                   </div>
                 )}
-                <div className="absolute bottom-1 right-1 bg-black/60 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold text-white">You</div>
+                <div className="absolute bottom-1 right-1 bg-black/70 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold text-white">You</div>
               </div>
               
               {toastMsg && (
@@ -999,19 +1104,43 @@ function LiveSession() {
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-between py-12 bg-slate-950">
           
           <div className="flex-1 flex flex-col items-center justify-center w-full px-4 text-center">
-             <div className="w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center text-4xl md:text-5xl font-bold text-white shadow-xl bg-slate-800 border-2 border-slate-700 mb-6">
-               {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+             <div className="relative mb-6">
+               <div className="absolute -inset-3 rounded-full bg-blue-500/20 blur-xl animate-ping"></div>
+               <div className="relative w-32 h-32 md:w-44 md:h-44 rounded-full overflow-hidden bg-slate-800 border-4 border-slate-700 shadow-2xl flex items-center justify-center ring-4 ring-blue-500/30">
+                 {remoteAvatar ? (
+                   <img
+                     src={remoteAvatar}
+                     alt={remoteUser?.name || 'User'}
+                     className="w-full h-full object-cover"
+                     onError={(e) => { e.target.style.display = 'none'; }}
+                   />
+                 ) : null}
+                 <span className={`text-4xl md:text-6xl font-bold text-white ${remoteAvatar ? 'hidden' : ''}`}>
+                   {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+                 </span>
+               </div>
              </div>
              
-             <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">{remoteUser?.name || 'Remote User'}</h3>
+             <h3 className="text-2xl md:text-3xl font-bold text-white mb-1.5 flex items-center justify-center gap-2">
+               <span>{remoteUser?.name || 'Remote User'}</span>
+               {remoteUser?.role === 'EXPERT' && (
+                 <span className="material-symbols-outlined text-blue-400 text-2xl" title="Verified Expert">verified</span>
+               )}
+             </h3>
+
+             {remoteUser?.role === 'EXPERT' && (remoteUser?.specialty || remoteUser?.specialization) && (
+               <p className="text-sm md:text-base text-slate-300 font-medium mb-2">
+                 {remoteUser.specialty || remoteUser.specialization}
+               </p>
+             )}
              
              {isIncoming && !callAccepted ? (
-               <p className="text-emerald-400 text-sm md:text-base font-medium mt-3 flex items-center justify-center gap-2">
+               <p className="text-emerald-400 text-sm md:text-base font-medium mt-2 flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 rounded-full">
                  <span className="material-symbols-outlined text-[20px]">{isAudioOnly ? 'call' : 'videocam'}</span>
                  {isAudioOnly ? 'Incoming Audio Call...' : 'Incoming Video Call...'}
                </p>
              ) : (
-               <p className="text-slate-400 text-sm md:text-base font-medium mt-3 flex items-center justify-center gap-1.5">
+               <p className="text-slate-300 text-sm md:text-base font-medium mt-2 flex items-center justify-center gap-2 bg-slate-800/80 border border-slate-700 px-4 py-1.5 rounded-full">
                  <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
                  {isExpert && callAccepted ? 'Connecting...' : (isAudioOnly ? 'Calling...' : 'Ringing...')}
                </p>

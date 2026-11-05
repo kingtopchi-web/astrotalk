@@ -601,6 +601,14 @@ io.on('connection', (socket) => {
     socket.to(`call_room_${roomId}`).emit('user_left_call', { userId: socket.id });
   });
 
+  socket.on('toggle_camera', (data) => {
+    if (data?.roomId) {
+      socket.to(`call_room_${data.roomId}`).emit('remote_camera_toggle', {
+        camOn: data.camOn
+      });
+    }
+  });
+
   // Handle call decline / reject from expert
   socket.on('reject_call', (data) => {
     if (data?.consultationId) {

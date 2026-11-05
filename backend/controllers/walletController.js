@@ -474,6 +474,7 @@ exports.verifyCallPayment = async (req, res) => {
           type: callType,
           userId: req.user._id,
           userName: req.user.name || 'Client',
+          userProfileImage: req.user.profileImage || '',
           expertId: expertId,
           serviceName: `${callType === 'video' ? 'Video' : 'Audio'} Consultation`
         });
@@ -579,6 +580,7 @@ exports.payCallWithWallet = async (req, res) => {
           type: callType,
           userId: user._id,
           userName: user.name || 'Client',
+          userProfileImage: user.profileImage || '',
           expertId: expert._id,
           serviceName: `${callType === 'video' ? 'Video' : 'Audio'} Consultation`
         });

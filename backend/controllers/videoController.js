@@ -57,6 +57,7 @@ exports.userJoinSession = async (req, res) => {
         sessionId: session._id,
         userId: userId,
         userName: req.user.name,
+        userProfileImage: req.user.profileImage,
         expertId: consultation.expert._id,
         serviceName: consultation.service ? consultation.service.name : 'Consultation',
         scheduledAt: consultation.startTime,

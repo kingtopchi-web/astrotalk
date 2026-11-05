@@ -486,8 +486,8 @@ router.get('/my-bookings', protect, authorizeRoles('USER'), async (req, res) => 
 router.get('/:id', protect, async (req, res) => {
   try {
     const consultation = await Consultation.findById(req.params.id)
-      .populate('user', 'name profileImage')
-      .populate('expert', 'name profileImage');
+      .populate('user', 'name profileImage role phone email')
+      .populate('expert', 'name profileImage specialty specialization role phone email');
       
     if (!consultation) {
       return res.status(404).json({ message: 'Consultation not found' });
