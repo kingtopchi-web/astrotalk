@@ -88,11 +88,10 @@ function BottomNav() {
     navigate('/');
   };
 
-  // User / Guest bottom navigation links
-  const isExplore = location.pathname === '/' || location.pathname.startsWith('/categories');
+  // Bottom navigation tab active states
+  const isHome = location.pathname === '/' || location.pathname.startsWith('/categories');
   const isExperts = location.pathname.startsWith('/experts') || location.pathname.startsWith('/expert/');
   const isBookings = location.pathname.startsWith('/booking');
-  const isExpertDashboard = location.pathname === '/expert/dashboard';
   const isExpertSessions = location.pathname.startsWith('/expert/consultation') || location.pathname.startsWith('/expert/schedule');
   const isExpertEarnings = location.pathname.startsWith('/expert/earnings');
   const isMarket = location.pathname.startsWith('/marketplace');
@@ -471,12 +470,12 @@ function BottomNav() {
             <>
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  isExpertDashboard ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                  isHome ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
-                to="/expert/dashboard"
+                to="/"
               >
-                <span className="material-symbols-outlined text-[22px]">dashboard</span>
-                <span className="text-[11px] font-medium">Dashboard</span>
+                <span className="material-symbols-outlined text-[22px]">home</span>
+                <span className="text-[11px] font-medium">Home</span>
               </Link>
 
               <Link
@@ -525,12 +524,12 @@ function BottomNav() {
             <>
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  location.pathname.startsWith('/admin') ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                  isHome ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
-                to="/admin/dashboard"
+                to="/"
               >
-                <span className="material-symbols-outlined text-[22px]">dashboard</span>
-                <span className="text-[11px] font-medium">Dashboard</span>
+                <span className="material-symbols-outlined text-[22px]">home</span>
+                <span className="text-[11px] font-medium">Home</span>
               </Link>
 
               <Link
@@ -569,12 +568,12 @@ function BottomNav() {
             <>
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  isExplore ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                  isHome ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
                 to="/"
               >
-                <span className="material-symbols-outlined text-[22px]">explore</span>
-                <span className="text-[11px] font-medium">Explore</span>
+                <span className="material-symbols-outlined text-[22px]">home</span>
+                <span className="text-[11px] font-medium">Home</span>
               </Link>
 
               <Link
