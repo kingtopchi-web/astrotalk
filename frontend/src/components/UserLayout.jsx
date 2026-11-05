@@ -155,14 +155,21 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
         <header className="md:hidden bg-surface border-b border-border-color p-4 sticky top-0 z-20">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2.5">
-              <Link
-                to="/"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
-                title="Back to Home"
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate('/');
+                  }
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-muted hover:bg-surface border border-border text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+                title="Go Back"
+                aria-label="Go Back"
               >
-                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                <span>Home</span>
-              </Link>
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              </button>
               <Link to="/" className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                   <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />

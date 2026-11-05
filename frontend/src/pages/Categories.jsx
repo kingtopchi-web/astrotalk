@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import BottomNav from '../components/BottomNav';
 import { Search, ArrowRight, Grid, ArrowLeft, Users } from 'lucide-react';
 
 function Categories() {
@@ -61,10 +60,13 @@ function Categories() {
           {/* Breadcrumb / Back Navigation */}
           <div className="flex items-center gap-2 mb-6">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                if (window.history.length > 1) navigate(-1);
+                else navigate('/');
+              }}
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
             >
-              <ArrowLeft size={16} /> Back to Home
+              <ArrowLeft size={16} /> Back
             </button>
           </div>
 
@@ -157,7 +159,6 @@ function Categories() {
       </main>
 
       <Footer />
-      <BottomNav />
     </div>
   );
 }

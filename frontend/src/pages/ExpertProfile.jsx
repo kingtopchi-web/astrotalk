@@ -3,7 +3,6 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import BottomNav from '../components/BottomNav';
 import { getApiUrl } from '../utils/apiConfig';
 import { 
   BadgeCheck, 
@@ -324,13 +323,17 @@ function ExpertPublicProfile() {
         
         {/* Mobile Back to Home Navigation Bar */}
         <div className="flex items-center justify-between mb-3.5 md:hidden">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-800 hover:text-amber-600 hover:border-amber-400 font-bold text-xs shadow-sm transition-all"
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate('/experts');
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-800 hover:text-amber-600 hover:border-amber-400 font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            Back to Home
-          </Link>
+            Back
+          </button>
           <Link
             to="/experts"
             className="text-xs text-slate-500 hover:text-amber-600 font-semibold"
@@ -860,7 +863,6 @@ function ExpertPublicProfile() {
         </div>
       )}
 
-      <BottomNav />
       <Footer />
     </div>
   );

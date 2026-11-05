@@ -1,7 +1,5 @@
 import React from 'react';
 import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
-
 function Placeholder({ title }) {
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -13,7 +11,6 @@ function Placeholder({ title }) {
           This page is under construction. It will be implemented soon!
         </p>
       </main>
-      <BottomNav />
     </div>
   );
 }

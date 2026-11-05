@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../../components/Header';
-import BottomNav from '../../components/BottomNav';
 
 function Experts() {
   const [experts, setExperts] = useState([]);
@@ -174,7 +173,6 @@ function Experts() {
         )}
 
       </main>
-      <BottomNav />
     </div>
   );
 }

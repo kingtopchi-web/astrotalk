@@ -58,6 +58,7 @@ import ExpertSettings from './pages/expert/ExpertSettings';
 import ExpertNotifications from './pages/expert/ExpertNotifications';
 import IncomingConsultationAlert from './components/IncomingConsultationAlert';
 import ErrorBoundary from './components/ErrorBoundary';
+import BottomNav from './components/BottomNav';
 
 // Marketplace Context & Pages
 import { CartProvider } from './context/CartContext';
@@ -193,6 +194,7 @@ function App() {
 
                 </Routes>
               </ErrorBoundary>
+              <BottomNav />
             </ThemeProvider>
           </CartProvider>
         </Router>

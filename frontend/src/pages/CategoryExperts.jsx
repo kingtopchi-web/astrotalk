@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import BottomNav from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
 import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
@@ -323,10 +322,10 @@ export default function CategoryExperts() {
             <div className="flex items-center gap-2 text-xs sm:text-sm text-on-surface-variant">
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/categories')}
                 className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer font-medium"
               >
-                <ArrowLeft size={16} /> Home
+                <ArrowLeft size={16} /> Back
               </button>
               <span>/</span>
               <button
@@ -838,7 +837,6 @@ export default function CategoryExperts() {
       </main>
 
       <Footer />
-      <BottomNav />
     </div>
   );
 }

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
@@ -1580,10 +1579,6 @@ function Home() {
       {/* Footer */}
       <Footer />
 
-      {/* Mobile Bottom Nav */}
-      <div className="md:hidden">
-        <BottomNav />
-      </div>
 
       {/* Free Chat Modal */}
       {freeChatModalOpen && (

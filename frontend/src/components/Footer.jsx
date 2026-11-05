@@ -7,9 +7,21 @@ function Footer() {
   const location = useLocation();
 
   // Pages where fixed mobile BottomNav is present require clearance; other pages do not
-  const hasBottomNav = ['/', '/categories'].includes(location.pathname) || 
-    location.pathname.startsWith('/expert/') || 
-    location.pathname.startsWith('/experts');
+  const hiddenRoutes = [
+    '/wallet',
+    '/messages',
+    '/expert/messages',
+    '/settings',
+    '/expert/settings',
+    '/live',
+    '/login',
+    '/register',
+    '/expert/login',
+    '/expert/register',
+    '/forgot-password',
+    '/reset-password'
+  ];
+  const hasBottomNav = !hiddenRoutes.some(r => location.pathname.startsWith(r));
 
   return (
     <footer className={`bg-black text-slate-300 relative pt-8 sm:pt-12 ${hasBottomNav ? 'pb-16 md:pb-0' : 'pb-0'}`}>

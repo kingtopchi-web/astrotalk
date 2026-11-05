@@ -216,14 +216,21 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
             <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1">
               <Menu size={22} />
             </button>
-            <Link
-              to="/"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-muted border border-border text-on-surface hover:text-primary text-xs font-bold transition-all shadow-sm shrink-0"
-              title="Back to Home"
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate('/expert/dashboard');
+                }
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-muted hover:bg-surface border border-border text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+              title="Go Back"
+              aria-label="Go Back"
             >
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span>Home</span>
-            </Link>
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            </button>
             <Link to="/" className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                 <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-full h-full object-cover" />
@@ -233,14 +240,6 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
           </div>
           
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-light border border-border text-on-surface hover:text-primary text-xs font-semibold transition-colors shadow-sm"
-              title="View Public Site / Home"
-            >
-              <span className="material-symbols-outlined text-[18px]">home</span>
-              <span>Back to Home</span>
-            </Link>
             <ExpertSearchBar />
           </div>
 
