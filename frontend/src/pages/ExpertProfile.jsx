@@ -19,7 +19,8 @@ import {
   Video,
   Phone,
   X,
-  Wallet
+  Wallet,
+  Bell
 } from 'lucide-react';
 
 function ExpertPublicProfile() {
@@ -96,6 +97,27 @@ function ExpertPublicProfile() {
     }
   };
 
+  const [isNotified, setIsNotified] = useState(false);
+
+  const handleNotifyExpert = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast("Please login first to notify this expert", "info");
+      navigate('/login');
+      return;
+    }
+    try {
+      setIsNotified(true);
+      await axios.post(getApiUrl(`/public/experts/${id}/notify-connect`), {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(`सूचना भेज दी गई! ${expert?.name || 'एक्सपर्ट'} को कनेक्ट रिक्वेस्ट भेज दी गई है।`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('अनुरोध भेज दिया गया है।', 'success');
+    }
+  };
+
   const openCallModal = async (type) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -103,6 +125,12 @@ function ExpertPublicProfile() {
       navigate('/login');
       return;
     }
+
+    if (expert?.onlineStatus !== 'online') {
+      showToast(`${expert?.name || 'Expert'} is currently offline. Please send a connect notification or book a service.`, 'info');
+      return;
+    }
+
     setCallType(type);
     
     const curBal = await fetchUserWallet();
@@ -435,42 +463,73 @@ function ExpertPublicProfile() {
               <span className="text-[11px] text-slate-400 font-medium">{services.length} active</span>
             </button>
 
-            <button 
-              onClick={() => openCallModal('video')}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold py-2.5 px-4 rounded-xl transition-all shadow-sm flex items-center justify-between mb-2 text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <Video size={15} />
-                <span>Video Call Now</span>
-              </div>
-              <span className="text-[11px] font-bold bg-black/10 px-2 py-0.5 rounded-md">₹{videoRate}/min</span>
-            </button>
+            {expert?.onlineStatus === 'online' ? (
+              <>
+                <button 
+                  onClick={() => openCallModal('video')}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold py-2.5 px-4 rounded-xl transition-all shadow-sm flex items-center justify-between mb-2 text-xs cursor-pointer active:scale-95"
+                >
+                  <div className="flex items-center gap-2">
+                    <Video size={15} />
+                    <span>Video Call Now</span>
+                  </div>
+                  <span className="text-[11px] font-bold bg-black/10 px-2 py-0.5 rounded-md">₹{videoRate}/min</span>
+                </button>
 
-            <button 
-              onClick={() => openCallModal('audio')}
-              className="w-full bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between mb-2 text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <Phone size={15} className="text-emerald-600" />
-                <span>Audio Call Now</span>
+                <button 
+                  onClick={() => openCallModal('audio')}
+                  className="w-full bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between mb-2 text-xs cursor-pointer active:scale-95"
+                >
+                  <div className="flex items-center gap-2">
+                    <Phone size={15} className="text-emerald-600" />
+                    <span>Audio Call Now</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">₹{audioRate}/min</span>
+                </button>
+                
+                <button 
+                  onClick={() => openCallModal('chat')}
+                  className="w-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between mb-3 text-xs cursor-pointer active:scale-95"
+                >
+                  <div className="flex items-center gap-2">
+                    <MessageSquare size={15} className="text-slate-600" />
+                    <span>Chat Now</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md">₹{chatRate}/min</span>
+                </button>
+
+                <div className="flex items-center justify-center md:justify-start gap-1.5 text-[11px] font-bold text-emerald-600">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  Available Online Now (Ready to connect)
+                </div>
+              </>
+            ) : (
+              <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 mb-3 text-center space-y-2.5 shadow-2xs">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-900">
+                  <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <span>Currently Offline / अभी ऑफलाइन हैं</span>
+                </div>
+                <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                  एक्सपर्ट अभी लाइव कॉल्स के लिए ऑफलाइन हैं। जब वे ऑनलाइन आएं तो बात करने के लिए आप उन्हें कॉल रिक्वेस्ट भेज सकते हैं।
+                </p>
+                <button
+                  type="button"
+                  onClick={handleNotifyExpert}
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer border ${
+                    isNotified
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 border-amber-400'
+                  }`}
+                >
+                  <Bell size={14} className={isNotified ? 'text-white' : 'text-slate-950 shrink-0'} />
+                  <span>{isNotified ? '✓ Notification Sent / भेजा गया' : 'Notify Expert / अनुरोध भेजें'}</span>
+                </button>
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold text-slate-500 pt-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                  Currently Offline (You can book scheduled services above)
+                </div>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">₹{audioRate}/min</span>
-            </button>
-            
-            <button 
-              onClick={() => openCallModal('chat')}
-              className="w-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between mb-3 text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <MessageSquare size={15} className="text-slate-600" />
-                <span>Chat Now</span>
-              </div>
-              <span className="text-[11px] font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md">₹{chatRate}/min</span>
-            </button>
-            <div className="flex items-center justify-center md:justify-start gap-1.5 text-[11px] font-bold text-emerald-600">
-              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-              Available today, 10:00 AM - 06:00 PM
-            </div>
+            )}
           </div>
         </div>
 

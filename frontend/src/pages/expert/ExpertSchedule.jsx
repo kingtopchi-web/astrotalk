@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useOutletContext } from 'react-router-dom';
 import { Clock, ToggleLeft, ToggleRight, Save, CheckCircle } from 'lucide-react';
+import { getApiUrl } from '../../utils/apiConfig';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -36,11 +37,11 @@ function ExpertSchedule() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('https://experthub.nextgoodtechnologies.in/api/expert/profile', 
+      await axios.patch(getApiUrl('/expert/profile'), 
         { onlineStatus: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      fetchProfile();
+      if (fetchProfile) fetchProfile();
     } catch (err) {
       console.error('Failed to update status', err);
       // Revert on error
@@ -59,11 +60,11 @@ function ExpertSchedule() {
     setSuccessMsg('');
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('https://experthub.nextgoodtechnologies.in/api/expert/profile', 
+      await axios.patch(getApiUrl('/expert/profile'), 
         { availability },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      await fetchProfile();
+      if (fetchProfile) await fetchProfile();
       setSuccessMsg('Schedule saved successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
@@ -86,14 +87,15 @@ function ExpertSchedule() {
             </p>
           </div>
           <button 
+            type="button"
             onClick={handleStatusToggle}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors ${Number(
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all active:scale-95 touch-manipulation cursor-pointer select-none ${
               onlineStatus === 'online' 
                 ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            ).toFixed(2)}`}
+            }`}
           >
-            <div className={`w-2 h-2 rounded-full ${onlineStatus === 'online' ? 'bg-green-600' : 'bg-slate-400'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${onlineStatus === 'online' ? 'bg-green-600 animate-pulse' : 'bg-slate-400'}`}></div>
             {onlineStatus === 'online' ? 'Online' : 'Offline'}
           </button>
         </div>
@@ -115,8 +117,9 @@ function ExpertSchedule() {
                 
                 <div className="flex items-center gap-4 w-48">
                   <button 
+                    type="button"
                     onClick={() => handleAvailabilityChange(index, 'isAvailable', !slot.isAvailable)}
-                    className={`text-2xl ${slot.isAvailable ? 'text-blue-600' : 'text-slate-400'}`}
+                    className={`text-2xl transition-transform active:scale-90 touch-manipulation cursor-pointer select-none ${slot.isAvailable ? 'text-blue-600' : 'text-slate-400'}`}
                   >
                     {slot.isAvailable ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                   </button>

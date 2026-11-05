@@ -9,14 +9,14 @@ export const ThemeToggle = ({ variant = 'segmented', className = '' }) => {
   if (variant === 'segmented') {
     return (
       <div 
-        className={`shrink-0 inline-flex items-center p-1 rounded-full bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-slate-700 shadow-inner transition-colors ${className}`}
+        className={`shrink-0 inline-flex items-center p-1 rounded-full bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-slate-700 shadow-inner transition-colors touch-manipulation select-none ${className}`}
         role="group"
         aria-label="Theme selector"
       >
         <button
           type="button"
           onClick={() => setTheme('light')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
             !isDark
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-400 hover:text-slate-200'
@@ -30,7 +30,7 @@ export const ThemeToggle = ({ variant = 'segmented', className = '' }) => {
         <button
           type="button"
           onClick={() => setTheme('dark')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
             isDark
               ? 'bg-slate-900 text-white shadow-xs'
               : 'text-slate-500 hover:text-slate-900'

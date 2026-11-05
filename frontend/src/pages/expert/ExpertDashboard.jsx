@@ -225,10 +225,17 @@ function ExpertDashboard() {
               <span className="text-xs sm:text-sm font-semibold text-slate-500">Experience</span>
               <span className="text-xs sm:text-sm font-bold text-slate-900">{expert?.experience ? `${expert.experience} Years` : '—'}</span>
             </div>
-            <div className="flex justify-between items-center py-2.5">
+            <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
               <span className="text-xs sm:text-sm font-semibold text-slate-500">Account Status</span>
               <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold ${expert?.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                 {expert?.status || 'UNKNOWN'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2.5">
+              <span className="text-xs sm:text-sm font-semibold text-slate-500">Live Availability</span>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${expert?.onlineStatus === 'online' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={`w-2 h-2 rounded-full ${expert?.onlineStatus === 'online' ? 'bg-emerald-600 animate-pulse' : 'bg-slate-400'}`}></span>
+                {expert?.onlineStatus === 'online' ? 'Online' : 'Offline'}
               </span>
             </div>
           </div>

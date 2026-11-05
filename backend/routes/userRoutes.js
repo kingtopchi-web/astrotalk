@@ -9,7 +9,8 @@ const {
   getPublicCategories,
   getPublicSubCategories,
   getSavedExperts,
-  toggleSaveExpert
+  toggleSaveExpert,
+  notifyExpertConnect
 } = require('../controllers/userController');
 
 // All user routes require authentication and USER role
@@ -27,6 +28,7 @@ router.post('/saved-experts/:id', toggleSaveExpert);
 // Public Expert Discovery (still requires login)
 router.get('/experts', getPublicExperts);
 router.get('/experts/:id', getPublicExpertById);
+router.post('/experts/:id/notify-connect', notifyExpertConnect);
 
 // Categories (public, used for filtering)
 router.get('/categories', getPublicCategories);

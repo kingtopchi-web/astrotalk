@@ -16,36 +16,24 @@ export const ThemeProvider = ({ children }) => {
     return 'light';
   });
 
-  // Apply theme to document root ONLY when on the Home page ('/')
+  // Apply theme to document root
   useEffect(() => {
     const root = document.documentElement;
 
-    if (isHomePage && theme === 'dark') {
+    if (theme === 'dark') {
       root.classList.add('dark');
       root.classList.add('dark-theme');
       root.classList.remove('light-theme');
       root.setAttribute('data-theme', 'dark');
       root.style.colorScheme = 'dark';
     } else {
-      // For all other pages (Dashboard, Expert Dashboard, Bookings, Profile, etc.) enforce pure Light mode
       root.classList.remove('dark');
       root.classList.remove('dark-theme');
       root.classList.add('light-theme');
       root.setAttribute('data-theme', 'light');
       root.style.colorScheme = 'light';
     }
-
-    return () => {
-      // Ensure dark theme does not leak when unmounting
-      if (isHomePage) {
-        root.classList.remove('dark');
-        root.classList.remove('dark-theme');
-        root.classList.add('light-theme');
-        root.setAttribute('data-theme', 'light');
-        root.style.colorScheme = 'light';
-      }
-    };
-  }, [theme, isHomePage, location.pathname]);
+  }, [theme]);
 
   const toggleTheme = () => {
     setThemeState(prev => {
@@ -71,7 +59,7 @@ export const ThemeProvider = ({ children }) => {
       theme, 
       toggleTheme, 
       setTheme, 
-      isDark: isHomePage && theme === 'dark',
+      isDark: theme === 'dark',
       isHomePage 
     }}>
       {children}

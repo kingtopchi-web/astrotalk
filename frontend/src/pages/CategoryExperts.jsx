@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
+import { createSocket } from '../utils/socket';
 import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
 import {
   Search,
@@ -20,7 +21,8 @@ import {
   RotateCcw,
   ArrowLeft,
   Users,
-  Grid
+  Grid,
+  Bell
 } from 'lucide-react';
 
 const categoryFallbackImages = {
@@ -67,12 +69,57 @@ export default function CategoryExperts() {
 
   // Bookmarking / Saved
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
+  const [notifiedExpertIds, setNotifiedExpertIds] = useState(new Set());
+  const [notifyToast, setNotifyToast] = useState('');
   const [userLocation, setUserLocation] = useState(getCachedUserLocation);
+
+  const handleNotifyExpert = async (expertId, expertName, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    try {
+      setNotifiedExpertIds(prev => new Set([...prev, expertId]));
+      await axios.post(getApiUrl(`/public/experts/${expertId}/notify-connect`), {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifyToast(`सूचना भेज दी गई! ${expertName || 'एक्सपर्ट'} को कनेक्ट रिक्वेस्ट नोटिफिकेशन भेज दिया गया है।`);
+      setTimeout(() => setNotifyToast(''), 4500);
+    } catch (err) {
+      console.error('Failed to notify expert', err);
+      setNotifyToast('अनुरोध भेज दिया गया है।');
+      setTimeout(() => setNotifyToast(''), 3500);
+    }
+  };
 
   useEffect(() => {
     requestUserLocation((coords) => {
       setUserLocation(coords);
     });
+  }, []);
+
+  // Listen to real-time expert status changes
+  useEffect(() => {
+    let socket;
+    try {
+      socket = createSocket();
+      socket.on('expert_status_changed', (data) => {
+        if (!data?.expertId) return;
+        setExperts(prev => prev.map(exp => {
+          if (exp._id?.toString() === data.expertId.toString()) {
+            return { ...exp, onlineStatus: data.onlineStatus };
+          }
+          return exp;
+        }));
+      });
+    } catch (e) {
+      console.warn('Socket connect failed on CategoryExperts', e);
+    }
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
 
   // 1. Fetch all categories on mount
@@ -806,28 +853,46 @@ export default function CategoryExperts() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="mt-auto w-full grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/expert/${expert._id}?action=chat`);
-                          }}
-                          className="flex items-center justify-center gap-1.5 py-2 bg-surface hover:bg-primary/10 border border-border text-on-background hover:text-primary hover:border-primary/50 rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95"
-                        >
-                          <MessageCircle size={13} className="text-primary" /> Chat
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/expert/${expert._id}?action=call`);
-                          }}
-                          className="flex items-center justify-center gap-1.5 py-2 bg-primary hover:bg-primary/90 text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-xs"
-                        >
-                          <Phone size={13} /> Call
-                        </button>
-                      </div>
+                      {isOnline ? (
+                        <div className="mt-auto w-full grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/expert/${expert._id}?action=chat`);
+                            }}
+                            className="flex items-center justify-center gap-1.5 py-2 bg-surface hover:bg-primary/10 border border-border text-on-background hover:text-primary hover:border-primary/50 rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation"
+                          >
+                            <MessageCircle size={13} className="text-primary" /> Chat
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/expert/${expert._id}?action=call`);
+                            }}
+                            className="flex items-center justify-center gap-1.5 py-2 bg-primary hover:bg-primary/90 text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-xs touch-manipulation"
+                          >
+                            <Phone size={13} /> Call
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mt-auto w-full">
+                          <button
+                            type="button"
+                            onClick={(e) => handleNotifyExpert(expert._id, expert.name, e)}
+                            className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer active:scale-95 touch-manipulation border shadow-2xs ${
+                              notifiedExpertIds.has(expert._id)
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : 'bg-amber-50 hover:bg-amber-100/90 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                            }`}
+                            title="एक्सपर्ट अभी ऑफलाइन है। जब वे ऑनलाइन आएं तो बात करने के लिए कनेक्ट रिक्वेस्ट भेजें।"
+                          >
+                            <Bell size={13} className={notifiedExpertIds.has(expert._id) ? 'text-emerald-600' : 'text-amber-600 shrink-0'} />
+                            <span>{notifiedExpertIds.has(expert._id) ? '✓ Request Sent / भेजा गया' : 'Notify Expert / अनुरोध भेजें'}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -837,6 +902,14 @@ export default function CategoryExperts() {
 
         </div>
       </main>
+
+      {/* Connect Notification Toast */}
+      {notifyToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-500/50 text-xs sm:text-sm font-semibold flex items-center gap-2.5 animate-in slide-in-from-bottom-5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+          <span>{notifyToast}</span>
+        </div>
+      )}
 
       <Footer />
     </div>

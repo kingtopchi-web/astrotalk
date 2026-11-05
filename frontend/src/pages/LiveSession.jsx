@@ -598,33 +598,35 @@ function LiveSession() {
   }, [sessionStatus, isExpert, userWalletBalance, maxAllowedSeconds]);
 
   const toggleMic = () => {
-    if (localStreamRef.current) {
-      const audioTrack = localStreamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !micOn;
+    setMicOn(prev => {
+      const next = !prev;
+      if (localStreamRef.current) {
+        const audioTrack = localStreamRef.current.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = next;
+        }
       }
-    }
-    setMicOn(!micOn);
+      return next;
+    });
   };
 
   const toggleCam = () => {
-    let nextCam = false;
-    if (localStreamRef.current) {
-      const videoTrack = localStreamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !camOn;
-        nextCam = videoTrack.enabled;
+    setCamOn(prev => {
+      const next = !prev;
+      if (localStreamRef.current) {
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.enabled = next;
+        }
       }
-    } else {
-      nextCam = !camOn;
-    }
-    setCamOn(nextCam);
-    if (socketRef.current) {
-      socketRef.current.emit('toggle_camera', {
-        roomId: consultationId,
-        camOn: nextCam
-      });
-    }
+      if (socketRef.current) {
+        socketRef.current.emit('toggle_camera', {
+          roomId: consultationId,
+          camOn: next
+        });
+      }
+      return next;
+    });
   };
 
   const endCall = async (isAutoDisconnect = false, finalSeconds = null) => {
@@ -752,9 +754,9 @@ function LiveSession() {
     <div className="bg-slate-900 font-sans text-background antialiased flex flex-col min-h-screen">
       <header className="fixed top-0 inset-x-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800">
         <div className="h-14 sm:h-16 px-3 sm:px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {remoteUser && (
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0 shadow-md flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0 shadow-md flex items-center justify-center">
                 {remoteAvatar ? (
                   <img src={remoteAvatar} alt={remoteUser.name || 'User'} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
                 ) : null}
@@ -763,20 +765,26 @@ function LiveSession() {
                 </span>
               </div>
             )}
-            <div className="min-w-0">
-              <h1 className="text-xs sm:text-sm font-bold truncate max-w-[120px] sm:max-w-xs text-white flex items-center gap-1">
-                <span>{remoteUser?.name || (isAudioOnly ? 'Audio Call' : 'Video Call')}</span>
+            <div className="min-w-0 flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[95px] xs:max-w-[140px] sm:max-w-xs">
+                  {remoteUser?.name || (isAudioOnly ? 'Audio Call' : 'Video Call')}
+                </span>
                 {remoteUser?.role === 'EXPERT' && (
-                  <span className="material-symbols-outlined text-[13px] text-blue-400 shrink-0">verified</span>
+                  <span className="material-symbols-outlined text-[15px] sm:text-[17px] text-blue-400 shrink-0 select-none leading-none inline-flex items-center" title="Verified Expert">
+                    verified
+                  </span>
                 )}
-              </h1>
-              <p className="text-[10px] text-slate-400 truncate">
+                {sessionStatus === 'LIVE' && (
+                  <span className="bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider animate-pulse shrink-0 leading-none">
+                    Live
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 truncate mt-0.5">
                 {isAudioOnly ? 'Audio Consultation' : 'Live Video Session'}
               </p>
             </div>
-            {sessionStatus === 'LIVE' && (
-              <span className="bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider animate-pulse shrink-0">Live</span>
-            )}
           </div>
           {!isExpert && sessionStatus === 'LIVE' && (
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -864,7 +872,8 @@ function LiveSession() {
               {/* Mic Toggle */}
               <div className="flex flex-col items-center gap-1">
                 <button 
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                  type="button"
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-90 touch-manipulation cursor-pointer select-none shadow-md ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                   onClick={toggleMic}
                   title={micOn ? 'Mute' : 'Unmute'}
                 >
@@ -877,7 +886,8 @@ function LiveSession() {
               {!isExpert && sessionStatus === 'LIVE' && (
                 <div className="flex flex-col items-center gap-1">
                   <button 
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-95 shadow-md"
+                    type="button"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-90 touch-manipulation cursor-pointer select-none shadow-md"
                     onClick={() => setShowGiftTray(!showGiftTray)}
                     title="Send Gift"
                   >
@@ -890,7 +900,8 @@ function LiveSession() {
               {/* End Call Button */}
               <div className="flex flex-col items-center gap-1">
                 <button 
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg hover:bg-red-500 transition-all active:scale-95"
+                  type="button"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg hover:bg-red-500 transition-all active:scale-90 touch-manipulation cursor-pointer select-none"
                   onClick={() => setShowEndModal(true)}
                   title="End Call"
                 >
@@ -1019,14 +1030,16 @@ function LiveSession() {
             {/* Video Call Controls */}
             <div className="w-full max-w-sm sm:max-w-md mx-auto bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-3 sm:p-4 mt-3 sm:mt-5 flex items-center justify-center gap-3 sm:gap-6">
               <button 
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                type="button"
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-90 touch-manipulation cursor-pointer select-none shadow-lg ${!micOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                 onClick={toggleMic}
                 title={micOn ? 'Mute' : 'Unmute'}
               >
                 <span className="material-symbols-outlined text-xl sm:text-2xl">{micOn ? 'mic' : 'mic_off'}</span>
               </button>
               <button 
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg ${!camOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                type="button"
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-90 touch-manipulation cursor-pointer select-none shadow-lg ${!camOn ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                 onClick={toggleCam}
                 title={camOn ? 'Turn Off Cam' : 'Turn On Cam'}
               >
@@ -1034,7 +1047,8 @@ function LiveSession() {
               </button>
               {!isExpert && sessionStatus === 'LIVE' && (
                 <button 
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-95 shadow-lg"
+                  type="button"
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all active:scale-90 touch-manipulation cursor-pointer select-none shadow-lg"
                   onClick={() => setShowGiftTray(!showGiftTray)}
                   title="Send Gift"
                 >
@@ -1042,7 +1056,8 @@ function LiveSession() {
                 </button>
               )}
               <button 
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 transition-all active:scale-95"
+                type="button"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 transition-all active:scale-90 touch-manipulation cursor-pointer select-none"
                 onClick={() => setShowEndModal(true)}
                 title="End Call"
               >

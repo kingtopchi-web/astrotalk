@@ -156,6 +156,13 @@ exports.updateMyExpertProfile = async (req, res) => {
       .populate('categoryId', 'name slug')
       .populate('subCategoryId', 'name slug');
 
+    if (updates.onlineStatus !== undefined) {
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('expert_status_changed', { expertId: expert._id.toString(), onlineStatus: expert.onlineStatus });
+      }
+    }
+
     res.json({ message: 'Profile updated successfully', expert });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

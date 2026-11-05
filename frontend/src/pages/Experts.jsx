@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight, Globe, MapPin } from 'lucide-react';
+import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight, Globe, MapPin, Bell } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
 import { useAuth } from '../context/AuthContext';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
+import { createSocket } from '../utils/socket';
 
 function ExpertDiscovery() {
   const { user } = useAuth();
@@ -39,6 +40,7 @@ function ExpertDiscovery() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState(null);
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
+  const [notifiedExpertIds, setNotifiedExpertIds] = useState(new Set());
   const [walletBalance, setWalletBalance] = useState(0);
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [freeChatStatus, setFreeChatStatus] = useState(null);
@@ -60,6 +62,28 @@ function ExpertDiscovery() {
     requestUserLocation((coords) => {
       setUserLocation(coords);
     });
+  }, []);
+
+  // Real-time listener for expert status changes
+  useEffect(() => {
+    let socket;
+    try {
+      socket = createSocket();
+      socket.on('expert_status_changed', (data) => {
+        if (!data?.expertId) return;
+        setExperts(prev => prev.map(exp => {
+          if (exp._id?.toString() === data.expertId.toString()) {
+            return { ...exp, onlineStatus: data.onlineStatus };
+          }
+          return exp;
+        }));
+      });
+    } catch (e) {
+      console.warn('Socket connect failed on Experts', e);
+    }
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
   
   // Modern Toast and Shortfall Prompt state
@@ -168,6 +192,26 @@ function ExpertDiscovery() {
   );
   const isDailyLimitReached = Boolean(freeChatStatus?.hasUsedToday);
 
+  const handleNotifyExpert = async (expertId, expertName, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast("Please login first to notify this expert", "info");
+      navigate('/login');
+      return;
+    }
+    try {
+      setNotifiedExpertIds(prev => new Set([...prev, expertId]));
+      await axios.post(getApiUrl(`/public/experts/${expertId}/notify-connect`), {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(`सूचना भेज दी गई! ${expertName || 'एक्सपर्ट'} को कनेक्ट रिक्वेस्ट भेज दी गई है।`, 'success');
+    } catch (err) {
+      console.error('Failed to notify expert', err);
+      showToast('अनुरोध भेज दिया गया है।', 'success');
+    }
+  };
+
   const openCallModal = async (expert, type) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -175,6 +219,12 @@ function ExpertDiscovery() {
       navigate('/login');
       return;
     }
+
+    if (expert.onlineStatus !== 'online') {
+      showToast(`${expert.name || 'Expert'} is currently offline. Please send a connect notification.`, 'info');
+      return;
+    }
+
     setSelectedExpert(expert);
     setCallType(type);
     
@@ -548,26 +598,47 @@ function ExpertDiscovery() {
                             </div>
                           </div>
                         )}
-                        <div className={`flex items-center gap-2 ${viewMode === 'grid' ? 'w-full' : ''}`}>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'chat'); }}
-                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1"
-                          >
-                            Chat
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'audio'); }}
-                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1"
-                          >
-                            Audio
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'video'); }}
-                            className="bg-primary hover:bg-primary-light text-background text-xs font-bold px-3.5 py-2 rounded-xl flex items-center justify-center gap-1 shadow-sm transition-all flex-1"
-                          >
-                            Video
-                          </button>
-                        </div>
+                        {expert.onlineStatus === 'online' ? (
+                          <div className={`flex items-center gap-2 ${viewMode === 'grid' ? 'w-full' : ''}`}>
+                            <button 
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'chat'); }}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
+                            >
+                              Chat
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'audio'); }}
+                              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
+                            >
+                              Audio
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'video'); }}
+                              className="bg-primary hover:bg-primary-light text-background text-xs font-bold px-3.5 py-2 rounded-xl flex items-center justify-center gap-1 shadow-sm transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
+                            >
+                              Video
+                            </button>
+                          </div>
+                        ) : (
+                          <div className={viewMode === 'grid' ? 'w-full' : 'min-w-[180px]'}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleNotifyExpert(expert._id, expert.name, e)}
+                              className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer active:scale-95 touch-manipulation border shadow-2xs ${
+                                notifiedExpertIds.has(expert._id)
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                              }`}
+                              title="एक्सपर्ट अभी ऑफलाइन है। कनेक्ट अनुरोध भेजें।"
+                            >
+                              <Bell size={13} className={notifiedExpertIds.has(expert._id) ? 'text-emerald-600' : 'text-amber-600 shrink-0'} />
+                              <span>{notifiedExpertIds.has(expert._id) ? '✓ Request Sent' : 'Notify Expert / अनुरोध भेजें'}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

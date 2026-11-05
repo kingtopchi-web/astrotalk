@@ -82,8 +82,18 @@ function BottomNav() {
     navigate(path);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsAccountOpen(false);
+    if (isExpert) {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          await axios.patch(getApiUrl('/expert/profile'), { onlineStatus: 'offline' }, {
+            headers: { Authorization: `Bearer ${token}` }
+          }).catch(() => {});
+        }
+      } catch (e) {}
+    }
     logout();
     navigate('/');
   };
@@ -240,6 +250,18 @@ function BottomNav() {
 
                   <button
                     type="button"
+                    onClick={() => handleLinkClick('/expert/services')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[20px] text-primary">business_center</span>
+                      <span className="text-sm font-semibold text-on-surface">Services & Pricing</span>
+                    </div>
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleLinkClick('/expert/consultations')}
                     className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                   >
@@ -264,12 +286,36 @@ function BottomNav() {
 
                   <button
                     type="button"
+                    onClick={() => handleLinkClick('/expert/messages')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[20px] text-primary">chat</span>
+                      <span className="text-sm font-semibold text-on-surface">Messages</span>
+                    </div>
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleLinkClick('/expert/earnings')}
                     className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-[20px] text-primary">payments</span>
                       <span className="text-sm font-semibold text-on-surface">Earnings & Payouts</span>
+                    </div>
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleLinkClick('/expert/clients')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[20px] text-primary">group</span>
+                      <span className="text-sm font-semibold text-on-surface">Clients</span>
                     </div>
                     <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
                   </button>
@@ -440,6 +486,21 @@ function BottomNav() {
                 </>
               )}
             </div>
+
+            {/* Settings (Near Logout) */}
+            {currentUser && (
+              <button
+                type="button"
+                onClick={() => handleLinkClick(isExpert ? '/expert/settings' : '/settings')}
+                className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl bg-surface-card border border-border hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors shadow-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
+                  <span className="text-sm font-semibold text-on-surface">Settings</span>
+                </div>
+                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+              </button>
+            )}
 
             {/* Logout / Exit */}
             {currentUser && (

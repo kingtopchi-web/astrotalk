@@ -229,4 +229,59 @@ exports.globalSearch = async (req, res) => {
   }
 };
 
+// POST /api/user/experts/:id/notify-connect or /api/public/experts/:id/notify-connect
+exports.notifyExpertConnect = async (req, res) => {
+  try {
+    const expertId = req.params.id;
+    const expert = await Expert.findById(expertId).select('name email onlineStatus notificationPreferences');
+    if (!expert) {
+      return res.status(404).json({ message: 'Expert not found' });
+    }
+
+    let userName = 'A prospective client';
+    let userContact = '';
+
+    // Check req.user or parse bearer token
+    let currentUser = req.user;
+    if (!currentUser && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production', { algorithms: ['HS256'] });
+        const User = require('../models/User');
+        currentUser = await User.findById(decoded.id).select('name mobile email');
+      } catch (e) {}
+    }
+
+    if (currentUser) {
+      userName = currentUser.name || userName;
+      userContact = currentUser.mobile || currentUser.email || '';
+    } else if (req.body?.userName) {
+      userName = req.body.userName;
+      userContact = req.body.userContact || '';
+    }
+
+    const { sendNotification } = require('../utils/notificationDispatcher');
+    await sendNotification({
+      recipient: expert._id,
+      recipientRole: 'EXPERT',
+      recipientModel: 'Expert',
+      title: 'Consultation Call Request / नया कॉल अनुरोध',
+      message: `${userName}${userContact ? ` (${userContact})` : ''} wants to consult with you! Please go online to accept calls/chats.`,
+      type: 'consultation_request',
+      link: '/expert/schedule',
+      actionText: 'Go Online',
+      badge: 'Offline Request'
+    });
+
+    res.json({
+      success: true,
+      message: `Notification sent to ${expert.name}! Expert has been notified to come online.`
+    });
+  } catch (error) {
+    console.error('Error sending connect notification to expert:', error);
+    res.status(500).json({ message: 'Failed to notify expert', error: error.message });
+  }
+};
+
 

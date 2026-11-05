@@ -254,6 +254,10 @@ io.use((socket, next) => {
   }
 });
 
+// Active expert socket tracking for automatic offline on disconnect
+const activeExpertSockets = new Map(); // Map<expertIdStr, Set<socketId>>
+const expertDisconnectTimers = new Map(); // Map<expertIdStr, NodeJS.Timeout>
+
 io.on('connection', (socket) => {
   console.log(`User connected to socket: ${socket.id}`);
   
@@ -274,7 +278,23 @@ io.on('connection', (socket) => {
       const isExpert = await Expert.exists({ _id: userId });
       if (isExpert) {
         socket.userRole = 'EXPERT';
+        const expertIdStr = userId.toString();
+        socket.expertId = expertIdStr;
+
+        // Cancel any pending disconnect grace timer if expert refreshed or opened new tab
+        if (expertDisconnectTimers.has(expertIdStr)) {
+          clearTimeout(expertDisconnectTimers.get(expertIdStr));
+          expertDisconnectTimers.delete(expertIdStr);
+        }
+
+        // Add socket to active connections set
+        if (!activeExpertSockets.has(expertIdStr)) {
+          activeExpertSockets.set(expertIdStr, new Set());
+        }
+        activeExpertSockets.get(expertIdStr).add(socket.id);
+
         await Expert.findByIdAndUpdate(userId, { onlineStatus: 'online' });
+        io.emit('expert_status_changed', { expertId: expertIdStr, onlineStatus: 'online' });
       } else if (!socket.userRole || socket.userRole === 'ANONYMOUS') {
         socket.userRole = 'USER';
       }
@@ -644,6 +664,44 @@ io.on('connection', (socket) => {
         consultationId: data.consultationId,
         reason: data.reason || 'Chat session completed'
       });
+    }
+  });
+
+  // Automatic Offline Handler when Expert closes tab/browser/app
+  socket.on('disconnect', async (reason) => {
+    console.log(`Socket disconnected: ${socket.id} (reason: ${reason})`);
+    const expertIdStr = socket.expertId || (socket.userRole === 'EXPERT' && socket.userId ? socket.userId.toString() : null);
+    if (expertIdStr && activeExpertSockets.has(expertIdStr)) {
+      const socketSet = activeExpertSockets.get(expertIdStr);
+      socketSet.delete(socket.id);
+
+      // If all active tabs/windows for this expert are closed
+      if (socketSet.size === 0) {
+        activeExpertSockets.delete(expertIdStr);
+
+        // Clear any previous timer
+        if (expertDisconnectTimers.has(expertIdStr)) {
+          clearTimeout(expertDisconnectTimers.get(expertIdStr));
+        }
+
+        // 25-second grace period: prevents flickering offline on quick page refresh
+        const timer = setTimeout(async () => {
+          expertDisconnectTimers.delete(expertIdStr);
+          // If still disconnected (no new tabs opened within 25 seconds)
+          if (!activeExpertSockets.has(expertIdStr) || activeExpertSockets.get(expertIdStr).size === 0) {
+            console.log(`[Socket Auto-Offline] Expert ${expertIdStr} closed website. Auto-setting status to offline.`);
+            try {
+              const Expert = require('./models/Expert');
+              await Expert.findByIdAndUpdate(expertIdStr, { onlineStatus: 'offline' });
+              io.emit('expert_status_changed', { expertId: expertIdStr, onlineStatus: 'offline' });
+            } catch (err) {
+              console.error('[Socket Auto-Offline] Error updating expert status to offline:', err.message);
+            }
+          }
+        }, 25000); // 25 seconds
+
+        expertDisconnectTimers.set(expertIdStr, timer);
+      }
     }
   });
 });

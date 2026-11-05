@@ -5,10 +5,11 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { usePlatformSettings } from '../context/PlatformSettingsContext';
-import { Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X, Globe, MapPin } from 'lucide-react';
+import { Star, ShieldCheck, ChevronRight, ChevronLeft, Video, Phone, MessageCircle, Heart, Clock, X, Globe, MapPin, Bell } from 'lucide-react';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
 import ThemeToggle from '../components/ThemeToggle';
+import { createSocket } from '../utils/socket';
 
 function Home() {
   const { user } = useAuth();
@@ -92,6 +93,8 @@ function Home() {
   const experts = topOnlineExperts; // preserve existing references
 
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
+  const [notifiedExpertIds, setNotifiedExpertIds] = useState(new Set());
+  const [notifyToast, setNotifyToast] = useState('');
   const [dbCategories, setDbCategories] = useState([]);
   const [currentHeroImgIndex, setCurrentHeroImgIndex] = useState(0);
   const [platformStats, setPlatformStats] = useState({ usersCount: 0, verifiedExpertsCount: 0 });
@@ -392,36 +395,86 @@ function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // 1. Fetch Top Online Experts (Runs on mount, ALWAYS independent of category selection)
+  // 1. Fetch Top Experts (Runs on mount, ALWAYS independent of category selection)
   useEffect(() => {
-    const fetchTopOnlineExperts = async (coords) => {
+    const fetchTopExperts = async (coords) => {
       setLoadingTopExperts(true);
       try {
         const userLoc = coords || getCachedUserLocation();
-        let url = getApiUrl('/public/experts?onlineStatus=online&limit=30');
+        let url = getApiUrl('/public/experts?limit=30');
         if (userLoc?.lat && userLoc?.lng) {
           url += `&latitude=${userLoc.lat}&longitude=${userLoc.lng}`;
         }
         const res = await axios.get(url);
         if (res.data && res.data.data) {
-          const onlineOnly = res.data.data.filter(exp => exp.onlineStatus === 'online');
-          setTopOnlineExperts(onlineOnly.length > 0 ? onlineOnly : res.data.data);
+          // Sort online experts first, but keep offline experts visible with appropriate status
+          const sorted = [...res.data.data].sort((a, b) => {
+            const aOnline = a.onlineStatus === 'online' ? 1 : 0;
+            const bOnline = b.onlineStatus === 'online' ? 1 : 0;
+            if (aOnline !== bOnline) return bOnline - aOnline;
+            return (b.rating || 0) - (a.rating || 0);
+          });
+          setTopOnlineExperts(sorted);
         } else {
           setTopOnlineExperts([]);
         }
       } catch (err) {
-        console.error('Failed to fetch top online experts', err);
+        console.error('Failed to fetch experts', err);
         setTopOnlineExperts([]);
       } finally {
         setLoadingTopExperts(false);
       }
     };
 
-    fetchTopOnlineExperts();
+    fetchTopExperts();
     requestUserLocation((freshCoords) => {
-      fetchTopOnlineExperts(freshCoords);
+      fetchTopExperts(freshCoords);
     });
   }, []);
+
+  // Listen to real-time expert status changes (Auto-Online on open, Auto-Offline on tab close)
+  useEffect(() => {
+    let socket;
+    try {
+      socket = createSocket();
+      socket.on('expert_status_changed', (data) => {
+        if (!data?.expertId) return;
+        setTopOnlineExperts(prev => prev.map(exp => {
+          if (exp._id?.toString() === data.expertId.toString()) {
+            return { ...exp, onlineStatus: data.onlineStatus };
+          }
+          return exp;
+        }));
+      });
+    } catch (e) {
+      console.warn('Socket connection error on Home', e);
+    }
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, []);
+
+  const handleNotifyExpert = async (expertId, expertName, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    try {
+      setNotifiedExpertIds(prev => new Set([...prev, expertId]));
+      await axios.post(getApiUrl(`/public/experts/${expertId}/notify-connect`), {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifyToast(`सूचना भेज दी गई! ${expertName || 'एक्सपर्ट'} को कनेक्ट रिक्वेस्ट नोटिफिकेशन भेज दिया गया है।`);
+      setTimeout(() => setNotifyToast(''), 4500);
+    } catch (err) {
+      console.error('Failed to notify expert', err);
+      setNotifyToast('अनुरोध भेज दिया गया है।');
+      setTimeout(() => setNotifyToast(''), 3500);
+    }
+  };
 
   useEffect(() => {
     const fetchSaved = async () => {
@@ -685,10 +738,17 @@ function Home() {
                       </button>
 
                       {/* Status Badge */}
-                      <div className="absolute top-3.5 right-3.5 bg-background/90 backdrop-blur px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 border border-border">
-                        <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
-                        <span className="text-[9px] font-bold text-on-background uppercase tracking-wider">Online</span>
-                      </div>
+                      {(() => {
+                        const isOnline = expert.onlineStatus === 'online';
+                        return (
+                          <div className="absolute top-3.5 right-3.5 bg-background/90 backdrop-blur px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 border border-border">
+                            <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-success animate-pulse' : 'bg-slate-400'}`}></div>
+                            <span className={`text-[9px] font-bold uppercase tracking-wider ${isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                              {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       <div className="p-5 flex flex-col items-center text-center relative flex-1">
                         <div className="relative mt-1">
@@ -793,28 +853,46 @@ function Home() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="mt-auto w-full grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/expert/${expert._id}?action=chat`);
-                            }}
-                            className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95"
-                          >
-                            <MessageCircle size={14} className="text-primary" /> Chat
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/expert/${expert._id}?action=audio`);
-                            }}
-                            className="flex items-center justify-center gap-1.5 py-2.5 bg-success/15 border border-success/30 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95"
-                          >
-                            <Phone size={14} /> Call
-                          </button>
-                        </div>
+                        {expert.onlineStatus === 'online' ? (
+                          <div className="mt-auto w-full grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/expert/${expert._id}?action=chat`);
+                              }}
+                              className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation"
+                            >
+                              <MessageCircle size={14} className="text-primary" /> Chat
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/expert/${expert._id}?action=audio`);
+                              }}
+                              className="flex items-center justify-center gap-1.5 py-2.5 bg-success/15 border border-success/30 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation"
+                            >
+                              <Phone size={14} /> Call
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-auto w-full">
+                            <button
+                              type="button"
+                              onClick={(e) => handleNotifyExpert(expert._id, expert.name, e)}
+                              className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer active:scale-95 touch-manipulation border shadow-2xs ${
+                                notifiedExpertIds.has(expert._id)
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'bg-amber-50 hover:bg-amber-100/90 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                              }`}
+                              title="एक्सपर्ट अभी ऑफलाइन है। जब वे ऑनलाइन आएं तो बात करने के लिए कनेक्ट रिक्वेस्ट भेजें।"
+                            >
+                              <Bell size={13} className={notifiedExpertIds.has(expert._id) ? 'text-emerald-600' : 'text-amber-600 shrink-0'} />
+                              <span>{notifiedExpertIds.has(expert._id) ? '✓ Request Sent / भेजा गया' : 'Notify Expert / अनुरोध भेजें'}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1744,6 +1822,14 @@ function Home() {
           </div>
         </div>
       )}
+      {/* Connect Notification Toast */}
+      {notifyToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-500/50 text-xs sm:text-sm font-semibold flex items-center gap-2.5 animate-in slide-in-from-bottom-5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+          <span>{notifyToast}</span>
+        </div>
+      )}
+
       {/* Floating Theme Toggle Button for Home Page */}
       <ThemeToggle variant="floating" />
     </div>

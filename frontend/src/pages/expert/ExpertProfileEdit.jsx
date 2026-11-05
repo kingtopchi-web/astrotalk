@@ -68,6 +68,7 @@ function ExpertProfileEdit() {
   const [newTagInput, setNewTagInput] = useState('');
   const [showAddTag, setShowAddTag] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
 
   const detectMyLocation = () => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -140,7 +141,9 @@ function ExpertProfileEdit() {
 
         setForm(initialForm);
         setTags(initialTags);
-        initialDataRef.current = JSON.stringify({ form: initialForm, tags: initialTags });
+        const snap = JSON.stringify({ form: initialForm, tags: initialTags });
+        initialDataRef.current = snap;
+        setSavedSnapshot(snap);
 
         setCategories(catRes.data || []);
 
@@ -230,19 +233,21 @@ function ExpertProfileEdit() {
 
   // Check if form or tags differ from original loaded state
   const hasUnsavedChanges = useMemo(() => {
-    if (!initialDataRef.current) return false;
+    const baseline = savedSnapshot || initialDataRef.current;
+    if (!baseline) return false;
     try {
       const current = JSON.stringify({ form, tags });
-      return current !== initialDataRef.current;
+      return current !== baseline;
     } catch (e) {
       return false;
     }
-  }, [form, tags]);
+  }, [form, tags, savedSnapshot]);
 
   const handleResetChanges = () => {
-    if (!initialDataRef.current) return;
+    const baseline = savedSnapshot || initialDataRef.current;
+    if (!baseline) return;
     try {
-      const parsed = JSON.parse(initialDataRef.current);
+      const parsed = JSON.parse(baseline);
       setForm(parsed.form);
       setTags(parsed.tags);
       setError('');
@@ -309,7 +314,9 @@ function ExpertProfileEdit() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      initialDataRef.current = JSON.stringify({ form, tags });
+      const updatedSnap = JSON.stringify({ form, tags });
+      initialDataRef.current = updatedSnap;
+      setSavedSnapshot(updatedSnap);
       setSuccess('Profile updated successfully!');
       setTimeout(() => {
         setSuccess('');
@@ -568,12 +575,12 @@ function ExpertProfileEdit() {
 
                 {/* Footer Options */}
                 <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-100">
-                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
+                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800 touch-manipulation select-none">
                     <input 
                       type="checkbox"
                       checked={form.instantCallEnabled}
-                      onChange={(e) => setForm({ ...form, instantCallEnabled: e.target.checked })}
-                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                      onChange={(e) => setForm(f => ({ ...f, instantCallEnabled: e.target.checked }))}
+                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer touch-manipulation"
                     />
                     <span>Enable Instant Call-ins</span>
                   </label>

@@ -57,22 +57,43 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
     };
   }, [isSidebarOpen]);
 
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const res = await axios.get(getApiUrl('/expert/profile'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setExpert(res.data);
+    } catch (err) {
+      if (err.response?.status === 401) navigate('/expert/login', { replace: true });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(getApiUrl('/expert/profile'), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setExpert(res.data);
-      } catch (err) {
-        if (err.response?.status === 401) navigate('/expert/login', { replace: true });
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProfile();
   }, [navigate]);
+
+  const toggleOnlineStatus = async () => {
+    if (!expert) return;
+    const currentStatus = expert.onlineStatus || 'offline';
+    const newStatus = currentStatus === 'online' ? 'offline' : 'online';
+    
+    // Instant optimistic update
+    setExpert(prev => ({ ...prev, onlineStatus: newStatus }));
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(getApiUrl('/expert/profile'), { onlineStatus: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error('Failed to toggle status', err);
+      setExpert(prev => ({ ...prev, onlineStatus: currentStatus }));
+    }
+  };
 
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -214,20 +235,36 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         <header className="bg-surface border-b border-border-color px-4 sm:px-6 py-3 sticky top-0 z-10 backdrop-blur-md bg-surface/95">
           {/* Mobile Centered Brand Header */}
           <div className="flex items-center justify-between w-full md:hidden">
-            <div className="w-10 flex items-center">
-              <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1 cursor-pointer" aria-label="Open sidebar">
-                <Menu size={22} />
+            <div className="flex items-center gap-1.5 min-w-0">
+              {!(location.pathname.startsWith('/expert/earnings') || location.pathname.startsWith('/expert/consultation') || location.pathname.startsWith('/expert/schedule')) && (
+                <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1 cursor-pointer" aria-label="Open sidebar">
+                  <Menu size={22} />
+                </button>
+              )}
+              {/* Quick Status Pill Mobile */}
+              <button
+                type="button"
+                onClick={toggleOnlineStatus}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer touch-manipulation select-none border ${
+                  expert?.onlineStatus === 'online'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                    : 'bg-slate-100 border-slate-300 text-slate-600'
+                }`}
+                title="Tap to toggle Online/Offline"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${expert?.onlineStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                <span>{expert?.onlineStatus === 'online' ? 'Online' : 'Offline'}</span>
               </button>
             </div>
 
-            <Link to="/" className="flex items-center gap-2 justify-center">
-              <div className="w-8 h-8 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+            <Link to="/" className="flex items-center gap-1.5 justify-center">
+              <div className="w-7 h-7 rounded-lg overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                 <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-full h-full object-cover" />
               </div>
-              <span className="font-heading font-black text-base text-on-surface leading-none">{platformName || 'ExpertHub'}</span>
+              <span className="font-heading font-black text-sm text-on-surface leading-none truncate max-w-[110px]">{platformName || 'ExpertHub'}</span>
             </Link>
 
-            <div className="w-10 flex items-center justify-end">
+            <div className="flex items-center justify-end">
               <NotificationDropdown role="EXPERT" viewAllPath="/expert/notifications" />
             </div>
           </div>
@@ -239,6 +276,21 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
             </div>
 
             <div className="flex items-center gap-3 ml-auto">
+              {/* Real-time Online/Offline Status Switch */}
+              <button
+                type="button"
+                onClick={toggleOnlineStatus}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer touch-manipulation select-none border shadow-2xs ${
+                  expert?.onlineStatus === 'online'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
+                }`}
+                title={`You are currently ${expert?.onlineStatus === 'online' ? 'Online' : 'Offline'}. Click to toggle.`}
+              >
+                <span className={`w-2 h-2 rounded-full ${expert?.onlineStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                <span>{expert?.onlineStatus === 'online' ? 'Online' : 'Offline'}</span>
+              </button>
+
               {/* Quick Contact & Helpdesk */}
               {supportEmail && (
                 <a
@@ -375,7 +427,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
-            ) : children ? children : <Outlet context={{ expert, fetchProfile: () => {} }} />}
+            ) : children ? children : <Outlet context={{ expert, setExpert, fetchProfile, toggleOnlineStatus }} />}
           </div>
         </div>
       </main>

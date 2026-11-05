@@ -7,7 +7,8 @@ const {
   getPublicSubCategories,
   getPublicStats,
   getPublicSettings,
-  globalSearch
+  globalSearch,
+  notifyExpertConnect
 } = require('../controllers/userController');
 const { getTopReviews } = require('../controllers/reviewController');
 const { submitContactForm } = require('../controllers/contactController');
@@ -22,6 +23,7 @@ router.get('/search', globalSearch);
 // Public Expert Discovery
 router.get('/experts', getPublicExperts);
 router.get('/experts/:id', getPublicExpertById);
+router.post('/experts/:id/notify-connect', notifyExpertConnect);
 
 // Public Stats & Settings
 router.get('/stats', getPublicStats);
