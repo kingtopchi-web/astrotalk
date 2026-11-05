@@ -266,6 +266,7 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
     let basePrice = 0;
     let platformFee = 0;
     let amount = 0;
+    let expertEarning = 0;
     let commission = null;
 
     // Convert 'Video'/'Audio'/'Chat' to match schema ('video', 'call', 'chat')
@@ -331,7 +332,7 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       commission = await getEffectiveCommission({ expertId, expert, serviceId });
       const commissionRate = commission.rate;
       platformFee = Number((basePrice * commissionRate).toFixed(2));
-      const expertEarning = Number((basePrice - platformFee).toFixed(2));
+      expertEarning = Number((basePrice - platformFee).toFixed(2));
       amount = Number(basePrice.toFixed(2));
 
       // Check if user has at least 1 minute minimum balance in wallet to connect (PAID bookings only)
