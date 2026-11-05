@@ -87,6 +87,40 @@
   .dark .border-border {
     border-color: #334155 !important;
   }
+  .dark .text-on-surface {
+    color: #F1F5F9 !important;
+  }
+  .dark button .material-symbols-outlined,
+  .dark .material-symbols-outlined {
+    color: inherit;
+  }
+
+  /* Back arrow button visibility in dark / black theme */
+  .dark button[title="Go Back"],
+  .dark button[aria-label="Go Back"] {
+    background-color: #1E293B !important;
+    border-color: #475569 !important;
+    color: #FFFFFF !important;
+  }
+  .dark button[title="Go Back"] .material-symbols-outlined,
+  .dark button[aria-label="Go Back"] .material-symbols-outlined,
+  .dark button[title="Go Back"] svg,
+  .dark button[aria-label="Go Back"] svg {
+    color: #FFFFFF !important;
+    fill: currentColor;
+  }
+  .dark button[title="Go Back"]:hover,
+  .dark button[aria-label="Go Back"]:hover {
+    background-color: #334155 !important;
+    border-color: #F7C83C !important;
+    color: #F7C83C !important;
+  }
+  .dark button[title="Go Back"]:hover .material-symbols-outlined,
+  .dark button[aria-label="Go Back"]:hover .material-symbols-outlined,
+  .dark button[title="Go Back"]:hover svg,
+  .dark button[aria-label="Go Back"]:hover svg {
+    color: #F7C83C !important;
+  }
   .dark header {
     background-color: rgba(15, 23, 42, 0.85) !important;
     border-color: #334155 !important;

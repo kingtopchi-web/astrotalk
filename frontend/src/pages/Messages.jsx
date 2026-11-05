@@ -702,7 +702,7 @@ function Messages() {
                     setSelectionMode(false);
                     setSelectedMsgIds([]);
                   }}
-                  className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-amber-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0"
+                  className="md:hidden p-1.5 -ml-1 text-slate-700 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"
                   title="Back to conversations"
                 >
                   <ArrowLeft size={19} />

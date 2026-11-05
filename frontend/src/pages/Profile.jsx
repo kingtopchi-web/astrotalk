@@ -248,7 +248,7 @@ function Profile({ autoEdit = false }) {
           <button 
             type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2.5 text-slate-900 hover:text-amber-800 font-bold text-base sm:text-lg transition-colors cursor-pointer group"
+            className="flex items-center gap-2.5 text-slate-900 dark:text-white hover:text-amber-800 dark:hover:text-amber-400 font-bold text-base sm:text-lg transition-colors cursor-pointer group"
           >
             <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
             <span>Profile</span>

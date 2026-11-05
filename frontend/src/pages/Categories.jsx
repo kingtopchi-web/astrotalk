@@ -65,11 +65,11 @@ function Categories() {
                 if (window.history.length > 1) navigate(-1);
                 else navigate('/');
               }}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-on-surface hover:text-primary transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white hover:text-primary dark:hover:text-amber-400 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95 group"
               title="Go Back"
               aria-label="Go Back"
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[18px] text-slate-800 dark:text-white group-hover:text-primary dark:group-hover:text-amber-400">arrow_back</span>
             </button>
           </div>
 
