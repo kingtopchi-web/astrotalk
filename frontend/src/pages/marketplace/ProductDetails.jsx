@@ -15,7 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 export default function ProductDetails() {
   const { slugOrId } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
   const { auth } = useAuth();
 
   const [product, setProduct] = useState(null);
@@ -26,6 +26,9 @@ export default function ProductDetails() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [added, setAdded] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState(null);
+
+  const isItemInCart = Boolean(cart?.items?.some(item => (item.product?._id || item.product) === product?._id));
+  const addedToCart = added || isItemInCart;
 
   // Review submission state
   const [userRating, setUserRating] = useState(5);
@@ -323,13 +326,13 @@ export default function ProductDetails() {
                     onClick={handleAddToCart}
                     disabled={addingToCart}
                     className={`w-full py-3 px-6 rounded-xl font-bold text-sm border transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      added
+                      addedToCart
                         ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                         : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    {added ? <Check size={18} /> : <ShoppingCart size={18} />}
-                    <span>{added ? 'Added to Cart' : 'Add to Cart'}</span>
+                    {addedToCart ? <Check size={18} /> : <ShoppingCart size={18} />}
+                    <span>{addedToCart ? 'Added to Cart' : 'Add to Cart'}</span>
                   </button>
                 </div>
 
@@ -542,7 +545,7 @@ export default function ProductDetails() {
                 addedToCart ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
               }`}
             >
-              <ShoppingCart size={14} />
+              {addedToCart ? <Check size={14} /> : <ShoppingCart size={14} />}
               <span>{addedToCart ? 'In Cart' : 'Add'}</span>
             </button>
 
