@@ -496,104 +496,103 @@ function Home() {
         {/* HERO SECTION - Carousel Concept */}
         <section className="relative overflow-hidden bg-background text-on-background pt-2 sm:pt-4 pb-0 sm:pb-1 px-3 sm:px-5 lg:px-6">
           <div className="relative max-w-screen-2xl mx-auto z-10">
-            <div className="flex flex-col md:flex-row items-center gap-5 md:gap-8 pt-1 sm:pt-2 pb-2 sm:pb-3 px-1 sm:px-2">
-              {/* Left Content */}
-              <div className="flex-1 space-y-3.5 text-center md:text-left">
-                <div className="flex items-center gap-2.5 justify-center md:justify-start mb-1">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 pt-1 sm:pt-2 pb-2 sm:pb-3 px-1 sm:px-2">
+              {/* Left Content (Text - placed below images on mobile with order-2) */}
+              <div className="flex-1 space-y-3 sm:space-y-4 text-center md:text-left order-2 md:order-1 w-full">
+                {/* Verified Network Badge - Hidden on mobile view as requested */}
+                <div className="hidden md:flex items-center gap-2.5 justify-start mb-1">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Verified Expert Network
                   </span>
-                  <div className="inline-flex md:hidden">
-                    <ThemeToggle variant="segmented" />
-                  </div>
                 </div>
 
-                <h1 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.15] text-on-background">
-                  India's most accurate <br />
+                <h1 className="font-heading font-extrabold text-2xl sm:text-3xl md:text-5xl lg:text-[3.25rem] leading-[1.2] text-on-background tracking-tight">
+                  India's most accurate <br className="hidden sm:inline" />
                   <span className="text-primary">
                     expert platform
                   </span>
                 </h1>
 
-                <div className="space-y-1 text-xs sm:text-sm text-on-surface-variant font-medium pt-0.5">
-                  <div className="flex items-center gap-2 justify-center md:justify-start">
-                    <div className="w-4 h-4 rounded-full bg-primary text-background flex items-center justify-center text-[11px] shrink-0"><span className="material-symbols-outlined text-[12px]">check</span></div>
-                    <span>Get Free initial consultation</span>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs sm:text-sm text-on-surface-variant font-medium pt-0.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-on-surface">
+                    <span className="material-symbols-outlined text-primary text-[15px]">verified</span>
+                    <span>Free initial consultation</span>
                   </div>
-                  <div className="flex items-center gap-2 justify-center md:justify-start">
-                    <div className="w-4 h-4 rounded-full bg-primary text-background flex items-center justify-center text-[11px] shrink-0"><span className="material-symbols-outlined text-[12px]">check</span></div>
-                    <span>Average reply under 12 seconds</span>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-on-surface">
+                    <span className="material-symbols-outlined text-emerald-500 text-[15px]">bolt</span>
+                    <span>Average reply under 12s</span>
                   </div>
                 </div>
 
-                <div className="pt-2 sm:pt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto max-w-sm sm:max-w-none mx-auto sm:mx-0">
                   <button 
                     onClick={handleStartFreeChatClick}
-                    className="px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
+                    className="w-full sm:w-auto px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
                   >
-                    Free Audio call for tension free <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <span>Free Audio call for tension free</span>
+                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </button>
 
                   {/* Become an Expert button - Hidden if already logged in as an Expert */}
                   {user?.role !== 'EXPERT' && (
                     <button 
                       onClick={() => navigate('/expert/register')}
-                      className="px-5 py-2.5 sm:px-6 sm:py-3 bg-surface-card text-on-surface border-2 border-primary/40 hover:border-primary hover:bg-primary/10 rounded-full font-heading font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
+                      className="w-full sm:w-auto px-5 py-2.5 sm:px-6 sm:py-3 bg-surface-card text-on-surface border-2 border-primary/40 hover:border-primary hover:bg-primary/10 rounded-full font-heading font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
                     >
                       <span className="material-symbols-outlined text-primary text-[20px]">workspace_premium</span>
-                      Become an Expert
+                      <span>Become an Expert</span>
                     </button>
                   )}
                 </div>
 
                 {/* Statistics */}
-                <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 pt-3 sm:pt-4">
-                  <div className="text-left">
+                <div className="flex items-center justify-around md:justify-start gap-3 sm:gap-6 lg:gap-8 pt-3 sm:pt-4 border-t border-border/60 md:border-t-0 mt-3 md:mt-0">
+                  <div className="text-center md:text-left">
                     <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
                       {formatStat(platformStats.usersCount)}
                     </p>
-                    <p className="text-xs sm:text-[13px] text-on-surface-variant font-normal mt-1 whitespace-nowrap">
+                    <p className="text-[11px] sm:text-[13px] text-on-surface-variant font-normal mt-0.5 whitespace-nowrap">
                       Users guided
                     </p>
                   </div>
 
                   <div className="h-8 sm:h-10 w-px bg-border/80 shrink-0"></div>
 
-                  <div className="text-left">
+                  <div className="text-center md:text-left">
                     <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
                       {formatStat(platformStats.verifiedExpertsCount)}
                     </p>
-                    <p className="text-xs sm:text-[13px] text-on-surface-variant font-normal mt-1 whitespace-nowrap">
+                    <p className="text-[11px] sm:text-[13px] text-on-surface-variant font-normal mt-0.5 whitespace-nowrap">
                       Verified experts
                     </p>
                   </div>
 
                   <div className="h-8 sm:h-10 w-px bg-border/80 shrink-0"></div>
 
-                  <div className="text-left">
+                  <div className="text-center md:text-left">
                     <p className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-on-background tracking-tight">
                       13+
                     </p>
-                    <p className="text-xs sm:text-[13px] text-on-surface-variant font-normal mt-1 whitespace-nowrap">
+                    <p className="text-[11px] sm:text-[13px] text-on-surface-variant font-normal mt-0.5 whitespace-nowrap">
                       Languages
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Right Image area */}
-              <div className="flex-1 relative w-full flex justify-center mt-3 md:mt-0">
-                <div className="relative w-full max-w-[460px] lg:max-w-[540px] h-[240px] sm:h-[280px] md:h-[320px] flex items-center justify-center">
+              {/* Right Image area - placed at TOP on mobile with order-1 */}
+              <div className="flex-1 relative w-full flex flex-col items-center justify-center mt-1 md:mt-0 order-1 md:order-2">
+                <div className="relative w-full max-w-[340px] sm:max-w-[460px] lg:max-w-[540px] h-[210px] sm:h-[280px] md:h-[320px] flex items-center justify-center">
                   {heroImages.map((img, idx) => {
                     let positionClass = '';
 
                     if (idx === currentHeroImgIndex) {
-                      positionClass = 'w-40 h-52 sm:w-48 sm:h-64 md:w-56 md:h-72 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_12px_32px_rgba(247,200,60,0.35)] opacity-100 scale-100';
+                      positionClass = 'w-36 h-48 sm:w-48 sm:h-64 md:w-56 md:h-72 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_12px_32px_rgba(247,200,60,0.35)] opacity-100 scale-100';
                     } else if (idx === (currentHeroImgIndex + 1) % heroImages.length) {
-                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 translate-x-20 sm:translate-x-28 md:translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
+                      positionClass = 'w-28 h-38 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 translate-x-18 sm:translate-x-28 md:translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
                     } else {
-                      positionClass = 'w-32 h-44 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 -translate-x-20 sm:-translate-x-28 md:-translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
+                      positionClass = 'w-28 h-38 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 -translate-x-18 sm:-translate-x-28 md:-translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
                     }
 
                     return (
@@ -602,6 +601,19 @@ function Home() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Mobile dots indicator under 3 hero images */}
+                <div className="flex items-center justify-center gap-1.5 mt-2 md:hidden">
+                  {heroImages.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setCurrentHeroImgIndex(i)}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${i === currentHeroImgIndex ? 'w-5 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'}`}
+                      aria-label={`Slide ${i + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
