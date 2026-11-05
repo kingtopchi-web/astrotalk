@@ -57,6 +57,7 @@ import ExpertClients from './pages/expert/ExpertClients';
 import ExpertSettings from './pages/expert/ExpertSettings';
 import ExpertNotifications from './pages/expert/ExpertNotifications';
 import IncomingConsultationAlert from './components/IncomingConsultationAlert';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Marketplace Context & Pages
 import { CartProvider } from './context/CartContext';
@@ -99,7 +100,8 @@ function App() {
               <ScrollToTop />
               <PlatformHeaderManager />
               <IncomingConsultationAlert />
-              <Routes>
+              <ErrorBoundary>
+                <Routes>
           {/* Guest-Only Auth Routes (Logged-in users automatically redirected to dashboard) */}
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<Login />} />
@@ -189,7 +191,8 @@ function App() {
             </Route>
           </Route>
 
-        </Routes>
+                </Routes>
+              </ErrorBoundary>
             </ThemeProvider>
           </CartProvider>
         </Router>

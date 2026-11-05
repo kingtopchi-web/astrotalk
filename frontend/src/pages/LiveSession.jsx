@@ -726,7 +726,7 @@ function LiveSession() {
         {!isExpert && showReviewModal && (
           <ReviewForm
             consultationId={consultationId}
-            expertName={otherUserName || consultation?.expert?.name || 'Expert'}
+            expertName={remoteUser?.name || consultation?.expert?.name || 'Expert'}
             consultationType={isAudioOnly ? 'Audio' : 'Video'}
             onSuccess={() => {
               setTimeout(() => {
@@ -1224,7 +1224,7 @@ function LiveSession() {
       {!isExpert && showReviewModal && (
         <ReviewForm
           consultationId={consultationId}
-          expertName={otherUserName || consultation?.expert?.name || 'Expert'}
+          expertName={remoteUser?.name || consultation?.expert?.name || 'Expert'}
           consultationType={isAudioOnly ? 'Audio' : 'Video'}
           onSuccess={() => {
             setTimeout(() => {
