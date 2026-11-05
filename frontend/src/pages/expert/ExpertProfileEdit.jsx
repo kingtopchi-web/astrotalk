@@ -31,6 +31,7 @@ import { compressAvatarImage } from '../../utils/imageCompressor';
 function ExpertProfileEdit() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const initialDataRef = useRef(null);
 
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -101,7 +102,7 @@ function ExpertProfileEdit() {
         const p = profileRes.data;
         setExpertId(p._id || '');
         
-        setForm({
+        const initialForm = {
           name: p.name || '',
           email: p.email || '',
           mobile: p.mobile || '',
@@ -124,17 +125,22 @@ function ExpertProfileEdit() {
           longitude: p.longitude ?? '',
           city: p.location?.city || p.city || '',
           state: p.location?.state || p.state || ''
-        });
+        };
 
+        let initialTags = ['PitchDecks', 'CapTables', 'SeedRounds'];
         if (p.specialization) {
           const parsedTags = p.specialization
             .split(',')
             .map(t => t.trim().replace(/^#/, ''))
             .filter(Boolean);
           if (parsedTags.length > 0) {
-            setTags(parsedTags);
+            initialTags = parsedTags;
           }
         }
+
+        setForm(initialForm);
+        setTags(initialTags);
+        initialDataRef.current = JSON.stringify({ form: initialForm, tags: initialTags });
 
         setCategories(catRes.data || []);
 
@@ -222,8 +228,31 @@ function ExpertProfileEdit() {
     return Math.min(100, Math.max(25, score));
   }, [form, tags]);
 
+  // Check if form or tags differ from original loaded state
+  const hasUnsavedChanges = useMemo(() => {
+    if (!initialDataRef.current) return false;
+    try {
+      const current = JSON.stringify({ form, tags });
+      return current !== initialDataRef.current;
+    } catch (e) {
+      return false;
+    }
+  }, [form, tags]);
+
+  const handleResetChanges = () => {
+    if (!initialDataRef.current) return;
+    try {
+      const parsed = JSON.parse(initialDataRef.current);
+      setForm(parsed.form);
+      setTags(parsed.tags);
+      setError('');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setSaving(true);
     setError('');
     setSuccess('');
@@ -280,10 +309,11 @@ function ExpertProfileEdit() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      initialDataRef.current = JSON.stringify({ form, tags });
       setSuccess('Profile updated successfully!');
       setTimeout(() => {
         setSuccess('');
-      }, 3000);
+      }, 3500);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Failed to update profile. Please try again.');
@@ -307,28 +337,48 @@ function ExpertProfileEdit() {
     <div className="min-h-screen bg-[#FDFBF9] p-4 sm:p-6 lg:p-8 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Status Alerts */}
+        {/* Fixed Global Floating Responsive Toast Alerts */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center justify-between text-xs sm:text-sm animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={18} className="shrink-0" />
-              <span>{error}</span>
+          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] w-[92vw] max-w-md animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="bg-rose-950/95 text-rose-100 border border-rose-500/40 px-4 sm:px-5 py-3.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3 backdrop-blur-md ring-1 ring-rose-500/30">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/30">
+                  <AlertCircle size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xs sm:text-sm text-white">Error Saving Profile</h4>
+                  <p className="text-[11px] sm:text-xs text-rose-200/90 truncate mt-0.5">{error}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setError('')} 
+                className="p-1.5 hover:bg-rose-800/40 text-rose-300 hover:text-white rounded-xl transition-colors shrink-0"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <button onClick={() => setError('')} className="p-1 hover:bg-red-100 rounded-lg">
-              <X size={15} />
-            </button>
           </div>
         )}
 
         {success && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex items-center justify-between text-xs sm:text-sm animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-              <span>{success}</span>
+          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] w-[92vw] max-w-md animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="bg-emerald-950/95 text-emerald-100 border border-emerald-500/40 px-4 sm:px-5 py-3.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3 backdrop-blur-md ring-1 ring-emerald-500/30">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xs sm:text-sm text-white">Profile Updated Successfully!</h4>
+                  <p className="text-[11px] sm:text-xs text-emerald-200/90 truncate mt-0.5">{success}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSuccess('')} 
+                className="p-1.5 hover:bg-emerald-800/40 text-emerald-300 hover:text-white rounded-xl transition-colors shrink-0"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <button onClick={() => setSuccess('')} className="p-1 hover:bg-emerald-100 rounded-lg">
-              <X size={15} />
-            </button>
           </div>
         )}
 
@@ -932,18 +982,18 @@ function ExpertProfileEdit() {
           </div>
 
           {/* ================= BOTTOM ACTION BAR ================= */}
-          <div className="flex items-center justify-end gap-3 pt-6 pb-12 border-t border-slate-200/80 mt-6">
+          <div className="flex items-center justify-end gap-3 pt-6 pb-20 sm:pb-12 border-t border-slate-200/80 mt-6">
             <button
               type="button"
-              onClick={() => navigate('/expert/dashboard')}
+              onClick={hasUnsavedChanges ? handleResetChanges : () => navigate('/expert/dashboard')}
               className="px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl shadow-2xs transition-all cursor-pointer"
             >
-              Cancel Changes
+              {hasUnsavedChanges ? 'Discard Changes' : 'Back to Dashboard'}
             </button>
 
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || !hasUnsavedChanges}
               className="px-6 py-2.5 bg-[#D97706] hover:bg-[#B45309] disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-2 cursor-pointer active:scale-95"
             >
               <Check size={16} />
@@ -951,6 +1001,53 @@ function ExpertProfileEdit() {
             </button>
           </div>
         </form>
+
+        {/* ================= FLOATING STICKY ACTION BAR (VISIBLE ON SCROLL) ================= */}
+        {hasUnsavedChanges && (
+          <div className="fixed bottom-3 inset-x-3 sm:bottom-6 sm:inset-x-auto sm:right-6 md:right-8 z-50 animate-in slide-in-from-bottom-5 duration-300">
+            <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-2xl p-2.5 sm:p-3 sm:px-4 flex items-center justify-between gap-3 sm:gap-5 ring-1 ring-amber-500/30 max-w-lg mx-auto sm:mx-0">
+              <div className="flex items-center gap-2.5 pl-1 min-w-0">
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                </span>
+                <div className="truncate">
+                  <p className="text-xs sm:text-sm font-bold text-white truncate">Unsaved Changes</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 hidden xs:block truncate">बदलाव सेव करना न भूलें</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetChanges}
+                  disabled={saving}
+                  className="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                >
+                  Discard
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-900/40 flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
