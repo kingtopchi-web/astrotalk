@@ -211,47 +211,58 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
       <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full max-w-full min-w-0">
 
         {/* Header - Desktop & Mobile */}
-        <header className="bg-surface border-b border-border-color px-4 sm:px-6 py-3 flex justify-between items-center sticky top-0 z-10 backdrop-blur-md bg-surface/95">
-          <div className="flex items-center gap-2.5 md:hidden">
-            <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1">
-              <Menu size={22} />
-            </button>
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+        <header className="bg-surface border-b border-border-color px-4 sm:px-6 py-3 sticky top-0 z-10 backdrop-blur-md bg-surface/95">
+          {/* Mobile Centered Brand Header */}
+          <div className="flex items-center justify-between w-full md:hidden">
+            <div className="w-10 flex items-center">
+              <button onClick={() => setIsSidebarOpen(true)} className="text-on-surface/80 p-1 -ml-1 cursor-pointer" aria-label="Open sidebar">
+                <Menu size={22} />
+              </button>
+            </div>
+
+            <Link to="/" className="flex items-center gap-2 justify-center">
+              <div className="w-8 h-8 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                 <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-full h-full object-cover" />
               </div>
               <span className="font-heading font-black text-base text-on-surface leading-none">{platformName || 'ExpertHub'}</span>
             </Link>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-3">
-            <ExpertSearchBar />
+
+            <div className="w-10 flex items-center justify-end">
+              <NotificationDropdown role="EXPERT" viewAllPath="/expert/notifications" />
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 ml-auto">
-            {/* Quick Contact & Helpdesk */}
-            {supportEmail && (
-              <a
-                href={`mailto:${supportEmail}`}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 border border-blue-200/60 text-blue-800 text-xs font-semibold hover:bg-blue-100/80 transition-colors shadow-xs"
-                title={`Contact Support: ${supportEmail}`}
-              >
-                <Mail size={13} className="text-blue-600 shrink-0" />
-                <span className="truncate max-w-[170px]">{supportEmail}</span>
-              </a>
-            )}
+          {/* Desktop Header */}
+          <div className="hidden md:flex justify-between items-center w-full">
+            <div className="flex items-center gap-3">
+              <ExpertSearchBar />
+            </div>
 
-            <NotificationDropdown role="EXPERT" viewAllPath="/expert/notifications" />
-            <div className="hidden md:flex items-center gap-3 border-l border-border-color pl-4 cursor-pointer">
-              <div className="text-right">
-                <p className="text-sm font-bold text-on-surface">{displayName}</p>
-                <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Expert</p>
+            <div className="flex items-center gap-3 ml-auto">
+              {/* Quick Contact & Helpdesk */}
+              {supportEmail && (
+                <a
+                  href={`mailto:${supportEmail}`}
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 border border-blue-200/60 text-blue-800 text-xs font-semibold hover:bg-blue-100/80 transition-colors shadow-xs"
+                  title={`Contact Support: ${supportEmail}`}
+                >
+                  <Mail size={13} className="text-blue-600 shrink-0" />
+                  <span className="truncate max-w-[170px]">{supportEmail}</span>
+                </a>
+              )}
+
+              <NotificationDropdown role="EXPERT" viewAllPath="/expert/notifications" />
+              <div className="flex items-center gap-3 border-l border-border-color pl-4 cursor-pointer">
+                <div className="text-right">
+                  <p className="text-sm font-bold text-on-surface">{displayName}</p>
+                  <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Expert</p>
+                </div>
+                <img
+                  src={expert?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10B981&color=fff`}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full shadow-sm border border-border-color object-cover"
+                />
               </div>
-              <img
-                src={expert?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10B981&color=fff`}
-                alt="Profile"
-                className="w-10 h-10 rounded-full shadow-sm border border-border-color object-cover"
-              />
             </div>
           </div>
         </header>

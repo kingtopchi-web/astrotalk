@@ -152,27 +152,29 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
       <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full min-w-0 max-w-full">
 
         {/* Mobile Header */}
-        <header className="md:hidden bg-surface border-b border-border-color p-4 sticky top-0 z-20">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2.5">
-              <Link to="/" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
-                  <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
-                </div>
-                <h1 className="text-base font-black text-on-surface leading-none">{platformName || 'ExpertHub'}</h1>
-              </Link>
+        <header className="md:hidden bg-surface border-b border-border-color px-4 py-3 sticky top-0 z-20">
+          <div className="flex justify-between items-center w-full">
+            <div className="w-14 flex items-center">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1 rounded-xl text-on-surface/80 hover:bg-surface-light -ml-1 cursor-pointer" aria-label="Open sidebar menu">
+                <Menu size={22} />
+              </button>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
+
+            <Link to="/" className="flex items-center gap-2 justify-center">
+              <div className="w-8 h-8 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+                <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
+              </div>
+              <h1 className="text-base font-black text-on-surface leading-none">{platformName || 'ExpertHub'}</h1>
+            </Link>
+
+            <div className="w-14 flex items-center justify-end gap-1">
               <NotificationDropdown role="USER" viewAllPath="/notifications" />
               <button
                 onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="p-2 rounded-xl text-on-surface/70 hover:text-on-surface hover:bg-surface-light"
+                className="p-1 rounded-xl text-on-surface/70 hover:text-on-surface hover:bg-surface-light"
                 title="Search"
               >
-                {isMobileSearchOpen ? <X size={20} /> : <Search size={20} />}
-              </button>
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-xl text-on-surface/80 hover:bg-surface-light">
-                <Menu size={22} />
+                {isMobileSearchOpen ? <X size={18} /> : <Search size={18} />}
               </button>
             </div>
           </div>
