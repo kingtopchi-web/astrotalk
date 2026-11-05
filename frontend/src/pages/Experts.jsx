@@ -594,55 +594,55 @@ function ExpertDiscovery() {
 
       {/* Call Modal */}
       {showCallModal && selectedExpert && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-border-color">
-            <div className="p-4 border-b border-border-color flex items-center justify-between">
-              <h3 className="font-bold text-lg text-on-surface flex items-center gap-2">
-                {callType === 'video' ? <Video size={20} className="text-primary"/> : callType === 'audio' ? <Phone size={20} className="text-emerald-500"/> : <MessageSquare size={20} className="text-blue-500" />}
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm sm:max-w-md overflow-hidden border border-border-color">
+            <div className="p-3 sm:p-4 border-b border-border-color flex items-center justify-between">
+              <h3 className="font-bold text-base sm:text-lg text-on-surface flex items-center gap-2">
+                {callType === 'video' ? <Video size={18} className="text-primary"/> : callType === 'audio' ? <Phone size={18} className="text-emerald-500"/> : <MessageSquare size={18} className="text-blue-500" />}
                 Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} with {selectedExpert.name}
               </h3>
-              <button onClick={() => setShowCallModal(false)} className="text-on-surface/50 hover:text-on-surface/80">
-                <X size={24} />
+              <button onClick={() => setShowCallModal(false)} className="text-on-surface/50 hover:text-on-surface/80 p-1">
+                <X size={20} />
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-3.5 sm:p-5 space-y-2.5 sm:space-y-3">
               {/* Pay as you go Rate Info or Free Chat Banner */}
               {isSelectedExpertFree ? (
-                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-4 mb-4 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
+                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-2.5 sm:p-3 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
                   <div>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-0.5">
                       🎁 1-Time Free Consultation
                     </span>
-                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-sm font-medium text-on-surface/70">/ Free Call</span></p>
-                    <p className="text-xs text-on-surface/70 mt-0.5">Admin limit: {freeDurationMinutes} min{freeDurationMinutes === 1 ? '' : 's'} • Zero wallet deduction</p>
+                    <p className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-xs sm:text-sm font-medium text-on-surface/70">/ Free Call</span></p>
+                    <p className="text-[10px] sm:text-xs text-on-surface/70 mt-0.5">Admin limit: {freeDurationMinutes} min{freeDurationMinutes === 1 ? '' : 's'} • Zero wallet deduction</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                    <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
                       100% Free
                     </span>
                   </div>
                 </div>
               ) : (
                 <>
-                <div className="bg-primary/10 rounded-xl p-4 mb-4 border border-primary/20 flex items-center justify-between">
+                <div className="bg-primary/10 rounded-xl p-2.5 sm:p-3 border border-primary/20 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
-                    <p className="text-2xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-sm font-medium text-on-surface/70"> / min</span></p>
+                    <p className="text-[10px] sm:text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
+                    <p className="text-lg sm:text-xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-xs sm:text-sm font-medium text-on-surface/70"> / min</span></p>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                    <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
                       Per-Second Billing
                     </span>
                   </div>
                 </div>
                 {callType === 'audio' && (
                   isSelectedExpertClaimed ? (
-                    <div className="p-3 mb-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                       ℹ️ You have already used your 1-time free consultation with {selectedExpert?.name}. Regular per-minute rates apply.
                     </div>
                   ) : isDailyLimitReached ? (
-                    <div className="p-3 mb-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-xs text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                      ℹ️ Daily free consultation limit reached (1/day). You can chat with {selectedExpert?.name} for free tomorrow, or continue now at regular rates.
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-[11px] sm:text-xs text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      ℹ️ Daily free consultation limit reached (1/day). You can call {selectedExpert?.name} for free tomorrow, or continue now at regular rates.
                     </div>
                   ) : null
                 )}
@@ -650,28 +650,37 @@ function ExpertDiscovery() {
               )}
               
               {/* Wallet Status Info */}
-              <div className="bg-surface-light border border-border-color rounded-xl p-4 mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <Wallet size={20} />
+              <div className="bg-surface-light border border-border-color rounded-xl p-2.5 sm:p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                    <Wallet size={16} />
                   </div>
                   <div>
-                    <p className="text-xs text-on-surface/60 font-medium">Your Wallet Balance</p>
-                    <p className="text-base font-bold text-on-surface">₹{walletBalance.toFixed(2)}</p>
+                    <p className="text-[10px] sm:text-xs text-on-surface/60 font-medium">Your Wallet Balance</p>
+                    <p className="text-xs sm:text-sm font-bold text-on-surface">₹{walletBalance.toFixed(2)}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-on-surface/60">{isSelectedExpertFree ? 'Session cost' : 'Estimated talk time'}</p>
-                  <p className="text-sm font-bold text-emerald-600">{isSelectedExpertFree ? '₹0 (Free Session)' : `~${Math.max(1, Math.floor(walletBalance / (getPerMinuteRate() * 1.2)))} mins`}</p>
-                </div>
+                {(() => {
+                  const rate = getPerMinuteRate();
+                  const totalSecs = rate > 0 ? Math.floor((walletBalance / rate) * 60) : 0;
+                  const m = Math.floor(totalSecs / 60);
+                  const s = totalSecs % 60;
+                  const formattedTime = m > 0 ? (s > 0 ? `~${m}m ${s}s` : `~${m} mins`) : `~${s}s`;
+                  return (
+                    <div className="text-right">
+                      <p className="text-[10px] sm:text-xs text-on-surface/60">{isSelectedExpertFree ? 'Session cost' : 'Estimated talk time'}</p>
+                      <p className="text-xs sm:text-sm font-bold text-emerald-600">{isSelectedExpertFree ? '₹0 (Free Session)' : formattedTime}</p>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* No Upfront payment guarantee notice */}
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 mb-6 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
-                <span className="text-base mt-0.5">💡</span>
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 sm:p-3 text-[11px] sm:text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                <span className="text-sm mt-0.5">💡</span>
                 <div>
-                  <p className="font-bold">{isSelectedExpertFree ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
-                  <p className="opacity-90 mt-0.5">
+                  <p className="font-bold text-[11px] sm:text-xs">{isSelectedExpertFree ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
+                  <p className="opacity-90 mt-0.5 text-[10px] sm:text-[11px] leading-tight">
                     {isSelectedExpertFree 
                       ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के ऑडियो कॉल कर सकते हैं। समय पूरा होते ही कॉल समाप्त हो जाएगी।`
                       : 'कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।'}
@@ -682,18 +691,18 @@ function ExpertDiscovery() {
               <button 
                 onClick={executeSessionBookingAndPayment}
                 disabled={processingPayment}
-                className="w-full bg-primary text-background font-bold py-3.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-base cursor-pointer"
+                className="w-full bg-primary text-background font-bold py-2.5 sm:py-3 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer"
               >
                 {processingPayment ? (
                   'Connecting...'
                 ) : isSelectedExpertFree ? (
                   <>
-                    <MessageSquare size={18} />
-                    <span>Start Free Chat ({freeDurationMinutes}m) / मुफ़्त चैट शुरू करें (₹0)</span>
+                    <Phone size={16} />
+                    <span>Start Free Call ({freeDurationMinutes}m) / मुफ़्त कॉल शुरू करें (₹0)</span>
                   </>
                 ) : (
                   <>
-                    <Phone size={18} />
+                    <Phone size={16} />
                     <span>Start Session Now / अभी शुरू करें</span>
                   </>
                 )}

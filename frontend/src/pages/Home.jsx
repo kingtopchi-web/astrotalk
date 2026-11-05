@@ -1582,105 +1582,105 @@ function Home() {
 
       {/* Free Chat Modal */}
       {freeChatModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-surface dark:bg-[#18181b] border border-border w-full max-w-lg rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-surface dark:bg-[#18181b] border border-border w-full max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col">
             <button
               onClick={() => setFreeChatModalOpen(false)}
-              className="absolute top-5 right-5 text-on-surface/50 hover:text-on-surface p-1.5 rounded-full hover:bg-surface-variant transition-colors cursor-pointer"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 text-on-surface/50 hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             {freeChatNotice ? (
-              <div className="text-center py-6 space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-3xl">
+              <div className="text-center py-4 sm:py-6 space-y-3 sm:space-y-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-2xl sm:text-3xl">
                   {freeChatNotice.type === 'already_used' ? '🎁' : 'ℹ️'}
                 </div>
                 <div>
-                  <h3 className="text-xl font-heading font-bold text-on-surface">
+                  <h3 className="text-lg sm:text-xl font-heading font-bold text-on-surface">
                     {freeChatNotice.title}
                   </h3>
-                  <p className="text-sm text-on-surface-variant mt-2 leading-relaxed px-4">
+                  <p className="text-xs sm:text-sm text-on-surface-variant mt-1.5 leading-relaxed px-2 sm:px-4">
                     {freeChatNotice.message}
                   </p>
                 </div>
-                <div className="pt-4 flex justify-center gap-3">
+                <div className="pt-2 sm:pt-4 flex justify-center gap-2.5">
                   <button
                     onClick={() => {
                       setFreeChatModalOpen(false);
                       navigate('/experts');
                     }}
-                    className="px-6 py-2.5 bg-primary text-background rounded-xl font-bold text-sm hover:bg-primary-light transition-all shadow-md cursor-pointer"
+                    className="px-4 sm:px-6 py-2 sm:py-2.5 bg-primary text-background rounded-xl font-bold text-xs sm:text-sm hover:bg-primary-light transition-all shadow-md cursor-pointer"
                   >
                     Browse Verified Experts
                   </button>
                   <button
                     onClick={() => setFreeChatModalOpen(false)}
-                    className="px-5 py-2.5 bg-surface-variant text-on-surface rounded-xl font-semibold text-sm hover:bg-border transition-colors cursor-pointer"
+                    className="px-3.5 sm:px-5 py-2 sm:py-2.5 bg-surface-variant text-on-surface rounded-xl font-semibold text-xs sm:text-sm hover:bg-border transition-colors cursor-pointer"
                   >
                     Close
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-2xl">
+              <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-1">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl sm:text-2xl shrink-0">
                     🎁
                   </div>
                   <div>
-                    <h3 className="text-lg font-heading font-bold text-on-surface">
+                    <h3 className="text-base sm:text-lg font-heading font-bold text-on-surface">
                       Start 1-Time Free Audio Call
                     </h3>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                      <Clock size={13} />
-                      Time limit: {freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'Minute' : 'Minutes'} • ₹0 Charged
+                    <p className="text-[11px] sm:text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                      <Clock size={12} />
+                      Time limit: {freeChatStatus?.freeChatDurationMinutes || 1} {(freeChatStatus?.freeChatDurationMinutes || 1) === 1 ? 'Minute' : 'Minutes'} • ₹0 Charged
                     </p>
                   </div>
                 </div>
 
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                <div className="p-2.5 sm:p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                   <p>
-                    <strong>Special Welcome Benefit:</strong> Enjoy a free <strong>{freeChatStatus?.freeChatDurationMinutes || 5} {(freeChatStatus?.freeChatDurationMinutes || 5) === 1 ? 'minute' : 'minutes'}</strong> audio call once with each listed expert! You can take <strong>1 free audio consultation per day</strong>.
+                    <strong>Special Welcome Benefit:</strong> Enjoy a free <strong>{freeChatStatus?.freeChatDurationMinutes || 1} {(freeChatStatus?.freeChatDurationMinutes || 1) === 1 ? 'minute' : 'minutes'}</strong> audio call once with each listed expert! You can take <strong>1 free audio consultation per day</strong>.
                   </p>
                 </div>
                 {freeChatStatus?.hasUsedToday && (
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
-                    <Clock size={15} />
+                  <div className="p-2.5 sm:p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+                    <Clock size={14} />
                     <span>Daily limit reached (1/day). You have used your free audio call for today. Remaining experts can be called for free tomorrow!</span>
                   </div>
                 )}
 
                 <div>
-                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
+                  <p className="text-[11px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                     Select an expert to begin:
                   </p>
-                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  <div className="max-h-56 sm:max-h-64 overflow-y-auto space-y-2 pr-0.5">
                     {experts.slice(0, 6).map((expert) => (
                       <div
                         key={expert._id}
-                        className="flex items-center justify-between p-3 rounded-2xl border border-border bg-surface-variant/30 hover:bg-surface-variant transition-colors"
+                        className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-border bg-surface-variant/30 hover:bg-surface-variant transition-colors gap-2"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <img
                             src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=F7C83C&color=fff`}
                             alt={expert.name}
-                            className="w-11 h-11 rounded-xl object-cover"
+                            className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl object-cover shrink-0"
                           />
-                          <div>
-                            <h4 className="text-sm font-bold text-on-surface leading-tight">
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate">
                               {expert.name}
                             </h4>
-                            <p className="text-xs text-on-surface-variant">
+                            <p className="text-[11px] sm:text-xs text-on-surface-variant truncate">
                               {expert.specialty || expert.categoryId?.name || 'Verified Expert'}
                             </p>
-                            <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 mt-0.5">
+                            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-medium text-slate-500 mt-0.5">
                               <span className="flex items-center gap-0.5 text-amber-500 font-bold">
-                                <Star size={11} className="fill-amber-500" />
+                                <Star size={10} className="fill-amber-500" />
                                 <span>{expert.rating ? expert.rating.toFixed(1) : '5.0'}</span>
                               </span>
                               {expert.languages && expert.languages.length > 0 && (
-                                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 truncate max-w-[120px]">
+                                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 truncate max-w-[100px] sm:max-w-[120px]">
                                   <Globe size={10} className="text-amber-500 shrink-0" />
                                   <span className="truncate">{expert.languages.slice(0, 2).join(', ')}</span>
                                 </span>
@@ -1703,9 +1703,9 @@ function Home() {
                                   ? 'You have already used your 1-time free consultation with this expert.'
                                   : isDailyLimitReached
                                   ? 'Daily free consultation limit reached. Available tomorrow!'
-                                  : `Call Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`
+                                  : `Audio Free (${freeChatStatus?.freeChatDurationMinutes || 1}m)`
                               }
-                              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 ${
+                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs transition-all shadow-xs flex items-center gap-1 shrink-0 ${
                                 isAvailableToday
                                   ? 'bg-primary text-background hover:bg-primary-light cursor-pointer'
                                   : 'bg-surface-variant text-on-surface-variant opacity-60 cursor-not-allowed'
@@ -1718,7 +1718,7 @@ function Home() {
                                   ? 'Call Used'
                                   : isDailyLimitReached
                                   ? 'Available Tomorrow'
-                                  : `Chat Free (${freeChatStatus?.freeChatDurationMinutes || 5}m)`}
+                                  : `Audio Free (${freeChatStatus?.freeChatDurationMinutes || 1}m)`}
                               </span>
                             </button>
                           );
