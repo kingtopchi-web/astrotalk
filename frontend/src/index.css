@@ -90,6 +90,63 @@
   .dark .text-on-surface {
     color: #F1F5F9 !important;
   }
+  .dark [class*="text-on-surface"] {
+    color: #F1F5F9 !important;
+  }
+  .dark [class*="text-on-background"] {
+    color: #F8FAFC !important;
+  }
+  .dark .text-gray-900,
+  .dark .text-gray-800 {
+    color: #F8FAFC !important;
+  }
+  .dark .text-gray-700,
+  .dark .text-gray-600 {
+    color: #CBD5E1 !important;
+  }
+  .dark .text-gray-500,
+  .dark .text-gray-400 {
+    color: #94A3B8 !important;
+  }
+  .dark .border-gray-200,
+  .dark .border-gray-100,
+  .dark .border-gray-300 {
+    border-color: #334155 !important;
+  }
+
+  /* Dark mode sidebar navigation text & icon high-contrast styling */
+  .dark aside {
+    background-color: #0F172A !important;
+    border-color: #1E293B !important;
+    color: #F8FAFC !important;
+  }
+  .dark aside nav a,
+  .dark aside a,
+  .dark aside button {
+    color: #E2E8F0 !important;
+  }
+  .dark aside nav a:hover,
+  .dark aside a:hover,
+  .dark aside button:hover {
+    color: #FFFFFF !important;
+    background-color: #1E293B !important;
+  }
+  .dark aside nav a[class*="text-primary"],
+  .dark aside a[class*="text-primary"],
+  .dark aside nav a[class*="text-amber"],
+  .dark aside a[class*="text-amber"],
+  .dark aside nav a[class*="bg-amber"],
+  .dark aside nav a[class*="bg-primary"] {
+    color: #F7C83C !important;
+    background-color: rgba(247, 200, 60, 0.15) !important;
+  }
+  .dark aside [class*="text-rose"],
+  .dark aside button[class*="text-rose"] {
+    color: #F87171 !important;
+  }
+  .dark aside [class*="uppercase"] {
+    color: #94A3B8 !important;
+  }
   .dark button .material-symbols-outlined,
   .dark .material-symbols-outlined {
     color: inherit;

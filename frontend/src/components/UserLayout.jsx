@@ -33,11 +33,6 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   React.useEffect(() => {
-    // User dashboard must never have black background theme
-    document.documentElement.classList.add('light-theme');
-  }, []);
-
-  React.useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
 
@@ -76,17 +71,17 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
   const displayName = user?.name || 'User';
 
   return (
-    <div className="light-theme min-h-screen bg-background flex font-sans w-full max-w-full">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-100 flex font-sans w-full max-w-full">
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border-color text-on-surface h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        <div className="p-5 border-b border-border-color/60">
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-[#0F172A] border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 h-screen fixed z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800">
           <Link to="/" className="flex items-center gap-3 group select-none">
             <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200">
               <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-black text-on-surface tracking-tight leading-none">
+              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">
                 {platformName || 'ExpertHub'}
               </span>
               <span className="text-[9px] font-bold uppercase tracking-wider text-primary mt-1 leading-none">
@@ -104,20 +99,20 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-on-surface/60 hover:bg-surface-light hover:text-on-surface'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={isActive ? 'text-primary' : 'text-on-surface/50'}>
+                    <span className={isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}>
                       {React.cloneElement(item.icon, { size: 18 })}
                     </span>
                     <span>{item.name}</span>
                   </div>
                   {item.badge && (
-                    <span className="bg-red-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {item.badge}
                     </span>
                   )}
@@ -127,23 +122,23 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
           </nav>
         </div>
 
-        <div className="px-4 py-3 border-t border-border-color bg-surface-light/40">
-          <p className="text-[10px] font-bold text-on-surface/50 uppercase tracking-wider mb-1">Support Desk</p>
+        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
+          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Support Desk</p>
           <a href={`mailto:${supportEmail || 'support@stitchplatform.com'}`} className="text-xs text-primary font-medium hover:underline block truncate">
             {supportEmail || 'support@stitchplatform.com'}
           </a>
-          <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="text-xs text-on-surface/60 hover:underline block mt-0.5">
+          <a href={`tel:${contactPhone || '+91 98765 43210'}`} className="text-xs text-slate-600 dark:text-slate-300 hover:underline block mt-0.5">
             {contactPhone || '+91 98765 43210'}
           </a>
         </div>
 
-        <div className="p-4 border-t border-border-color">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl transition-colors text-sm font-medium text-on-surface/60 hover:bg-red-50 hover:text-red-600"
+            className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl transition-colors text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
           >
-            <LogOut size={18} className="text-on-surface/50" />
-            Logout
+            <LogOut size={18} className="text-rose-500 dark:text-rose-400 shrink-0" />
+            <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -189,13 +184,13 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
         {isSidebarOpen && (
           <div className="md:hidden fixed inset-0 z-30 flex">
             <div className="fixed inset-0 bg-on-background/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
-            <aside className="relative flex flex-col w-64 bg-surface-light text-on-surface h-screen shadow-2xl">
-              <div className="p-4 border-b border-border-color">
+            <aside className="relative flex flex-col w-64 bg-white dark:bg-[#0F172A] border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 h-screen shadow-2xl">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2.5 px-2 py-1">
                   <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                     <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
                   </div>
-                  <span className="text-lg font-black text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
+                  <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{platformName || 'ExpertHub'}</span>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto px-4 py-2">
@@ -207,20 +202,20 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
                         key={item.name}
                         to={item.path}
                         onClick={() => setIsSidebarOpen(false)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
                           isActive
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-on-surface/60 hover:bg-surface-light hover:text-on-surface'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className={isActive ? 'text-primary' : 'text-on-surface/50'}>
+                          <span className={isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}>
                             {React.cloneElement(item.icon, { size: 18 })}
                           </span>
                           <span>{item.name}</span>
                         </div>
                         {item.badge && (
-                          <span className="bg-red-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                             {item.badge}
                           </span>
                         )}
@@ -232,9 +227,9 @@ const UserLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile = f
               <div className="px-4 pb-6 mt-auto space-y-1">
                 <button
                   onClick={() => { handleLogout(); setIsSidebarOpen(false); }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-red-50 hover:text-red-600 w-full text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 w-full text-left cursor-pointer"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={18} className="text-rose-500 dark:text-rose-400 shrink-0" />
                   <span>Logout</span>
                 </button>
               </div>

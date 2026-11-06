@@ -38,11 +38,6 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
   const location = useLocation();
 
   useEffect(() => {
-    // Expert dashboard must never have black background theme
-    document.documentElement.classList.add('light-theme');
-  }, []);
-
-  useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
 
@@ -132,19 +127,19 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
   const displayName = expert?.name || 'Expert';
 
   return (
-    <div className="light-theme min-h-screen bg-surface-light flex font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-100 flex font-sans">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-surface-light border-r border-border-color text-on-surface h-screen fixed z-20">
-        <div className="p-4 border-b border-border-color">
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-[#0F172A] border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 h-screen fixed z-20">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
           <Link to="/" className="flex items-center gap-3 group select-none">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200">
+            <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200">
               <img src="/logo.png" alt="ExpertHub" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-black text-on-surface tracking-tight leading-none">
+              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">
                 {platformName || 'ExpertHub'}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mt-1 leading-none">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mt-1 leading-none">
                 Expert Partner Portal
               </span>
             </div>
@@ -152,7 +147,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto">
-          <div className="text-xs font-semibold text-on-surface/60 uppercase tracking-wider mb-2 px-3">Expert Portal</div>
+          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 px-3">Expert Portal</div>
           <nav className="space-y-1">
             {navItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
@@ -160,13 +155,13 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold ${
                     isActive
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-on-surface/80 hover:bg-slate-200 hover:text-on-surface'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <div className={isActive ? 'text-primary' : 'text-on-surface/60'}>
+                  <div className={isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}>
                     {React.cloneElement(item.icon, { size: 18 })}
                   </div>
                   <span>{item.name}</span>
@@ -179,49 +174,49 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         <div className="px-4 pb-6 mt-auto">
           {/* Expert Support Desk */}
           {(supportEmail || contactPhone) && (
-            <div className="mb-3 p-3 rounded-xl bg-blue-50/80 border border-blue-100 text-xs shadow-sm">
-              <div className="font-bold text-blue-900 flex items-center gap-1.5 mb-1.5">
-                <HelpCircle size={14} className="text-blue-600 shrink-0" />
+            <div className="mb-3 p-3 rounded-xl bg-blue-50/80 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 text-xs shadow-sm">
+              <div className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5 mb-1.5">
+                <HelpCircle size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
                 <span>Expert Support</span>
               </div>
               {supportEmail && (
                 <a 
                   href={`mailto:${supportEmail}`} 
-                  className="flex items-center gap-1.5 text-blue-800 hover:text-blue-900 hover:underline truncate py-0.5"
+                  className="flex items-center gap-1.5 text-blue-800 dark:text-slate-300 hover:text-blue-900 dark:hover:text-white hover:underline truncate py-0.5"
                   title={`Email support: ${supportEmail}`}
                 >
-                  <Mail size={12} className="shrink-0 text-blue-600" />
+                  <Mail size={12} className="shrink-0 text-blue-600 dark:text-blue-400" />
                   <span className="truncate">{supportEmail}</span>
                 </a>
               )}
               {contactPhone && (
                 <a 
                   href={`tel:${contactPhone}`} 
-                  className="flex items-center gap-1.5 text-blue-800 hover:text-blue-900 hover:underline truncate py-0.5"
+                  className="flex items-center gap-1.5 text-blue-800 dark:text-slate-300 hover:text-blue-900 dark:hover:text-white hover:underline truncate py-0.5"
                   title={`Call support: ${contactPhone}`}
                 >
-                  <Phone size={12} className="shrink-0 text-blue-600" />
+                  <Phone size={12} className="shrink-0 text-blue-600 dark:text-blue-400" />
                   <span className="truncate">{contactPhone}</span>
                 </a>
               )}
             </div>
           )}
 
-          <div className="text-xs font-semibold text-on-surface/60 uppercase tracking-wider mb-2 px-3">Settings</div>
+          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 px-3">Settings</div>
           <div className="space-y-1">
-             <Link to="/expert/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-slate-200 hover:text-on-surface">
-               <UserIcon size={18} />
+             <Link to="/expert/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white">
+               <UserIcon size={18} className="text-slate-500 dark:text-slate-400" />
                <span>My Profile</span>
              </Link>
-             <Link to="/expert/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-slate-200 hover:text-on-surface">
-               <Settings size={18} />
+             <Link to="/expert/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white">
+               <Settings size={18} className="text-slate-500 dark:text-slate-400" />
                <span>Settings</span>
              </Link>
              <button 
                onClick={handleLogout}
-               className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-red-50 hover:text-red-600 w-full text-left"
+               className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 w-full text-left cursor-pointer"
              >
-               <LogOut size={18} />
+               <LogOut size={18} className="text-rose-500 dark:text-rose-400" />
                <span>Logout</span>
              </button>
           </div>
@@ -323,12 +318,12 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         {isSidebarOpen && (
           <div className="md:hidden fixed inset-0 z-30 flex">
             <div className="fixed inset-0 bg-on-background/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
-            <aside className="relative flex flex-col w-64 bg-surface-light text-on-surface h-screen shadow-2xl">
-              <div className="p-4 border-b border-border-color flex items-center gap-2.5">
+            <aside className="relative flex flex-col w-64 bg-white dark:bg-[#0F172A] border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 h-screen shadow-2xl">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
                   <img src="/logo.png" alt={platformName || 'ExpertHub'} className="w-full h-full object-cover" />
                 </div>
-                <span className="text-lg font-black text-on-surface tracking-tight">{platformName || 'ExpertHub'}</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{platformName || 'ExpertHub'}</span>
               </div>
               <div className="p-4 flex-1 overflow-y-auto">
                 <nav className="space-y-1">
@@ -339,13 +334,13 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
                         key={item.name}
                         to={item.path}
                         onClick={() => setIsSidebarOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold ${
                           isActive
-                            ? 'bg-blue-100 text-primary font-semibold'
-                            : 'text-on-surface/80 hover:bg-slate-200 hover:text-on-surface'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
-                        <div className={isActive ? 'text-primary' : 'text-on-surface/60'}>
+                        <div className={isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}>
                           {React.cloneElement(item.icon, { size: 18 })}
                         </div>
                         <span>{item.name}</span>
@@ -354,41 +349,41 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
                   })}
                 </nav>
               </div>
-              <div className="px-4 pb-6 mt-auto space-y-1 border-t border-border-color pt-4">
+              <div className="px-4 pb-6 mt-auto space-y-1 border-t border-slate-200 dark:border-slate-800 pt-4">
                  {/* Support Desk in mobile sidebar */}
                  {(supportEmail || contactPhone) && (
-                   <div className="mb-2 p-2.5 rounded-xl bg-blue-50/80 border border-blue-100 text-xs">
-                     <div className="font-bold text-blue-900 flex items-center gap-1.5 mb-1">
-                       <HelpCircle size={13} className="text-blue-600 shrink-0" />
+                   <div className="mb-2 p-2.5 rounded-xl bg-blue-50/80 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 text-xs">
+                     <div className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5 mb-1">
+                       <HelpCircle size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
                        <span>Expert Support</span>
                      </div>
                      {supportEmail && (
-                       <a href={`mailto:${supportEmail}`} className="flex items-center gap-1.5 text-blue-800 hover:underline truncate py-0.5">
-                         <Mail size={11} className="shrink-0 text-blue-600" />
+                       <a href={`mailto:${supportEmail}`} className="flex items-center gap-1.5 text-blue-800 dark:text-slate-300 hover:underline truncate py-0.5">
+                         <Mail size={11} className="shrink-0 text-blue-600 dark:text-blue-400" />
                          <span className="truncate">{supportEmail}</span>
                        </a>
                      )}
                      {contactPhone && (
-                       <a href={`tel:${contactPhone}`} className="flex items-center gap-1.5 text-blue-800 hover:underline truncate py-0.5">
-                         <Phone size={11} className="shrink-0 text-blue-600" />
+                       <a href={`tel:${contactPhone}`} className="flex items-center gap-1.5 text-blue-800 dark:text-slate-300 hover:underline truncate py-0.5">
+                         <Phone size={11} className="shrink-0 text-blue-600 dark:text-blue-400" />
                          <span>{contactPhone}</span>
                        </a>
                      )}
                    </div>
                  )}
-                 <Link onClick={() => setIsSidebarOpen(false)} to="/expert/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-slate-200 hover:text-on-surface w-full text-left">
-                   <UserIcon size={18} />
+                 <Link onClick={() => setIsSidebarOpen(false)} to="/expert/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white w-full text-left">
+                   <UserIcon size={18} className="text-slate-500 dark:text-slate-400" />
                    <span>My Profile</span>
                  </Link>
-                 <Link onClick={() => setIsSidebarOpen(false)} to="/expert/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-slate-200 hover:text-on-surface w-full text-left">
-                   <Settings size={18} />
+                 <Link onClick={() => setIsSidebarOpen(false)} to="/expert/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white w-full text-left">
+                   <Settings size={18} className="text-slate-500 dark:text-slate-400" />
                    <span>Settings</span>
                  </Link>
                  <button 
                    onClick={() => { handleLogout(); setIsSidebarOpen(false); }}
-                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-on-surface/80 hover:bg-red-50 hover:text-red-600 w-full text-left"
+                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 w-full text-left cursor-pointer"
                  >
-                   <LogOut size={18} />
+                   <LogOut size={18} className="text-rose-500 dark:text-rose-400" />
                    <span>Logout</span>
                  </button>
               </div>
@@ -397,7 +392,7 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
         )}
 
         {/* Page Content passed through Outlet */}
-        <div className="flex-1 p-3.5 sm:p-5 md:p-6 pb-28 sm:pb-32 md:pb-8 bg-surface-light min-w-0 max-w-full">
+        <div className="flex-1 p-3.5 sm:p-5 md:p-6 pb-28 sm:pb-32 md:pb-8 bg-slate-50 dark:bg-[#0B0F19] min-w-0 max-w-full">
           <div className="max-w-7xl mx-auto">
             {/* Page Top-Left Back Arrow */}
             <div className="mb-3 sm:mb-4 flex items-center">
