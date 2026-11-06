@@ -65,7 +65,7 @@ function Bookings() {
     status: b.status === 'scheduled' ? 'Confirmed' : 'Ongoing',
     paymentStatus: b.paymentStatus || 'pending',
     cost: b.cost || 0,
-    type: b.type === 'call' ? 'Audio' : b.type === 'video' ? 'Video' : 'Chat',
+    type: b.type === 'call' ? 'Voice Call' : b.type === 'video' ? 'Video' : 'Chat',
     expertId: b.expert?._id,
     meetingLink: b.meetingLink
   }));
@@ -79,7 +79,7 @@ function Bookings() {
     rawStatus: b.status,
     paymentStatus: b.paymentStatus || 'pending',
     cost: b.cost || 0,
-    type: b.type === 'call' ? 'Audio' : b.type === 'video' ? 'Video' : 'Chat',
+    type: b.type === 'call' ? 'Voice Call' : b.type === 'video' ? 'Video' : 'Chat',
     expertId: b.expert?._id,
     meetingLink: b.meetingLink,
     hasReviewed: b.hasReviewed,
@@ -259,7 +259,7 @@ function Bookings() {
                     </div>
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900 mb-1">Pick Your Slot</h4>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      Choose your preferred date, time, and session format (Audio or Video call).
+                      Choose your preferred date, time, and session format (Voice or Video call).
                     </p>
                   </div>
                 </div>
@@ -360,7 +360,7 @@ function Bookings() {
                             className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl flex items-center gap-1 transition-all"
                           >
                             <Phone size={13} />
-                            <span>Audio</span>
+                            <span>Voice Call</span>
                           </Link>
                           <Link
                             to={booking.meetingLink || `/live/${booking.id}?type=video`}

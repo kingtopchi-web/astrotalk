@@ -292,7 +292,7 @@ function ExpertProfile() {
                         <span className="material-symbols-outlined text-[20px]">call</span>
                       </div>
                       <div className="text-left">
-                        <span className="font-bold text-on-surface block">Audio Call</span>
+                        <span className="font-bold text-on-surface block">Voice Call</span>
                         <span className="text-xs text-on-surface-variant block">Voice consultation</span>
                       </div>
                     </div>

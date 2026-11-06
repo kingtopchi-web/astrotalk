@@ -19,12 +19,14 @@ import ConsultationsList from './pages/ConsultationsList';
 import AdminPlaceholder from './pages/AdminPlaceholder';
 import SupportTickets from './pages/SupportTickets';
 import ContactInquiries from './pages/ContactInquiries';
+import ReviewsModeration from './pages/ReviewsModeration';
 import TransactionsList from './pages/TransactionsList';
 import Refunds from './pages/Refunds';
 import Revenue from './pages/Revenue';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
 import RazorpayManagement from './pages/RazorpayManagement';
+import CouponsManagement from './pages/CouponsManagement';
 import MarketplaceManagement from './pages/MarketplaceManagement';
 import Administrators from './pages/Administrators';
 
@@ -67,6 +69,7 @@ function App() {
           {/* COMMUNICATION */}
           <Route path="/messages" element={<SupportTickets />} />
           <Route path="/contact-inquiries" element={<ContactInquiries />} />
+          <Route path="/reviews" element={<ReviewsModeration />} />
           <Route path="/video-sessions" element={<AdminPlaceholder title="Video Sessions" description="Video session management coming soon." />} />
           <Route path="/notifications" element={<Notifications />} />
 
@@ -74,6 +77,7 @@ function App() {
           <Route path="/transactions" element={<TransactionsList />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/revenue" element={<Revenue />} />
+          <Route path="/coupons" element={<CouponsManagement />} />
           <Route path="/razorpay-accounts" element={<RazorpayManagement />} />
 
           {/* MARKETPLACE */}

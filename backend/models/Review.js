@@ -37,6 +37,14 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     enum: ['PUBLISHED', 'HIDDEN', 'FLAGGED'],
     default: 'PUBLISHED'
+  },
+  flagReason: {
+    type: String,
+    default: ''
+  },
+  adminNotes: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true

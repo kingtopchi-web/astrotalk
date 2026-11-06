@@ -83,6 +83,14 @@ const walletTransactionSchema = new mongoose.Schema({
   },
   completedAt: {
     type: Date,
+  },
+  couponCode: {
+    type: String,
+    trim: true,
+  },
+  bonusAmount: {
+    type: Number,
+    default: 0,
   }
 }, { timestamps: true });
 

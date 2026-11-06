@@ -6,7 +6,7 @@ import {
   MessageSquare, Video, Bell, CreditCard, ArrowLeftRight, RefreshCw,
   TrendingUp, Star, Settings, User as UserIcon, LogOut, Menu, X,
   Search, ChevronDown, ChevronRight, CalendarClock, CheckCircle,
-  XCircle, Clock, Mail, ShoppingBag, ShieldCheck
+  XCircle, Clock, Mail, ShoppingBag, ShieldCheck, Ticket
 } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 import AdminSearchBar from '../components/AdminSearchBar';
@@ -51,11 +51,12 @@ const buildNav = (stats = {}) => [
   {
     section: 'COMMUNICATION',
     icon: MessageSquare,
-    badge: stats.pendingInquiries > 0 ? stats.pendingInquiries : undefined,
+    badge: (stats.pendingInquiries > 0 || stats.flaggedReviews > 0) ? (stats.pendingInquiries || 0) + (stats.flaggedReviews || 0) : undefined,
     badgeColor: 'orange',
     items: [
       { name: 'Support Tickets', path: '/messages', icon: MessageSquare },
       { name: 'Contact Inquiries', path: '/contact-inquiries', icon: Mail, badge: stats.pendingInquiries, badgeColor: 'orange' },
+      { name: 'Review Moderation', path: '/reviews', icon: Star, badge: stats.flaggedReviews > 0 ? stats.flaggedReviews : undefined, badgeColor: 'orange' },
       { name: 'Notifications', path: '/notifications', icon: Bell },
     ],
   },
@@ -65,6 +66,7 @@ const buildNav = (stats = {}) => [
     items: [
       { name: 'Transactions', path: '/transactions', icon: ArrowLeftRight },
       { name: 'Revenue', path: '/revenue', icon: TrendingUp },
+      { name: 'Coupons & Vouchers', path: '/coupons', icon: Ticket },
       { name: 'Razorpay Accounts', path: '/razorpay-accounts', icon: CreditCard },
     ],
   },

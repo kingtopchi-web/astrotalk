@@ -158,7 +158,7 @@ exports.expertJoinSession = async (req, res) => {
         title: 'Expert Ready to Connect',
         message: 'Your video consultation is ready to start.',
         type: 'expert_ready',
-        link: `/consultations/${consultationId}`,
+        link: `/live/${consultationId}?type=video`,
         actionText: 'Join consultation',
         badge: 'Live'
       }, io).catch(e => console.error('Expert ready notification error:', e));

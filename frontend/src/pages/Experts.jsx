@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight, Globe, MapPin, Bell } from 'lucide-react';
+import { Columns, Filter, Download, Search as SearchIcon, List, Video, Phone, X, MessageSquare, Heart, Wallet, CheckCircle2, AlertCircle, ArrowRight, Globe, MapPin, Bell, Calendar } from 'lucide-react';
 import UserLayout from '../components/UserLayout';
 import { useAuth } from '../context/AuthContext';
+import { usePlatformSettings } from '../context/PlatformSettingsContext';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
 import { getCachedUserLocation, requestUserLocation } from '../utils/userLocation';
 import { createSocket } from '../utils/socket';
+import FreeCallShareModal from '../components/FreeCallShareModal';
+import BookAppointmentModal from '../components/BookAppointmentModal';
 
 function ExpertDiscovery() {
   const { user } = useAuth();
+  const { callSafetyTips } = usePlatformSettings();
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [experts, setExperts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -35,6 +40,7 @@ function ExpertDiscovery() {
 
   // Call Modal State
   const [showCallModal, setShowCallModal] = useState(false);
+  const [showFreeCallShareModal, setShowFreeCallShareModal] = useState(false);
   const [callType, setCallType] = useState('video');
   const [callMinutes, setCallMinutes] = useState(15);
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -45,6 +51,15 @@ function ExpertDiscovery() {
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [freeChatStatus, setFreeChatStatus] = useState(null);
   const [freeDurationMinutes, setFreeDurationMinutes] = useState(5);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [appointmentExpert, setAppointmentExpert] = useState(null);
+  const [appointmentInitialType, setAppointmentInitialType] = useState('call');
+
+  const openAppointmentModal = (expert, type = 'call') => {
+    setAppointmentExpert(expert);
+    setAppointmentInitialType(type);
+    setShowAppointmentModal(true);
+  };
 
   useEffect(() => {
     fetchFreeChatConfig().then(cfg => {
@@ -103,6 +118,16 @@ function ExpertDiscovery() {
     const fetchSaved = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
+
+      let userRole = user?.role;
+      if (!userRole) {
+        try {
+          const u = JSON.parse(localStorage.getItem('user'));
+          userRole = u?.role;
+        } catch (e) {}
+      }
+      if (userRole && userRole !== 'USER') return;
+
       try {
         const res = await axios.get(getApiUrl('/user/saved-experts'), {
           headers: { Authorization: `Bearer ${token}` }
@@ -115,7 +140,7 @@ function ExpertDiscovery() {
       }
     };
     fetchSaved();
-  }, []);
+  }, [user]);
 
   const handleToggleSave = async (expertId, e) => {
     e.stopPropagation();
@@ -124,6 +149,15 @@ function ExpertDiscovery() {
       navigate('/login');
       return;
     }
+
+    let userRole = user?.role;
+    if (!userRole) {
+      try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        userRole = u?.role;
+      } catch (e) {}
+    }
+    if (userRole && userRole !== 'USER') return;
 
     const isCurrentlySaved = savedExpertIds.has(expertId);
     setSavedExpertIds(prev => {
@@ -313,6 +347,19 @@ function ExpertDiscovery() {
       showToast(err.response?.data?.message || err.message || 'Connection failed', 'error');
     } finally {
       setProcessingPayment(false);
+    }
+  };
+
+  const handleInitiateSessionClick = () => {
+    if (!acceptedTerms) {
+      alert('कृपया सत्र शुरू करने से पहले नियम व सुरक्षा दिशानिर्देश स्वीकार करें (Please accept safety guidelines & terms to proceed).');
+      return;
+    }
+    const isFreeCall = callType === 'audio' && isExpertFreeEligible(selectedExpert?._id);
+    if (isFreeCall) {
+      setShowFreeCallShareModal(true);
+    } else {
+      executeSessionBookingAndPayment();
     }
   };
 
@@ -612,7 +659,7 @@ function ExpertDiscovery() {
                               onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'audio'); }}
                               className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
                             >
-                              Audio
+                              Voice Call
                             </button>
                             <button 
                               type="button"
@@ -626,16 +673,15 @@ function ExpertDiscovery() {
                           <div className={viewMode === 'grid' ? 'w-full' : 'min-w-[180px]'}>
                             <button
                               type="button"
-                              onClick={(e) => handleNotifyExpert(expert._id, expert.name, e)}
-                              className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer active:scale-95 touch-manipulation border shadow-2xs ${
-                                notifiedExpertIds.has(expert._id)
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
-                              }`}
-                              title="एक्सपर्ट अभी ऑफलाइन है। कनेक्ट अनुरोध भेजें।"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openAppointmentModal(expert, 'call');
+                              }}
+                              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+                              title="एक्सपर्ट अभी ऑफलाइन है। अपॉइंटमेंट बुक करें।"
                             >
-                              <Bell size={13} className={notifiedExpertIds.has(expert._id) ? 'text-emerald-600' : 'text-amber-600 shrink-0'} />
-                              <span>{notifiedExpertIds.has(expert._id) ? '✓ Request Sent' : 'Notify Expert / अनुरोध भेजें'}</span>
+                              <Calendar size={13} className="shrink-0" />
+                              <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
                             </button>
                           </div>
                         )}
@@ -670,99 +716,90 @@ function ExpertDiscovery() {
             <div className="p-3 sm:p-4 border-b border-border-color flex items-center justify-between">
               <h3 className="font-bold text-base sm:text-lg text-on-surface flex items-center gap-2">
                 {callType === 'video' ? <Video size={18} className="text-primary"/> : callType === 'audio' ? <Phone size={18} className="text-emerald-500"/> : <MessageSquare size={18} className="text-blue-500" />}
-                Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} with {selectedExpert.name}
+                Instant {callType === 'video' ? 'Video Call' : callType === 'audio' ? 'Voice Call' : 'Chat'} with {selectedExpert.name}
               </h3>
               <button onClick={() => setShowCallModal(false)} className="text-on-surface/50 hover:text-on-surface/80 p-1">
                 <X size={20} />
               </button>
             </div>
             <div className="p-3.5 sm:p-5 space-y-2.5 sm:space-y-3">
-              {/* Pay as you go Rate Info or Free Chat Banner */}
+              {/* Compact Consultation Rate & Wallet Summary */}
               {isSelectedExpertFree ? (
-                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-2.5 sm:p-3 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
+                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 rounded-xl p-3 border border-amber-300 dark:border-amber-800 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold inline-block mb-0.5">
                       🎁 1-Time Free Consultation
                     </span>
-                    <p className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-xs sm:text-sm font-medium text-on-surface/70">/ Free Call</span></p>
+                    <p className="text-lg font-black text-amber-600 dark:text-amber-400">₹0 <span className="text-xs font-medium text-on-surface/70">/ Free Call</span></p>
                     <p className="text-[10px] sm:text-xs text-on-surface/70 mt-0.5">Admin limit: {freeDurationMinutes} min{freeDurationMinutes === 1 ? '' : 's'} • Zero wallet deduction</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
+                    <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
                       100% Free
                     </span>
                   </div>
                 </div>
               ) : (
-                <>
-                <div className="bg-primary/10 rounded-xl p-2.5 sm:p-3 border border-primary/20 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] sm:text-xs text-on-surface/70 uppercase tracking-wider font-semibold">Consultation Rate</p>
-                    <p className="text-lg sm:text-xl font-black text-primary">₹{getPerMinuteRate()}<span className="text-xs sm:text-sm font-medium text-on-surface/70"> / min</span></p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold border border-emerald-500/20">
-                      Per-Second Billing
-                    </span>
-                  </div>
-                </div>
-                {callType === 'audio' && (
-                  isSelectedExpertClaimed ? (
-                    <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      ℹ️ You have already used your 1-time free consultation with {selectedExpert?.name}. Regular per-minute rates apply.
+                <div className="bg-surface-light border border-border-color rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-on-surface/60 uppercase tracking-wider font-semibold">Consultation Rate</p>
+                      <p className="text-base font-black text-primary">₹{getPerMinuteRate()}<span className="text-xs font-normal text-on-surface/60"> / min</span></p>
                     </div>
-                  ) : isDailyLimitReached ? (
-                    <div className="p-2 sm:p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-[11px] sm:text-xs text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                      ℹ️ Daily free consultation limit reached (1/day). You can call {selectedExpert?.name} for free tomorrow, or continue now at regular rates.
-                    </div>
-                  ) : null
-                )}
-                </>
-              )}
-              
-              {/* Wallet Status Info */}
-              <div className="bg-surface-light border border-border-color rounded-xl p-2.5 sm:p-3 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                    <Wallet size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] sm:text-xs text-on-surface/60 font-medium">Your Wallet Balance</p>
-                    <p className="text-xs sm:text-sm font-bold text-on-surface">₹{walletBalance.toFixed(2)}</p>
-                  </div>
-                </div>
-                {(() => {
-                  const rate = getPerMinuteRate();
-                  const totalSecs = rate > 0 ? Math.floor((walletBalance / rate) * 60) : 0;
-                  const m = Math.floor(totalSecs / 60);
-                  const s = totalSecs % 60;
-                  const formattedTime = m > 0 ? (s > 0 ? `~${m}m ${s}s` : `~${m} mins`) : `~${s}s`;
-                  return (
                     <div className="text-right">
-                      <p className="text-[10px] sm:text-xs text-on-surface/60">{isSelectedExpertFree ? 'Session cost' : 'Estimated talk time'}</p>
-                      <p className="text-xs sm:text-sm font-bold text-emerald-600">{isSelectedExpertFree ? '₹0 (Free Session)' : formattedTime}</p>
+                      <p className="text-[10px] text-on-surface/60 font-medium">Wallet Balance</p>
+                      <p className="text-xs font-bold text-on-surface">₹{walletBalance.toFixed(2)}</p>
                     </div>
-                  );
-                })()}
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-border-color/60 text-on-surface/60">
+                    <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                      ⚡ Per-Second Billing (पहले कोई एडवांस नहीं कटेगा)
+                    </span>
+                    {(() => {
+                      const rate = getPerMinuteRate();
+                      const totalSecs = rate > 0 ? Math.floor((walletBalance / rate) * 60) : 0;
+                      const m = Math.floor(totalSecs / 60);
+                      const s = totalSecs % 60;
+                      const formattedTime = m > 0 ? (s > 0 ? `~${m}m ${s}s` : `~${m}m`) : `~${s}s`;
+                      return <span className="font-bold text-on-surface">{formattedTime} talk time</span>;
+                    })()}
+                  </div>
+                  {callType === 'audio' && isSelectedExpertClaimed && (
+                    <p className="text-[10px] text-on-surface/60 pt-0.5">
+                      ℹ️ You have used your 1-time free consultation with {selectedExpert?.name}. Regular per-minute rates apply.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Safety & Privacy Guidelines (Editable by Admin) */}
+              <div className="bg-blue-50/70 dark:bg-slate-800/80 border border-blue-200/80 dark:border-slate-700 rounded-xl p-3 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                  <span>🛡️</span>
+                  <span>सुरक्षा एवं गोपनीयता दिशानिर्देश (Safety Guidelines)</span>
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-white/70 dark:bg-slate-900/60 p-2.5 rounded-lg border border-blue-100 dark:border-slate-700/80">
+                  {callSafetyTips || '• अपनी प्राइवेसी बनाए रखने के लिए अपना मोबाइल नंबर, नाम, पता, बैंक A/C नंबर या OTP किसी से शेयर न करें।\n• प्लेटफॉर्म के बाहर किसी से भी पैसे का लेन-देन न करें।\n• किसी भी असुरक्षित स्थान पर किसी से व्यक्तिगत रूप से न मिलें।\n• किसी के बहकावे अथवा लालच के शिकार न हों।'}
+                </div>
               </div>
 
-              {/* No Upfront payment guarantee notice */}
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 sm:p-3 text-[11px] sm:text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
-                <span className="text-sm mt-0.5">💡</span>
-                <div>
-                  <p className="font-bold text-[11px] sm:text-xs">{isSelectedExpertFree ? 'यह सत्र 100% मुफ़्त है!' : 'पहले कोई एडवांस पैसा नहीं कटेगा!'}</p>
-                  <p className="opacity-90 mt-0.5 text-[10px] sm:text-[11px] leading-tight">
-                    {isSelectedExpertFree 
-                      ? `एडमिन द्वारा निर्धारित ${freeDurationMinutes} मिनट तक आप बिना किसी शुल्क के ऑडियो कॉल कर सकते हैं। समय पूरा होते ही कॉल समाप्त हो जाएगी।`
-                      : 'कॉल तुरंत शुरू होगी। जितनी देर बात होगी, सिर्फ़ उतने समय का पैसा बात खत्म होने पर वॉलेट से कटेगा।'}
-                  </p>
-                </div>
-              </div>
+              {/* Accept Terms & Conditions Checkbox */}
+              <label className="flex items-start gap-2.5 p-2 rounded-xl bg-surface-light border border-border-color cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer accent-amber-500 shrink-0"
+                />
+                <span className="text-[11px] sm:text-xs text-on-surface/70 leading-tight">
+                  मैं <strong className="text-on-surface">नियम व सुरक्षा दिशानिर्देश</strong> स्वीकार करता/करती हूँ (I accept Terms & Safety Guidelines)
+                </span>
+              </label>
               
               <button 
-                onClick={executeSessionBookingAndPayment}
-                disabled={processingPayment}
-                className="w-full bg-primary text-background font-bold py-2.5 sm:py-3 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer"
+                onClick={handleInitiateSessionClick}
+                disabled={processingPayment || !acceptedTerms}
+                className="w-full bg-primary text-background font-bold py-2.5 sm:py-3 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer disabled:cursor-not-allowed"
               >
                 {processingPayment ? (
                   'Connecting...'
@@ -773,8 +810,8 @@ function ExpertDiscovery() {
                   </>
                 ) : (
                   <>
-                    <Phone size={16} />
-                    <span>Start Session Now / अभी शुरू करें</span>
+                    {callType === 'chat' ? <MessageSquare size={16} /> : <Phone size={16} />}
+                    <span>Start {callType === 'chat' ? 'Chat' : 'Call'} Now / अभी शुरू करें</span>
                   </>
                 )}
               </button>
@@ -847,6 +884,28 @@ function ExpertDiscovery() {
           </div>
         </div>
       )}
+
+      {/* Free Call Viral Share Modal */}
+      <FreeCallShareModal
+        isOpen={showFreeCallShareModal}
+        onClose={() => setShowFreeCallShareModal(false)}
+        onProceed={() => {
+          setShowFreeCallShareModal(false);
+          executeSessionBookingAndPayment();
+        }}
+        expertName={selectedExpert?.name}
+        freeDuration={freeDurationMinutes || 5}
+      />
+      {/* Book Appointment Modal (When Expert is Offline) */}
+      <BookAppointmentModal
+        isOpen={showAppointmentModal}
+        onClose={() => {
+          setShowAppointmentModal(false);
+          setAppointmentExpert(null);
+        }}
+        expert={appointmentExpert}
+        initialType={appointmentInitialType}
+      />
     </UserLayout>
   );
 }

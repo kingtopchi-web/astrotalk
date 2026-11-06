@@ -17,7 +17,10 @@ import {
   AlertTriangle, 
   FileText,
   Clock,
-  X
+  X,
+  Megaphone,
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import { 
   fetchNotifications, 
@@ -34,6 +37,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [filter, setFilter] = useState('all'); // 'all' | 'unread'
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -70,7 +74,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
         socket.emit('join_role', role);
       }
 
-      socket.on('new_notification', (newNotif) => {
+      socket.on('new_notification', () => {
         soundService.playNotificationSound();
         loadData();
       });
@@ -105,6 +109,69 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
     };
   }, [isOpen]);
 
+  // Resolve appropriate route based on role and notification metadata
+  const resolveTargetLink = (notif) => {
+    if (!notif) return null;
+    let target = (notif.link || '').trim();
+
+    if (!target) {
+      // Auto-fallback link based on type if missing
+      switch (notif.type) {
+        case 'booking_confirmed':
+        case 'expert_ready':
+        case 'rate_consultation':
+          target = role === 'EXPERT' ? '/expert/consultations' : '/bookings';
+          break;
+        case 'chat_message':
+          target = role === 'EXPERT' ? '/expert/messages' : '/messages';
+          break;
+        case 'wallet_update':
+        case 'wallet_recharge':
+        case 'wallet_topup':
+          target = role === 'EXPERT' ? '/expert/earnings' : '/wallet';
+          break;
+        case 'consultation_request':
+        case 'incoming_call':
+          target = role === 'EXPERT' ? '/expert/consultations' : '/bookings';
+          break;
+        case 'earnings_update':
+        case 'payout_request':
+        case 'payout_processed':
+          target = role === 'EXPERT' ? '/expert/earnings' : '/wallet';
+          break;
+        case 'upcoming_session':
+          target = role === 'EXPERT' ? '/expert/schedule' : '/bookings';
+          break;
+        default:
+          target = '';
+      }
+    }
+
+    // Normalize /consultations/:id to /live/:id
+    if (target.startsWith('/consultations/')) {
+      const consultationId = target.replace('/consultations/', '').split('?')[0];
+      target = `/live/${consultationId}?type=video`;
+    }
+
+    // Role-based route normalization
+    if (role === 'EXPERT') {
+      if (target === '/bookings' || target === '/booking') target = '/expert/consultations';
+      if (target === '/wallet') target = '/expert/earnings';
+      if (target === '/messages') target = '/expert/messages';
+      if (target === '/profile') target = '/expert/profile';
+      if (target === '/settings') target = '/expert/settings';
+    } else {
+      if (target.startsWith('/expert/consultations')) target = '/bookings';
+      if (target.startsWith('/expert/earnings')) target = '/wallet';
+      if (target.startsWith('/expert/messages')) target = '/messages';
+      if (target.startsWith('/expert/profile')) target = '/profile';
+      if (target.startsWith('/expert/settings')) target = '/settings';
+      if (target.startsWith('/expert/schedule')) target = '/bookings';
+    }
+
+    return target;
+  };
+
   const handleMarkAsRead = async (id, e) => {
     if (e) e.stopPropagation();
     const res = await markNotificationAsRead(id, role);
@@ -134,13 +201,56 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
     setUnreadCount(res.unreadCount);
   };
 
-  const handleItemClick = async (notif) => {
+  // When clicking anywhere on the notification card:
+  // Navigate directly if an action link exists; otherwise open the detail modal ("ander jana")
+  const handleItemClick = (notif, e) => {
+    if (e) e.stopPropagation();
+
+    // Optimistically mark as read immediately
     if (!notif.isRead) {
-      await markNotificationAsRead(notif._id, role);
+      setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      markNotificationAsRead(notif._id, role);
     }
+
+    const target = resolveTargetLink(notif);
+    if (target) {
+      setIsOpen(false);
+      navigate(target);
+    } else {
+      // If it's a message/announcement with no specific route, open detail view
+      setSelectedNotification(notif);
+    }
+  };
+
+  // Open the detail modal explicitly
+  const handleOpenDetailModal = (notif, e) => {
+    if (e) e.stopPropagation();
+
+    if (!notif.isRead) {
+      setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      markNotificationAsRead(notif._id, role);
+    }
+
+    setSelectedNotification(notif);
+  };
+
+  // Direct action navigation from modal or action pill
+  const handleDirectNavigate = (notif, e) => {
+    if (e) e.stopPropagation();
+
+    if (!notif.isRead) {
+      setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      markNotificationAsRead(notif._id, role);
+    }
+
+    const target = resolveTargetLink(notif);
     setIsOpen(false);
-    if (notif.link) {
-      navigate(notif.link);
+    setSelectedNotification(null);
+    if (target) {
+      navigate(target);
     }
   };
 
@@ -153,6 +263,8 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
       case 'chat_message':
         return <MessageSquare className="w-5 h-5 text-indigo-500" />;
       case 'wallet_update':
+      case 'wallet_recharge':
+      case 'wallet_topup':
         return <Wallet className="w-5 h-5 text-amber-500" />;
       case 'rate_consultation':
         return <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />;
@@ -161,17 +273,12 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
       case 'incoming_call':
         return <PhoneCall className="w-5 h-5 text-rose-500" />;
       case 'earnings_update':
+      case 'payout_processed':
         return <TrendingUp className="w-5 h-5 text-emerald-500" />;
       case 'upcoming_session':
         return <Clock className="w-5 h-5 text-cyan-500" />;
-      case 'expert_registration':
-        return <UserCheck className="w-5 h-5 text-purple-500" />;
-      case 'payment_alert':
-        return <AlertTriangle className="w-5 h-5 text-rose-500" />;
-      case 'complaint_report':
-        return <FileText className="w-5 h-5 text-amber-500" />;
       case 'system_alert':
-        return <AlertTriangle className="w-5 h-5 text-red-500" />;
+        return <Megaphone className="w-5 h-5 text-blue-500" />;
       default:
         return <Bell className="w-5 h-5 text-primary" />;
     }
@@ -189,7 +296,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Notifications"
         title={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
-        className="relative p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-muted transition-colors flex items-center justify-center focus:outline-none"
+        className="relative p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-muted transition-colors flex items-center justify-center focus:outline-none cursor-pointer"
       >
         <span className="material-symbols-outlined text-[24px]">notifications</span>
         
@@ -232,7 +339,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
                 <button
                   type="button"
                   onClick={handleMarkAllRead}
-                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors"
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors cursor-pointer"
                   title="Mark all as read"
                 >
                   <CheckCheck size={14} /> Read all
@@ -242,7 +349,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="text-xs font-semibold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1 transition-colors"
+                  className="text-xs font-semibold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
                   title="Clear all notifications"
                 >
                   <Trash2 size={13} /> Clear all
@@ -266,7 +373,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
             <button
               type="button"
               onClick={() => setFilter('all')}
-              className={`px-3 py-1 rounded-full font-semibold transition-all ${
+              className={`px-3 py-1 rounded-full font-semibold transition-all cursor-pointer ${
                 filter === 'all'
                   ? 'bg-primary text-background'
                   : 'text-on-surface-variant hover:text-on-background bg-surface-muted'
@@ -277,7 +384,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
             <button
               type="button"
               onClick={() => setFilter('unread')}
-              className={`px-3 py-1 rounded-full font-semibold transition-all ${
+              className={`px-3 py-1 rounded-full font-semibold transition-all cursor-pointer ${
                 filter === 'unread'
                   ? 'bg-primary text-background'
                   : 'text-on-surface-variant hover:text-on-background bg-surface-muted'
@@ -300,78 +407,93 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
                 </p>
               </div>
             ) : (
-              filteredNotifications.map((notif) => (
-                <div
-                  key={notif._id}
-                  onClick={() => handleItemClick(notif)}
-                  className={`p-4 transition-colors cursor-pointer group flex items-start gap-3 relative ${
-                    !notif.isRead 
-                      ? 'bg-primary/5 hover:bg-primary/10' 
-                      : 'hover:bg-surface-muted/60 opacity-80 hover:opacity-100'
-                  }`}
-                >
-                  {/* Icon */}
-                  <div className="w-9 h-9 rounded-xl bg-surface-muted border border-border flex items-center justify-center shrink-0 mt-0.5">
-                    {getIcon(notif.type)}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 pr-6">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h4 className={`text-sm leading-tight text-on-background ${!notif.isRead ? 'font-bold' : 'font-medium'}`}>
-                        {notif.title}
-                      </h4>
-                      {notif.badge && !notif.isRead && (
-                        <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 text-[10px] font-bold uppercase tracking-wider">
-                          {notif.badge}
-                        </span>
-                      )}
+              filteredNotifications.map((notif) => {
+                const targetLink = resolveTargetLink(notif);
+                return (
+                  <div
+                    key={notif._id}
+                    onClick={(e) => handleItemClick(notif, e)}
+                    className={`p-4 transition-all cursor-pointer group flex items-start gap-3 relative hover:bg-primary/5 active:scale-[0.99] ${
+                      !notif.isRead 
+                        ? 'bg-primary/5' 
+                        : 'opacity-85 hover:opacity-100'
+                    }`}
+                  >
+                    {/* Icon */}
+                    <div className="w-9 h-9 rounded-xl bg-surface-muted border border-border flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                      {getIcon(notif.type)}
                     </div>
 
-                    <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
-                      {notif.message}
-                    </p>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 pr-6">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h4 className={`text-sm leading-tight text-on-background group-hover:text-primary transition-colors ${!notif.isRead ? 'font-bold' : 'font-medium'}`}>
+                          {notif.title}
+                        </h4>
+                        {notif.badge && !notif.isRead && (
+                          <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-500 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider">
+                            {notif.badge}
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="mt-2 flex items-center gap-3 text-[11px]">
-                      {notif.actionText && (
-                        <span className="font-semibold text-primary group-hover:underline flex items-center gap-1">
-                          {notif.actionText} <ExternalLink size={11} />
+                      <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
+                        {notif.message}
+                      </p>
+
+                      <div className="mt-2 flex items-center gap-3 text-[11px] flex-wrap">
+                        {targetLink ? (
+                          <button
+                            type="button"
+                            onClick={(e) => handleDirectNavigate(notif, e)}
+                            className="font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer bg-primary/10 px-2 py-0.5 rounded-md hover:bg-primary hover:text-white transition-all"
+                          >
+                            {notif.actionText || 'Open details'} <ChevronRight size={12} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenDetailModal(notif, e)}
+                            className="font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            View announcement <ExternalLink size={11} />
+                          </button>
+                        )}
+                        <span className="text-on-surface-variant/70">
+                          {notif.timeAgo || 'Recently'}
                         </span>
-                      )}
-                      <span className="text-on-surface-variant/70">
-                        {notif.timeAgo || 'Recently'}
-                      </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Actions (Mark read, delete) */}
-                  <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!notif.isRead && (
+                    {/* Actions (Mark read, delete) */}
+                    <div className="absolute right-3 top-3 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      {!notif.isRead && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleMarkAsRead(notif._id, e)}
+                          title="Mark as read"
+                          className="p-1 rounded-md text-on-surface-variant hover:text-emerald-500 hover:bg-surface-muted transition-colors cursor-pointer"
+                        >
+                          <Check size={14} />
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={(e) => handleMarkAsRead(notif._id, e)}
-                        title="Mark as read"
-                        className="p-1 rounded-md text-on-surface-variant hover:text-emerald-400 hover:bg-surface-muted transition-colors"
+                        onClick={(e) => handleDelete(notif._id, e)}
+                        title="Delete notification"
+                        className="p-1 rounded-md text-on-surface-variant hover:text-rose-500 hover:bg-surface-muted transition-colors cursor-pointer"
                       >
-                        <Check size={14} />
+                        <Trash2 size={14} />
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={(e) => handleDelete(notif._id, e)}
-                      title="Delete notification"
-                      className="p-1 rounded-md text-on-surface-variant hover:text-rose-400 hover:bg-surface-muted transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                    </div>
 
-                  {/* Unread dot */}
-                  {!notif.isRead && (
-                    <span className="w-2 h-2 rounded-full bg-primary shrink-0 self-center absolute right-3 top-1/2 -translate-y-1/2 group-hover:hidden" />
-                  )}
-                </div>
-              ))
+                    {/* Unread indicator */}
+                    {!notif.isRead && (
+                      <span className="w-2 h-2 rounded-full bg-primary shrink-0 self-center absolute right-3 bottom-3" />
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -383,7 +505,7 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
                 setIsOpen(false);
                 navigate(viewAllPath);
               }}
-              className="text-xs font-bold text-primary hover:underline transition-colors block w-full py-1"
+              className="text-xs font-bold text-primary hover:underline transition-colors block w-full py-1 cursor-pointer"
             >
               View All Notifications &rarr;
             </button>
@@ -391,6 +513,85 @@ export default function NotificationDropdown({ role = 'USER', viewAllPath = '/no
 
         </div>
       )}
+
+      {/* ========================================================= */}
+      {/* NOTIFICATION DETAIL MODAL ("ANDER JANA") */}
+      {/* ========================================================= */}
+      {selectedNotification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface-card border border-border text-on-background rounded-3xl shadow-2xl max-w-md w-full overflow-hidden p-6 space-y-4 animate-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-surface-muted border border-border flex items-center justify-center shrink-0">
+                  {getIcon(selectedNotification.type)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                      {selectedNotification.type ? selectedNotification.type.replace(/_/g, ' ') : 'Notification'}
+                    </span>
+                    {selectedNotification.badge && (
+                      <span className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-500 text-[10px] font-extrabold uppercase">
+                        {selectedNotification.badge}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-on-surface-variant mt-0.5">
+                    {selectedNotification.timeAgo || new Date(selectedNotification.createdAt || Date.now()).toLocaleString('en-IN', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short'
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedNotification(null)}
+                className="w-8 h-8 rounded-full bg-surface-muted hover:bg-border text-on-surface-variant hover:text-on-background flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Notification Title */}
+            <h3 className="text-lg font-bold text-on-background leading-snug">
+              {selectedNotification.title}
+            </h3>
+
+            {/* Full Message */}
+            <div className="p-4 rounded-2xl bg-surface-muted/60 border border-border/80 text-sm text-on-background leading-relaxed whitespace-pre-line max-h-60 overflow-y-auto">
+              {selectedNotification.message}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedNotification(null)}
+                className="px-4 py-2 rounded-xl border border-border text-on-surface-variant hover:bg-surface-muted text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+
+              {resolveTargetLink(selectedNotification) && (
+                <button
+                  type="button"
+                  onClick={() => handleDirectNavigate(selectedNotification)}
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-background text-xs font-bold shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  {selectedNotification.actionText || 'Open details'}
+                  <ChevronRight size={14} />
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

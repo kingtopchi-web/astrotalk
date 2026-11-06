@@ -66,8 +66,30 @@ exports.getTransactions = async (req, res) => {
 
 exports.addMoney = async (req, res) => {
   try {
-    const { amount, accountCode } = req.body; // amount in INR
+    const { amount, accountCode, couponCode } = req.body; // amount in INR
     if (!amount || amount < 10) return res.status(400).json({ message: 'Invalid amount' });
+
+    // Validate optional coupon
+    let appliedBonus = 0;
+    let validatedCoupon = null;
+    if (couponCode && typeof couponCode === 'string') {
+      const Coupon = require('../models/Coupon');
+      const foundCoupon = await Coupon.findOne({ code: couponCode.trim().toUpperCase(), isActive: true });
+      if (foundCoupon && (!foundCoupon.validTill || new Date(foundCoupon.validTill) > new Date())) {
+        if (!foundCoupon.minRechargeAmount || amount >= foundCoupon.minRechargeAmount) {
+          if (foundCoupon.discountType === 'FLAT') {
+            appliedBonus = foundCoupon.discountValue;
+          } else if (foundCoupon.discountType === 'PERCENTAGE') {
+            appliedBonus = (amount * foundCoupon.discountValue) / 100;
+            if (foundCoupon.maxDiscountAmount > 0 && appliedBonus > foundCoupon.maxDiscountAmount) {
+              appliedBonus = foundCoupon.maxDiscountAmount;
+            }
+          }
+          appliedBonus = Math.round(appliedBonus * 100) / 100;
+          validatedCoupon = foundCoupon;
+        }
+      }
+    }
 
     const amountInPaise = Math.round(amount * 100);
 
@@ -77,7 +99,8 @@ exports.addMoney = async (req, res) => {
       receipt: `wallet_${req.user._id}_${Date.now()}`,
       notes: {
         type: 'wallet_topup',
-        userId: req.user._id.toString()
+        userId: req.user._id.toString(),
+        couponCode: validatedCoupon ? validatedCoupon.code : ''
       },
       accountCode: accountCode || null
     });
@@ -92,14 +115,16 @@ exports.addMoney = async (req, res) => {
       status: 'PENDING',
       balanceBefore: 0, 
       balanceAfter: 0,
-      description: 'Wallet Top-up',
+      description: validatedCoupon ? `Wallet Top-up (+₹${appliedBonus} Bonus with ${validatedCoupon.code})` : 'Wallet Top-up',
       razorpayOrderId: order.orderId,
       providerOrderId: order.orderId,
       razorpayAccountId: order.keyId,
       accountCode: order.accountCode,
       transactionType: 'TOPUP',
       internalTransactionId,
-      mode: order.mode
+      mode: order.mode,
+      couponCode: validatedCoupon ? validatedCoupon.code : null,
+      bonusAmount: appliedBonus
     });
     
     await transaction.save();
@@ -109,7 +134,9 @@ exports.addMoney = async (req, res) => {
       amount: order.amount,
       currency: order.currency,
       keyId: order.keyId,
-      accountCode: order.accountCode
+      accountCode: order.accountCode,
+      bonusAmount: appliedBonus,
+      couponCode: validatedCoupon ? validatedCoupon.code : null
     });
   } catch (error) {
     console.error(error);
@@ -165,10 +192,12 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Transaction already processed or in progress' });
     }
 
-    // Atomic update of user wallet balance
+    const totalCredit = transaction.amount + (transaction.bonusAmount || 0);
+
+    // Atomic update of user wallet balance with base amount + bonus
     const user = await User.findOneAndUpdate(
       { _id: transaction.user },
-      { $inc: { walletBalance: transaction.amount } },
+      { $inc: { walletBalance: totalCredit } },
       { new: false }
     );
     if (!user) {
@@ -178,7 +207,7 @@ exports.verifyPayment = async (req, res) => {
     }
 
     const balanceBefore = user.walletBalance;
-    const balanceAfter = balanceBefore + transaction.amount;
+    const balanceAfter = balanceBefore + totalCredit;
 
     // Finalize transaction status to SUCCESS
     transaction.status = 'SUCCESS';
@@ -187,17 +216,37 @@ exports.verifyPayment = async (req, res) => {
     transaction.completedAt = new Date();
     await transaction.save();
 
+    // If coupon was applied, update coupon statistics
+    if (transaction.couponCode && transaction.bonusAmount > 0) {
+      const Coupon = require('../models/Coupon');
+      await Coupon.findOneAndUpdate(
+        { code: transaction.couponCode },
+        {
+          $inc: { usedCount: 1 },
+          $push: {
+            usedBy: {
+              user: user._id,
+              usedAt: new Date(),
+              bonusAmount: transaction.bonusAmount,
+              rechargeAmount: transaction.amount
+            }
+          }
+        }
+      ).catch((e) => console.error('Coupon stats update error:', e));
+    }
+
     // Dynamic Notifications
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
 
     // 1. User Notification: Wallet Update
+    const bonusText = transaction.bonusAmount > 0 ? ` (includes ₹${transaction.bonusAmount} extra bonus from ${transaction.couponCode})` : '';
     await sendNotification({
       recipient: user._id,
       recipientRole: 'USER',
       recipientModel: 'User',
-      title: 'Wallet Update',
-      message: `Your wallet recharge of ₹${transaction.amount} has been credited. Current balance: ₹${balanceAfter}.`,
+      title: 'Wallet Recharge Successful',
+      message: `Your recharge of ₹${transaction.amount} has been credited${bonusText}. Current balance: ₹${balanceAfter}.`,
       actionText: 'View transactions',
       link: '/wallet',
       type: 'wallet_update',

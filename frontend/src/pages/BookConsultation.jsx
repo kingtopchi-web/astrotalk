@@ -72,7 +72,7 @@ function BookConsultation() {
             if (foundService.consultationType) {
               setConsultationType(
                 foundService.consultationType === 'Video' ? 'Video Call' :
-                foundService.consultationType === 'Audio' ? 'Audio Call' :
+                (foundService.consultationType === 'Audio' || foundService.consultationType === 'Voice Call') ? 'Voice Call' :
                 foundService.consultationType === 'Chat' ? 'Chat' : 'Video Call'
               );
             }
@@ -120,13 +120,13 @@ function BookConsultation() {
         serviceId: service?._id,
         date: selectedDate.toISOString(),
         time: selectedTime,
-        type: consultationType.split(' ')[0], // Video, Audio, Chat
+        type: consultationType.toLowerCase().includes('video') ? 'video' : consultationType.toLowerCase().includes('chat') ? 'chat' : 'call',
         duration: service ? service.duration : 45,
         notes
       };
 
       // 1. Create Consultation (Pending Status)
-      const bookingResponse = await axios.post('https://experthub.nextgoodtechnologies.in/api/bookings', bookingData, config);
+      const bookingResponse = await axios.post(getApiUrl('/bookings'), bookingData, config);
       const consultation = bookingResponse.data;
 
       const basePrice = service ? service.price : (expert.rates?.video || expert.pricePerMinute || 500);
@@ -551,7 +551,7 @@ function BookConsultation() {
                   
                   {[
                     { id: 'Video Call', icon: Video, desc: 'Face-to-face consultation via video call' },
-                    { id: 'Audio Call', icon: Phone, desc: 'Talk with expert via voice call' },
+                    { id: 'Voice Call', icon: Phone, desc: 'Talk with expert via voice call' },
                     { id: 'Chat', icon: MessageSquare, desc: 'Get expert advice via text chat' }
                   ].map((type) => (
                     <div 
@@ -644,7 +644,7 @@ function BookConsultation() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-                    {consultationType === 'Video Call' ? <Video size={16} /> : consultationType === 'Audio Call' ? <Phone size={16} /> : <MessageSquare size={16} />} 
+                    {consultationType === 'Video Call' ? <Video size={16} /> : (consultationType === 'Voice Call' || consultationType === 'Audio Call') ? <Phone size={16} /> : <MessageSquare size={16} />} 
                     Consultation Type
                   </div>
                   <div className="text-sm font-bold text-slate-900">{consultationType}</div>

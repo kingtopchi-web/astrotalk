@@ -335,15 +335,18 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       expertEarning = Number((basePrice - platformFee).toFixed(2));
       amount = Number(basePrice.toFixed(2));
 
-      // Check if user has at least 1 minute minimum balance in wallet to connect (PAID bookings only)
-      const user = await User.findById(req.user._id);
-      const minRequired = ratePerMinute;
-      if (!user || (user.walletBalance || 0) < minRequired) {
-        return res.status(400).json({ 
-          message: `Insufficient balance. Minimum ₹${minRequired} (1 minute) required in your wallet to start.`,
-          requiredBalance: minRequired,
-          currentBalance: user ? (user.walletBalance || 0) : 0
-        });
+      // Check if user has at least 1 minute minimum balance in wallet to connect (PAID instant bookings only)
+      const isScheduledBooking = req.body.isInstant === false || Boolean(req.body.isScheduled);
+      if (!isScheduledBooking) {
+        const user = await User.findById(req.user._id);
+        const minRequired = ratePerMinute;
+        if (!user || (user.walletBalance || 0) < minRequired) {
+          return res.status(400).json({ 
+            message: `Insufficient balance. Minimum ₹${minRequired} (1 minute) required in your wallet to start.`,
+            requiredBalance: minRequired,
+            currentBalance: user ? (user.walletBalance || 0) : 0
+          });
+        }
       }
     }
 
@@ -351,14 +354,15 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
     const startTime = date ? new Date(date) : new Date();
 
     const allowInstant = settings ? settings.enableInstantBooking !== false : true;
+    const isScheduledBooking = req.body.isInstant === false || Boolean(req.body.isScheduled);
     if (req.body.isInstant && !allowInstant && !isFreeBooking) {
       return res.status(400).json({ 
         message: 'Instant booking is currently disabled by administrator. Please schedule an appointment slot.' 
       });
     }
 
-    const isInstant = (req.body.isInstant !== undefined ? req.body.isInstant : !serviceId) && allowInstant;
-    const initialStatus = (isInstant || isFreeBooking) ? 'ongoing' : 'pending';
+    const isInstant = !isScheduledBooking && (req.body.isInstant !== undefined ? req.body.isInstant : !serviceId) && allowInstant;
+    const initialStatus = isScheduledBooking ? 'scheduled' : ((isInstant || isFreeBooking) ? 'ongoing' : 'pending');
 
     const consultation = new Consultation({
       user: req.user._id,
@@ -437,13 +441,85 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       recipient: expert._id,
       recipientRole: 'EXPERT',
       recipientModel: 'Expert',
-      title: 'New Consultation Request',
-      message: `${req.user.name || 'A client'} requested a ${consultationDuration}-minute ${schemaType} consultation.`,
+      title: isScheduledBooking ? '🗓️ New Appointment Booked' : 'New Consultation Request',
+      message: `${req.user.name || 'A client'} booked a ${consultationDuration}-minute ${schemaType === 'call' ? 'voice call' : schemaType} ${isScheduledBooking ? 'appointment' : 'consultation'}.`,
       actionText: schemaType === 'chat' ? 'Open Chat & Reply' : 'View request · Accept or reject',
       link: schemaType === 'chat' ? '/expert/messages' : '/expert/consultations',
       type: 'consultation_request',
       badge: 'New'
     }, io).catch(e => console.error('Booking notif expert error:', e));
+
+    // 3. Dispatch Email to Expert regarding the appointment (non-blocking)
+    if (expert.email) {
+      try {
+        const sendEmail = require('../utils/sendEmail');
+        const typeLabel = schemaType === 'video' ? 'Video Call' : schemaType === 'chat' ? 'Chat' : 'Voice Call';
+        const formattedDate = new Date(startTime).toLocaleString('en-IN', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+          timeZone: 'Asia/Kolkata'
+        });
+        const clientName = req.user.name || 'A client';
+
+        sendEmail({
+          email: expert.email,
+          subject: `🗓️ New Appointment Booked: ${clientName} (${typeLabel})`,
+          message: `Namaste ${expert.name},\n\nYou have a new scheduled appointment with ${clientName} on ${formattedDate} (IST).\nFormat: ${typeLabel}\nDuration: ${consultationDuration} minutes\n\nPlease log in to your Expert Dashboard to manage your appointment:\nhttps://experthub.nextgoodtechnologies.in/expert/consultations\n\nThank you,\nTeam ExpertHub`,
+          htmlMessage: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #0f172a; margin: 0;">🗓️ New Appointment Booked!</h2>
+                <p style="color: #64748b; font-size: 14px; margin-top: 5px;">A client has scheduled an appointment with you</p>
+              </div>
+              
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px; color: #334155;"><strong>Client Name:</strong> ${clientName}</p>
+                <p style="margin: 0 0 10px; color: #334155;"><strong>Date & Time:</strong> ${formattedDate} (IST)</p>
+                <p style="margin: 0 0 10px; color: #334155;"><strong>Format:</strong> ${typeLabel}</p>
+                <p style="margin: 0 0 10px; color: #334155;"><strong>Estimated Duration:</strong> ${consultationDuration} mins</p>
+                ${notes ? `<p style="margin: 0; color: #334155;"><strong>Client Note:</strong> <em>"${notes}"</em></p>` : ''}
+              </div>
+
+              <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+                Please make sure you are available at the scheduled time. You can view all your active and upcoming appointments in your Expert Dashboard.
+              </p>
+
+              <div style="text-align: center; margin: 25px 0 15px;">
+                <a href="https://experthub.nextgoodtechnologies.in/expert/consultations" style="display: inline-block; background: #f59e0b; color: #000000; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px;">View Appointments in Dashboard</a>
+              </div>
+              
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+              <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">ExpertHub Consultation Marketplace</p>
+            </div>
+          `
+        }).catch(err => console.error('Error delivering appointment email to expert:', err.message));
+      } catch (err) {
+        console.error('Email preparation error:', err.message);
+      }
+    }
+
+    // 4. Dispatch SMS/Message to Expert's Mobile Number (non-blocking)
+    const expertMobile = expert.mobile || expert.phone;
+    if (expertMobile) {
+      try {
+        const { sendSms } = require('../utils/sendSms');
+        const typeLabel = schemaType === 'video' ? 'Video Call' : schemaType === 'chat' ? 'Chat' : 'Voice Call';
+        const formattedDate = new Date(startTime).toLocaleString('en-IN', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+          timeZone: 'Asia/Kolkata'
+        });
+        const clientName = req.user.name || 'A client';
+        const smsText = `ExpertHub Alert: Namaste ${expert.name}, ${clientName} has booked an appointment with you for ${formattedDate} (${typeLabel}). Check expert dashboard.`;
+        
+        sendSms({
+          phone: expertMobile,
+          message: smsText
+        }).catch(err => console.error('Error delivering appointment SMS to expert:', err.message));
+      } catch (err) {
+        console.error('SMS preparation error:', err.message);
+      }
+    }
 
     res.status(201).json(consultation);
   } catch (error) {

@@ -102,7 +102,15 @@ exports.createReview = async (req, res) => {
     const expertId = consultation.expert;
     const userId = req.user._id;
 
-    // 8. Create and persist review (with DB unique constraint safety)
+    // 8. Auto-moderation check: flag high-risk or abusive feedback for admin review
+    const SUSPICIOUS_PATTERNS = [
+      /\b(fraud|scam|scammer|thief|fake|chor|dhokha|harass|idiot|stupid|bastard|abuse)\b/i
+    ];
+    const isSuspicious = SUSPICIOUS_PATTERNS.some(pat => pat.test(trimmedFeedback));
+    const initialStatus = isSuspicious ? 'FLAGGED' : 'PUBLISHED';
+    const flagReason = isSuspicious ? 'Auto-flagged: feedback contains flagged sensitive/abusive keywords' : '';
+
+    // Create and persist review (with DB unique constraint safety)
     let review;
     try {
       review = await Review.create({
@@ -111,7 +119,8 @@ exports.createReview = async (req, res) => {
         expert: expertId,
         rating: numericRating,
         feedback: trimmedFeedback,
-        status: 'PUBLISHED'
+        status: initialStatus,
+        flagReason
       });
     } catch (createErr) {
       // Handle race condition duplicate key error (E11000)
@@ -420,4 +429,199 @@ exports.getTopReviews = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// ==========================================
+// ADMIN REVIEW MODERATION CONTROLLERS
+// ==========================================
+
+// @route   GET /api/admin/reviews
+// @desc    Get all reviews with filters, search, and pagination for Admin
+// @access  Private (ADMIN only)
+exports.getAllReviewsAdmin = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit, 10) || 15);
+    const skip = (page - 1) * limit;
+    const { status, rating, search } = req.query;
+
+    const query = {};
+
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+
+    if (rating && !isNaN(Number(rating))) {
+      query.rating = Number(rating);
+    }
+
+    if (search && search.trim()) {
+      const s = search.trim();
+      const regex = new RegExp(s, 'i');
+
+      const [matchedUsers, matchedExperts] = await Promise.all([
+        mongoose.model('User').find({ $or: [{ name: regex }, { email: regex }] }).select('_id'),
+        mongoose.model('Expert').find({ $or: [{ name: regex }, { email: regex }, { specialty: regex }] }).select('_id')
+      ]);
+
+      query.$or = [
+        { feedback: regex },
+        { user: { $in: matchedUsers.map(u => u._id) } },
+        { expert: { $in: matchedExperts.map(e => e._id) } }
+      ];
+    }
+
+    const [reviews, total, statusCounts, aggAvg] = await Promise.all([
+      Review.find(query)
+        .populate('user', 'name email profileImage phone')
+        .populate('expert', 'name email specialty profileImage rating reviewsCount')
+        .populate('consultation', 'type status startTime scheduledStartTime durationInMinutes actualDuration totalAmount')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Review.countDocuments(query),
+      Review.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]),
+      Review.aggregate([
+        { $match: { status: 'PUBLISHED' } },
+        { $group: { _id: null, avgRating: { $avg: '$rating' } } }
+      ])
+    ]);
+
+    const counts = {
+      TOTAL: 0,
+      PUBLISHED: 0,
+      HIDDEN: 0,
+      FLAGGED: 0
+    };
+    statusCounts.forEach(item => {
+      if (counts[item._id] !== undefined) {
+        counts[item._id] = item.count;
+      }
+      counts.TOTAL += item.count;
+    });
+
+    const averageRating = aggAvg.length > 0 ? Number(aggAvg[0].avgRating.toFixed(1)) : 0;
+
+    return res.json({
+      success: true,
+      reviews,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
+      stats: {
+        totalReviews: counts.TOTAL,
+        publishedCount: counts.PUBLISHED,
+        hiddenCount: counts.HIDDEN,
+        flaggedCount: counts.FLAGGED,
+        averageRating
+      }
+    });
+  } catch (error) {
+    console.error('Get all reviews admin error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
+  }
+};
+
+// @route   PATCH /api/admin/reviews/:id/status
+// @desc    Update review status (PUBLISHED, HIDDEN, FLAGGED) and recalculate expert rating
+// @access  Private (ADMIN only)
+exports.updateReviewStatusAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes } = req.body;
+
+    if (!['PUBLISHED', 'HIDDEN', 'FLAGGED'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status. Must be PUBLISHED, HIDDEN, or FLAGGED' });
+    }
+
+    const review = await Review.findById(id);
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    review.status = status;
+    if (adminNotes !== undefined) {
+      review.adminNotes = adminNotes;
+    }
+    await review.save();
+
+    // Re-calculate the expert's official aggregate rating and review count from PUBLISHED reviews only
+    const updatedStats = await updateExpertAggregateRating(review.expert);
+
+    // Real-time broadcast so users and expert see updated score immediately
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`expert_${review.expert}`).emit('expert_rating_updated', {
+        expertId: review.expert,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+      io.emit('public_expert_rating_updated', {
+        expertId: review.expert,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Review marked as ${status} successfully`,
+      review,
+      expertStats: updatedStats
+    });
+  } catch (error) {
+    console.error('Update review status admin error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update review status' });
+  }
+};
+
+// @route   DELETE /api/admin/reviews/:id
+// @desc    Permanently delete a fake/offensive review and recalculate expert rating
+// @access  Private (ADMIN only)
+exports.deleteReviewAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const review = await Review.findById(id);
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    const expertId = review.expert;
+    await Review.findByIdAndDelete(id);
+
+    // Re-calculate expert's official rating and review count
+    const updatedStats = await updateExpertAggregateRating(expertId);
+
+    // Broadcast real-time score updates
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`expert_${expertId}`).emit('expert_rating_updated', {
+        expertId,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+      io.emit('public_expert_rating_updated', {
+        expertId,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Review permanently deleted and expert rating recalculated',
+      expertStats: updatedStats
+    });
+  } catch (error) {
+    console.error('Delete review admin error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete review' });
+  }
+};
+
 

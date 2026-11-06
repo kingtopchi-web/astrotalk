@@ -506,13 +506,13 @@ function ExpertProfileEdit() {
                 <div className="grid grid-cols-3 gap-2.5 pt-1">
                   
                   {/* Chat Rate */}
-                  <div className="bg-slate-50/70 border border-slate-200/90 rounded-xl p-2.5 text-center flex flex-col justify-between">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 mb-1.5">
-                      <MessageCircle size={12} className="text-blue-600" />
+                  <div className="bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-center flex flex-col justify-between">
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                      <MessageCircle size={12} className="text-blue-500 shrink-0" />
                       <span>Chat</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-2xs">
-                      <span className="text-xs font-bold text-slate-400">₹</span>
+                    <div className="flex items-center justify-center gap-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 shadow-2xs">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">₹</span>
                       <input 
                         type="number"
                         min="5"
@@ -521,20 +521,20 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, chat: e.target.value }
                         })}
-                        className="w-12 text-sm font-bold text-slate-900 text-center outline-none bg-transparent"
+                        className="w-12 text-sm font-bold text-slate-900 dark:text-white text-center outline-none bg-transparent"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 font-semibold mt-1">Min ₹5/min</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Min ₹5/min</span>
                   </div>
 
-                  {/* Audio Rate */}
-                  <div className="bg-slate-50/70 border border-slate-200/90 rounded-xl p-2.5 text-center flex flex-col justify-between">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 mb-1.5">
-                      <Phone size={12} className="text-emerald-600" />
-                      <span>Audio</span>
+                  {/* Voice Call Rate */}
+                  <div className="bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-center flex flex-col justify-between">
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                      <Phone size={12} className="text-emerald-500 shrink-0" />
+                      <span>Voice Call</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-2xs">
-                      <span className="text-xs font-bold text-slate-400">₹</span>
+                    <div className="flex items-center justify-center gap-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 shadow-2xs">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">₹</span>
                       <input 
                         type="number"
                         min="10"
@@ -543,20 +543,20 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, audio: e.target.value }
                         })}
-                        className="w-12 text-sm font-bold text-slate-900 text-center outline-none bg-transparent"
+                        className="w-12 text-sm font-bold text-slate-900 dark:text-white text-center outline-none bg-transparent"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 font-semibold mt-1">Min ₹10/min</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Min ₹10/min</span>
                   </div>
 
                   {/* Video Rate */}
-                  <div className="bg-slate-50/70 border border-slate-200/90 rounded-xl p-2.5 text-center flex flex-col justify-between">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 mb-1.5">
-                      <Video size={12} className="text-amber-600" />
+                  <div className="bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-center flex flex-col justify-between">
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                      <Video size={12} className="text-amber-500 shrink-0" />
                       <span>Video</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-2xs">
-                      <span className="text-xs font-bold text-slate-400">₹</span>
+                    <div className="flex items-center justify-center gap-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 shadow-2xs">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">₹</span>
                       <input 
                         type="number"
                         min="20"
@@ -565,10 +565,10 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, video: e.target.value }
                         })}
-                        className="w-12 text-sm font-bold text-slate-900 text-center outline-none bg-transparent"
+                        className="w-12 text-sm font-bold text-slate-900 dark:text-white text-center outline-none bg-transparent"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 font-semibold mt-1">Min ₹20/min</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Min ₹20/min</span>
                   </div>
 
                 </div>
@@ -682,48 +682,48 @@ function ExpertProfileEdit() {
 
                   {/* Email Address */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                       Email Address
                     </label>
                     <div className="relative">
-                      <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
                       <input 
                         type="email" 
                         value={form.email}
                         readOnly
                         title="Registered account email"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50/80 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 font-semibold cursor-not-allowed"
                       />
                     </div>
                   </div>
 
                   {/* Primary Base / Timezone */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                       Primary Base / Timezone
                     </label>
                     <div className="relative">
-                      <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
                       <input 
                         type="text" 
                         value={form.timezone}
                         onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                         placeholder="Bengaluru, India (IST)"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 dark:text-slate-100"
                       />
                     </div>
                   </div>
 
                   {/* Live Coordinates / Geolocation */}
-                  <div className="sm:col-span-2 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+                  <div className="sm:col-span-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-xl p-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <MapPin size={16} className={form.latitude && form.longitude ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
+                        <MapPin size={16} className={form.latitude && form.longitude ? 'text-emerald-500 shrink-0' : 'text-slate-400 shrink-0'} />
                         <div>
-                          <p className="text-xs font-bold text-slate-800">
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
                             Geographical Coordinates (For User Distance Matching)
                           </p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             {form.latitude && form.longitude
                               ? `Latitude: ${Number(form.latitude).toFixed(4)}, Longitude: ${Number(form.longitude).toFixed(4)}`
                               : 'No GPS location saved yet. Click detect to set your current location.'}

@@ -549,7 +549,7 @@ function ExpertConsultations() {
                   {activeQueueSession.isLiveWaiting ? 'Incoming Live Call' : 'Next Appointment'}
                 </span>
                 <h3 className="text-lg font-extrabold text-white leading-tight">
-                  {activeQueueSession.userName} ({activeQueueSession.type === 'video' ? 'Video Call' : activeQueueSession.type === 'chat' ? 'Chat' : 'Audio Call'})
+                  {activeQueueSession.userName} ({activeQueueSession.type === 'video' ? 'Video Call' : activeQueueSession.type === 'chat' ? 'Chat' : 'Voice Call'})
                 </h3>
                 <p className="text-xs text-amber-200/90 flex items-center gap-1.5 pt-1">
                   <Clock size={13} className="text-amber-200" />
@@ -629,10 +629,10 @@ function ExpertConsultations() {
                 }}
                 className="appearance-none bg-white border border-slate-200/90 text-slate-700 text-xs sm:text-sm font-medium rounded-xl pl-3.5 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer shadow-xs"
               >
-                <option value="all">All Formats (Video, Chat, Audio)</option>
+                <option value="all">All Formats (Video, Chat, Voice Call)</option>
                 <option value="video">Video Call</option>
                 <option value="chat">Chat Consults</option>
-                <option value="call">Audio Calls</option>
+                <option value="call">Voice Calls</option>
                 <option value="report">Report & Second Opinion</option>
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -765,7 +765,7 @@ function ExpertConsultations() {
                           {item.type === 'call' && (
                             <span className="flex items-center gap-1 text-slate-600">
                               <Phone size={13} className="text-emerald-600" />
-                              <span>Audio Call</span>
+                              <span>Voice Call</span>
                             </span>
                           )}
                           {item.type === 'report' && (
@@ -974,7 +974,7 @@ function ExpertConsultations() {
                   >
                     <option value="video">Video Call</option>
                     <option value="chat">Chat</option>
-                    <option value="call">Audio Call</option>
+                    <option value="call">Voice Call</option>
                     <option value="report">Report & Second Opinion</option>
                   </select>
                 </div>

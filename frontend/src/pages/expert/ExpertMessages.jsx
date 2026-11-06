@@ -698,7 +698,7 @@ function ExpertMessages() {
               </button>
               <button 
                 className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-                title="Audio Call"
+                title="Voice Call"
               >
                 <Phone size={19} />
               </button>

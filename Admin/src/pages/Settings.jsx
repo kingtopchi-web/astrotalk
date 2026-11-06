@@ -32,6 +32,7 @@ export default function Settings() {
     freeChatDurationMinutes: '5',
     minimumExpertDistanceKm: '0',
     minPayoutAmount: '100',
+    callSafetyTips: '• अपनी प्राइवेसी बनाए रखने के लिए अपना मोबाइल नंबर, नाम, पता, बैंक A/C नंबर या OTP किसी से शेयर न करें।\n• प्लेटफॉर्म के बाहर किसी से भी पैसे का लेन-देन न करें।\n• किसी भी असुरक्षित स्थान पर किसी से व्यक्तिगत रूप से न मिलें।\n• किसी के बहकावे अथवा लालच के शिकार न हों।',
     
     // Security
     sessionTimeoutMinutes: '60',
@@ -446,6 +447,40 @@ export default function Settings() {
                     />
                     <span className="text-xs font-bold text-slate-600">Minutes</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Call Safety & Privacy Guidelines (Editable by Admin) */}
+              <div className="p-5 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold">
+                    🛡️
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Call Safety Guidelines & Privacy Tips (User Popup)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Yeh safety tips call modal popup me dikhenge. Users ko call start karne se pehle terms & safety tick karni hogi.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Safety Messages / Privacy Tips (Line-by-Line)
+                  </label>
+                  <textarea
+                    rows={5}
+                    name="callSafetyTips"
+                    value={formData.callSafetyTips || ''}
+                    onChange={handleChange}
+                    placeholder="Enter safety tips that will appear in the call confirmation popup..."
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans leading-relaxed"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Tip: You can use bullets (• or 1., 2.) for distinct guidelines.
+                  </p>
                 </div>
               </div>
             </div>

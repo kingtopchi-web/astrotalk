@@ -210,7 +210,8 @@ exports.getPublicSettings = async (req, res) => {
       address: settings?.address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India',
       enableFreeChat: settings ? settings.enableFreeChat !== false : true,
       freeChatDurationMinutes: settings?.freeChatDurationMinutes || 5,
-      minimumExpertDistanceKm: settings?.minimumExpertDistanceKm || 0
+      minimumExpertDistanceKm: settings?.minimumExpertDistanceKm || 0,
+      callSafetyTips: settings?.callSafetyTips || '• अपनी प्राइवेसी बनाए रखने के लिए अपना मोबाइल नंबर, नाम, पता, बैंक A/C नंबर या OTP किसी से शेयर न करें।\n• प्लेटफॉर्म के बाहर किसी से भी पैसे का लेन-देन न करें।\n• किसी भी असुरक्षित स्थान पर किसी से व्यक्तिगत रूप से न मिलें।\n• किसी के बहकावे अथवा लालच के शिकार न हों।'
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

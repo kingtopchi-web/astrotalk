@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 
 // Default sample notifications matching the user's exact specification
@@ -361,6 +362,11 @@ exports.getNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.json({ success: true, message: 'Notification marked as read' });
+    }
+
     const notification = await Notification.findOneAndUpdate(
       {
         _id: id,
@@ -434,6 +440,11 @@ exports.markAllAsRead = async (req, res) => {
 exports.deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.json({ success: true, message: 'Notification removed' });
+    }
+
     const notification = await Notification.findOneAndUpdate(
       {
         _id: id,

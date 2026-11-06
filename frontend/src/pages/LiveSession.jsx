@@ -7,10 +7,37 @@ import ReviewForm from '../components/ReviewForm';
 import { soundService } from '../utils/soundService';
 import { getApiUrl } from '../utils/apiConfig';
 
-function LiveSession() {
-  const { id: consultationId } = useParams();
+function LiveSession({ consultationId: propId, isMinimized: propMinimized, onToggleMinimize, onEndSession }) {
+  const { id: paramId } = useParams();
+  const consultationId = propId || paramId;
   const navigate = useNavigate();
   const { user } = useAuth(); // Can be User or Expert
+  
+  const [isMinimized, setIsMinimized] = useState(Boolean(propMinimized));
+
+  useEffect(() => {
+    if (typeof propMinimized === 'boolean') {
+      setIsMinimized(propMinimized);
+    }
+  }, [propMinimized]);
+
+  const handleMinimize = () => {
+    setIsMinimized(true);
+    if (onToggleMinimize) {
+      onToggleMinimize(true);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleMaximize = () => {
+    setIsMinimized(false);
+    if (onToggleMinimize) {
+      onToggleMinimize(false);
+    } else {
+      navigate(`/live/${consultationId}?type=${isAudioOnly ? 'audio' : 'video'}`);
+    }
+  };
   
   const [sessionStatus, setSessionStatus] = useState('LOADING'); // LOADING, SCHEDULED, USER_WAITING, EXPERT_JOINED, LIVE, COMPLETED
   const [seconds, setSeconds] = useState(0);
@@ -675,6 +702,7 @@ function LiveSession() {
       setCallAccepted(false);
       setIsConnected(false);
       setSessionStatus('COMPLETED');
+      if (onEndSession) onEndSession();
 
       // If disconnected due to low balance, keep modal open
       if (autoDisconnect) {
@@ -749,12 +777,127 @@ function LiveSession() {
 
   // Waiting room and manual start logic removed to enable direct calling.
 
+  // If in Minimized mode, render the Floating Mini Call Card so the user can browse the Home page!
+  if (isMinimized) {
+    return (
+      <aside aria-label="Active call mini player" className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-[99999] w-[92vw] max-w-[340px] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-3 text-white animate-in slide-in-from-bottom-5 duration-200 select-none">
+        {/* Hidden video elements so WebRTC audio and tracks remain uninterrupted */}
+        <video ref={remoteVideoRef} autoPlay playsInline className="hidden" />
+        <video ref={localVideoRef} autoPlay playsInline muted className="hidden" />
+
+        <div className="flex items-center justify-between gap-2.5">
+          {/* Avatar & Remote Info - Click to expand */}
+          <div 
+            onClick={handleMaximize}
+            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group"
+            title="Click to expand call full screen"
+          >
+            <div className="relative shrink-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border-2 border-emerald-500 flex items-center justify-center shadow-md">
+                {remoteAvatar ? (
+                  <img src={remoteAvatar} alt={remoteUser?.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                ) : (
+                  <span className="font-bold text-sm text-white">
+                    {remoteUser?.name ? remoteUser.name.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                )}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse" />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-bold text-white truncate group-hover:text-amber-400 transition-colors">
+                  {remoteUser?.name || (isAudioOnly ? 'Audio Call' : 'Video Call')}
+                </span>
+              </div>
+              <p className="text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                {sessionStatus === 'LIVE' ? formatTime(seconds) : 'Connecting...'}
+                <span className="text-slate-400 font-normal">· {isAudioOnly ? 'Audio' : 'Video'}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Controls: Mic, Maximize, End */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Mic Toggle */}
+            <button
+              type="button"
+              onClick={toggleMic}
+              className={`p-2 rounded-xl border transition cursor-pointer ${
+                !micOn ? 'bg-red-500/20 text-red-400 border-red-500/40' : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+              }`}
+              title={micOn ? 'Mute Mic' : 'Unmute Mic'}
+            >
+              <span className="material-symbols-outlined text-base">{micOn ? 'mic' : 'mic_off'}</span>
+            </button>
+
+            {/* Maximize Button */}
+            <button
+              type="button"
+              onClick={handleMaximize}
+              className="p-2 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition cursor-pointer"
+              title="Expand to Full Screen"
+            >
+              <span className="material-symbols-outlined text-base">open_in_full</span>
+            </button>
+
+            {/* End Call Button */}
+            <button
+              type="button"
+              onClick={() => setShowEndModal(true)}
+              className="p-2 rounded-xl bg-red-600 hover:bg-red-500 text-white transition cursor-pointer shadow-md"
+              title="End Call"
+            >
+              <span className="material-symbols-outlined text-base">call_end</span>
+            </button>
+          </div>
+        </div>
+
+        {/* End Call Modal when in minimized state */}
+        {showEndModal && (
+          <div className="mt-3 pt-3 border-t border-slate-800 text-xs space-y-2">
+            <p className="font-semibold text-slate-200">End this consultation?</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEndModal(false)}
+                className="flex-1 py-1.5 rounded-lg bg-slate-800 text-slate-300 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => endCall(false)}
+                className="flex-1 py-1.5 rounded-lg bg-red-600 text-white font-bold"
+              >
+                End Call
+              </button>
+            </div>
+          </div>
+        )}
+      </aside>
+    );
+  }
+
   // Live or Joined Session
   return (
     <div className="bg-slate-900 font-sans text-background antialiased flex flex-col min-h-screen">
       <header className="fixed top-0 inset-x-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800">
         <div className="h-14 sm:h-16 px-3 sm:px-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Kat / Minimize Button to view Home page without ending call */}
+            <button
+              type="button"
+              onClick={handleMinimize}
+              className="p-1.5 sm:p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+              title="Minimize call card & view Home page (Call stays running in background)"
+            >
+              <span className="material-symbols-outlined text-lg sm:text-xl">close_fullscreen</span>
+              <span className="text-[11px] font-bold ml-1 hidden xs:inline">Minimize</span>
+            </button>
+
             {remoteUser && (
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0 shadow-md flex items-center justify-center">
                 {remoteAvatar ? (

@@ -9,6 +9,7 @@ const WalletTransaction = require('../models/WalletTransaction');
 const Setting = require('../models/Setting');
 const ContactInquiry = require('../models/ContactInquiry');
 const ExpertDocument = require('../models/ExpertDocument');
+const Review = require('../models/Review');
 const { getRequirementsForCategory } = require('../utils/documentRequirementsHelper');
 
 exports.getSettings = async (req, res) => {
@@ -873,14 +874,18 @@ exports.getSidebarStats = async (req, res) => {
       pendingConsultations,
       totalUsers,
       totalExperts,
-      pendingInquiries
+      pendingInquiries,
+      flaggedReviews,
+      totalReviews
     ] = await Promise.all([
       Expert.countDocuments({ verificationStatus: 'PENDING' }),
       Consultation.countDocuments(),
       Consultation.countDocuments({ status: 'scheduled' }),
       User.countDocuments(),
       Expert.countDocuments(),
-      ContactInquiry.countDocuments({ status: 'PENDING' })
+      ContactInquiry.countDocuments({ status: 'PENDING' }),
+      Review.countDocuments({ status: 'FLAGGED' }),
+      Review.countDocuments()
     ]);
 
     res.json({
@@ -889,7 +894,9 @@ exports.getSidebarStats = async (req, res) => {
       pendingConsultations,
       totalUsers,
       totalExperts,
-      pendingInquiries
+      pendingInquiries,
+      flaggedReviews,
+      totalReviews
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching sidebar stats', error: error.message });
@@ -1198,5 +1205,141 @@ exports.deleteAdministrator = async (req, res) => {
     res.status(500).json({ message: 'Error deleting administrator', error: error.message });
   }
 };
+
+// ==========================================
+// BROADCAST ANNOUNCEMENTS TO USERS & EXPERTS
+// ==========================================
+
+// POST /api/admin/broadcast
+exports.sendBroadcastNotification = async (req, res) => {
+  try {
+    const { targetAudience, title, message, badge, link, actionText } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Notification title is required' });
+    }
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'Notification message is required' });
+    }
+
+    const audience = targetAudience || 'ALL'; // 'ALL', 'USERS', 'EXPERTS'
+    const cleanTitle = title.trim();
+    const cleanMessage = message.trim();
+    const cleanBadge = (badge || 'Important').trim();
+    const cleanLink = (link || '').trim();
+    const cleanActionText = (actionText || '').trim();
+
+    let targetUsers = [];
+    let targetExperts = [];
+
+    if (audience === 'ALL' || audience === 'USERS') {
+      targetUsers = await User.find({ status: { $ne: 'BLOCKED' } }).select('_id');
+    }
+
+    if (audience === 'ALL' || audience === 'EXPERTS') {
+      targetExperts = await Expert.find({ status: { $ne: 'BLOCKED' } }).select('_id');
+    }
+
+    const Notification = require('../models/Notification');
+    const notificationsToInsert = [];
+
+    targetUsers.forEach((u) => {
+      notificationsToInsert.push({
+        recipient: u._id,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: cleanTitle,
+        message: cleanMessage,
+        type: 'system_alert',
+        badge: cleanBadge,
+        link: cleanLink,
+        actionText: cleanActionText,
+        isRead: false,
+        createdAt: new Date()
+      });
+    });
+
+    targetExperts.forEach((e) => {
+      notificationsToInsert.push({
+        recipient: e._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: cleanTitle,
+        message: cleanMessage,
+        type: 'system_alert',
+        badge: cleanBadge,
+        link: cleanLink,
+        actionText: cleanActionText,
+        isRead: false,
+        createdAt: new Date()
+      });
+    });
+
+    if (notificationsToInsert.length > 0) {
+      await Notification.insertMany(notificationsToInsert, { ordered: false });
+    }
+
+    // Record in BroadcastLog history
+    const BroadcastLog = require('../models/BroadcastLog');
+    const broadcastRecord = await BroadcastLog.create({
+      title: cleanTitle,
+      message: cleanMessage,
+      targetAudience: audience,
+      badge: cleanBadge,
+      link: cleanLink,
+      actionText: cleanActionText,
+      recipientsCount: {
+        users: targetUsers.length,
+        experts: targetExperts.length,
+        total: notificationsToInsert.length
+      },
+      sentBy: req.user?.name || req.user?.email || 'Administrator',
+      sentAt: new Date()
+    });
+
+    // Real-time Socket.io push to all online users and experts
+    const io = req.app.get('io');
+    if (io) {
+      const payload = {
+        title: cleanTitle,
+        message: cleanMessage,
+        badge: cleanBadge,
+        link: cleanLink,
+        actionText: cleanActionText,
+        type: 'system_alert',
+        createdAt: new Date()
+      };
+      if (audience === 'ALL' || audience === 'USERS') {
+        io.to('role_USER').emit('new_notification', payload);
+      }
+      if (audience === 'ALL' || audience === 'EXPERTS') {
+        io.to('role_EXPERT').emit('new_notification', payload);
+      }
+      io.emit('admin_broadcast_announcement', payload);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `Important broadcast sent successfully to ${targetUsers.length} Users and ${targetExperts.length} Experts (${notificationsToInsert.length} total recipients)!`,
+      broadcast: broadcastRecord
+    });
+  } catch (error) {
+    console.error('Send broadcast notification error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to send broadcast notification' });
+  }
+};
+
+// GET /api/admin/broadcasts
+exports.getBroadcastHistory = async (req, res) => {
+  try {
+    const BroadcastLog = require('../models/BroadcastLog');
+    const broadcasts = await BroadcastLog.find().sort({ createdAt: -1 }).limit(50);
+    return res.json({ success: true, broadcasts });
+  } catch (error) {
+    console.error('Get broadcast history error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch broadcast history' });
+  }
+};
+
 
 

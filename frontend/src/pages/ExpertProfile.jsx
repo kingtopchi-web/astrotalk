@@ -22,6 +22,7 @@ import {
   Wallet,
   Bell
 } from 'lucide-react';
+import BookAppointmentModal from '../components/BookAppointmentModal';
 
 function ExpertPublicProfile() {
   const { id } = useParams();
@@ -42,6 +43,13 @@ function ExpertPublicProfile() {
   const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' | 'info' }
   const [showShortfallModal, setShowShortfallModal] = useState(false);
   const [shortfallData, setShortfallData] = useState(null);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [appointmentInitialType, setAppointmentInitialType] = useState('call');
+
+  const openAppointmentModal = (type = 'call') => {
+    setAppointmentInitialType(type);
+    setShowAppointmentModal(true);
+  };
 
   // Real backend reviews & ratings state
   const [reviewsData, setReviewsData] = useState({
@@ -482,7 +490,7 @@ function ExpertPublicProfile() {
                 >
                   <div className="flex items-center gap-2">
                     <Phone size={15} className="text-emerald-600" />
-                    <span>Audio Call Now</span>
+                    <span>Voice Call Now</span>
                   </div>
                   <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">₹{audioRate}/min</span>
                 </button>
@@ -510,19 +518,15 @@ function ExpertPublicProfile() {
                   <span>Currently Offline / अभी ऑफलाइन हैं</span>
                 </div>
                 <p className="text-[11px] text-amber-800/80 leading-relaxed">
-                  एक्सपर्ट अभी लाइव कॉल्स के लिए ऑफलाइन हैं। जब वे ऑनलाइन आएं तो बात करने के लिए आप उन्हें कॉल रिक्वेस्ट भेज सकते हैं।
+                  एक्सपर्ट अभी ऑफलाइन हैं। अपनी सुविधानुसार समय चुनकर अपॉइंटमेंट बुक करें (बात होने पर वॉलेट से कटेगा)।
                 </p>
                 <button
                   type="button"
-                  onClick={handleNotifyExpert}
-                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer border ${
-                    isNotified
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 border-amber-400'
-                  }`}
+                  onClick={() => openAppointmentModal('call')}
+                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 border border-amber-400"
                 >
-                  <Bell size={14} className={isNotified ? 'text-white' : 'text-slate-950 shrink-0'} />
-                  <span>{isNotified ? '✓ Notification Sent / भेजा गया' : 'Notify Expert / अनुरोध भेजें'}</span>
+                  <CalendarIcon size={14} className="text-slate-950 shrink-0" />
+                  <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
                 </button>
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold text-slate-500 pt-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
@@ -793,7 +797,7 @@ function ExpertPublicProfile() {
             <div className="p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
                 {callType === 'video' ? <Video size={18} className="text-amber-500"/> : callType === 'audio' ? <Phone size={18} className="text-emerald-500"/> : <MessageSquare size={18} className="text-amber-500"/>}
-                Instant {callType === 'video' ? 'Video' : callType === 'audio' ? 'Audio' : 'Chat'} with {expert.name}
+                Instant {callType === 'video' ? 'Video Call' : callType === 'audio' ? 'Voice Call' : 'Chat'} with {expert.name}
               </h3>
               <button onClick={() => setShowCallModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X size={20} />
@@ -931,6 +935,14 @@ function ExpertPublicProfile() {
           </div>
         </div>
       )}
+
+      {/* Book Appointment Modal (When Expert is Offline) */}
+      <BookAppointmentModal
+        isOpen={showAppointmentModal}
+        onClose={() => setShowAppointmentModal(false)}
+        expert={expert}
+        initialType={appointmentInitialType}
+      />
 
       <Footer />
     </div>

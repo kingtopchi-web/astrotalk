@@ -36,6 +36,12 @@ const settingSchema = new mongoose.Schema({
   enableFreeChat: { type: Boolean, default: true },
   freeChatDurationMinutes: { type: Number, default: 5 }, // Admin sets dynamic duration in minutes
   
+  // Call Safety Guidelines & Privacy Tips (Dynamic Admin Control)
+  callSafetyTips: {
+    type: String,
+    default: '• अपनी प्राइवेसी बनाए रखने के लिए अपना मोबाइल नंबर, नाम, पता, बैंक A/C नंबर या OTP किसी से शेयर न करें।\n• प्लेटफॉर्म के बाहर किसी से भी पैसे का लेन-देन न करें।\n• किसी भी असुरक्षित स्थान पर किसी से व्यक्तिगत रूप से न मिलें।\n• किसी के बहकावे अथवा लालच के शिकार न हों।'
+  },
+  
   // Geolocation & Proximity Settings (Dynamic Admin Control)
   minimumExpertDistanceKm: { type: Number, default: 0 }, // Admin sets minimum required distance between user & expert in KM (0 = disabled)
   

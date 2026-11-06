@@ -40,7 +40,9 @@ const {
   createAdministrator,
   updateAdministratorStatus,
   updateAdministratorPassword,
-  deleteAdministrator
+  deleteAdministrator,
+  sendBroadcastNotification,
+  getBroadcastHistory
 } = require('../controllers/adminController');
 
 const {
@@ -135,6 +137,34 @@ router.get('/payments', getAllPayments);
 // Transactions & Revenue
 router.get('/transactions', getAllTransactions);
 router.get('/revenue', getRevenue);
+
+// Coupons & Recharge Vouchers
+const {
+  getAllCouponsAdmin,
+  createCouponAdmin,
+  updateCouponAdmin,
+  deleteCouponAdmin
+} = require('../controllers/couponController');
+
+router.get('/coupons', getAllCouponsAdmin);
+router.post('/coupons', createCouponAdmin);
+router.patch('/coupons/:id', updateCouponAdmin);
+router.delete('/coupons/:id', deleteCouponAdmin);
+
+// Review Moderation
+const {
+  getAllReviewsAdmin,
+  updateReviewStatusAdmin,
+  deleteReviewAdmin
+} = require('../controllers/reviewController');
+
+router.get('/reviews', getAllReviewsAdmin);
+router.patch('/reviews/:id/status', updateReviewStatusAdmin);
+router.delete('/reviews/:id', deleteReviewAdmin);
+
+// Broadcast Announcements to Users & Experts
+router.post('/broadcast', sendBroadcastNotification);
+router.get('/broadcasts', getBroadcastHistory);
 
 // Contact Inquiries
 const {

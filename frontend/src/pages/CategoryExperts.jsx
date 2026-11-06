@@ -22,8 +22,10 @@ import {
   ArrowLeft,
   Users,
   Grid,
-  Bell
+  Bell,
+  Calendar
 } from 'lucide-react';
+import BookAppointmentModal from '../components/BookAppointmentModal';
 
 const categoryFallbackImages = {
   astrologer: 'https://images.unsplash.com/photo-1532968961962-8a0cb3a2d4f5?auto=format&fit=crop&w=800&q=80',
@@ -50,7 +52,7 @@ const getCatImage = (cat) => {
 export default function CategoryExperts() {
   const { id } = useParams();
   const navigate = useNavigate();
-  useAuth();
+  const { user } = useAuth();
 
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -71,7 +73,16 @@ export default function CategoryExperts() {
   const [savedExpertIds, setSavedExpertIds] = useState(new Set());
   const [notifiedExpertIds, setNotifiedExpertIds] = useState(new Set());
   const [notifyToast, setNotifyToast] = useState('');
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [appointmentExpert, setAppointmentExpert] = useState(null);
+  const [appointmentInitialType, setAppointmentInitialType] = useState('call');
   const [userLocation, setUserLocation] = useState(getCachedUserLocation);
+
+  const openAppointmentModal = (expert, type = 'call') => {
+    setAppointmentExpert(expert);
+    setAppointmentInitialType(type);
+    setShowAppointmentModal(true);
+  };
 
   const handleNotifyExpert = async (expertId, expertName, e) => {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -208,6 +219,16 @@ export default function CategoryExperts() {
     const fetchSaved = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
+
+      let userRole = user?.role;
+      if (!userRole) {
+        try {
+          const u = JSON.parse(localStorage.getItem('user'));
+          userRole = u?.role;
+        } catch (e) {}
+      }
+      if (userRole && userRole !== 'USER') return;
+
       try {
         const res = await axios.get(getApiUrl('/user/saved-experts'), {
           headers: { Authorization: `Bearer ${token}` }
@@ -218,7 +239,7 @@ export default function CategoryExperts() {
       } catch {}
     };
     fetchSaved();
-  }, []);
+  }, [user]);
 
   const handleToggleSave = async (expertId, e) => {
     e.stopPropagation();
@@ -227,6 +248,15 @@ export default function CategoryExperts() {
       navigate('/login');
       return;
     }
+
+    let userRole = user?.role;
+    if (!userRole) {
+      try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        userRole = u?.role;
+      } catch (e) {}
+    }
+    if (userRole && userRole !== 'USER') return;
 
     const isCurrentlySaved = savedExpertIds.has(expertId);
     setSavedExpertIds(prev => {
@@ -834,7 +864,7 @@ export default function CategoryExperts() {
                         </div>
                         <div className="flex flex-col items-center justify-center py-0.5 border-x border-border/60">
                           <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-0.5">
-                            <Phone size={10} className="text-success shrink-0" /> Audio
+                            <Phone size={10} className="text-success shrink-0" /> Voice Call
                           </span>
                           <span className="text-xs font-bold text-on-background mt-0.5 flex items-baseline justify-center">
                             ₹{Math.max(10, expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10))}
@@ -873,23 +903,22 @@ export default function CategoryExperts() {
                             }}
                             className="flex items-center justify-center gap-1.5 py-2 bg-primary hover:bg-primary/90 text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-xs touch-manipulation"
                           >
-                            <Phone size={13} /> Call
+                            <Phone size={13} /> Voice Call
                           </button>
                         </div>
                       ) : (
                         <div className="mt-auto w-full">
                           <button
                             type="button"
-                            onClick={(e) => handleNotifyExpert(expert._id, expert.name, e)}
-                            className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer active:scale-95 touch-manipulation border shadow-2xs ${
-                              notifiedExpertIds.has(expert._id)
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : 'bg-amber-50 hover:bg-amber-100/90 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300 dark:border-amber-700'
-                            }`}
-                            title="एक्सपर्ट अभी ऑफलाइन है। जब वे ऑनलाइन आएं तो बात करने के लिए कनेक्ट रिक्वेस्ट भेजें।"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAppointmentModal(expert, 'call');
+                            }}
+                            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+                            title="एक्सपर्ट अभी ऑफलाइन है। अपॉइंटमेंट बुक करें।"
                           >
-                            <Bell size={13} className={notifiedExpertIds.has(expert._id) ? 'text-emerald-600' : 'text-amber-600 shrink-0'} />
-                            <span>{notifiedExpertIds.has(expert._id) ? '✓ Request Sent / भेजा गया' : 'Notify Expert / अनुरोध भेजें'}</span>
+                            <Calendar size={13} className="shrink-0" />
+                            <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
                           </button>
                         </div>
                       )}
@@ -910,6 +939,17 @@ export default function CategoryExperts() {
           <span>{notifyToast}</span>
         </div>
       )}
+
+      {/* Book Appointment Modal (When Expert is Offline) */}
+      <BookAppointmentModal
+        isOpen={showAppointmentModal}
+        onClose={() => {
+          setShowAppointmentModal(false);
+          setAppointmentExpert(null);
+        }}
+        expert={appointmentExpert}
+        initialType={appointmentInitialType}
+      />
 
       <Footer />
     </div>

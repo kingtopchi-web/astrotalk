@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useParams, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PlatformSettingsProvider } from './context/PlatformSettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { CallProvider, useCall } from './context/CallContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import GuestRoute from './components/GuestRoute';
 import ScrollToTop from './components/ScrollToTop';
@@ -91,18 +92,51 @@ function PlatformHeaderManager() {
   return null;
 }
 
+function GlobalActiveCallOverlay() {
+  const { activeCall, minimizeCall, maximizeCall, endCall } = useCall();
+  const location = useLocation();
+
+  if (!activeCall?.consultationId) return null;
+
+  const isLiveRoute = location.pathname.startsWith('/live/') || location.pathname.startsWith('/consultations/');
+  const isMinimized = activeCall.isMinimized || !isLiveRoute;
+
+  return (
+    <LiveSession
+      key={activeCall.consultationId}
+      consultationId={activeCall.consultationId}
+      isMinimized={isMinimized}
+      onToggleMinimize={(min) => (min ? minimizeCall() : maximizeCall())}
+      onEndSession={endCall}
+    />
+  );
+}
+
+function ConsultationRedirectWrapper() {
+  const { id } = useParams();
+  const location = useLocation();
+  const search = location.search || '';
+  return <Navigate to={`/live/${id}${search ? search : '?type=video'}`} replace />;
+}
+
+function LiveSessionRoutePlaceholder() {
+  return <div className="min-h-screen bg-slate-900" />;
+}
+
 function App() {
   return (
     <AuthProvider>
       <PlatformSettingsProvider>
         <Router>
-          <CartProvider>
-            <ThemeProvider>
-              <ScrollToTop />
-              <PlatformHeaderManager />
-              <IncomingConsultationAlert />
-              <ErrorBoundary>
-                <Routes>
+          <CallProvider>
+            <CartProvider>
+              <ThemeProvider>
+                <ScrollToTop />
+                <PlatformHeaderManager />
+                <IncomingConsultationAlert />
+                <GlobalActiveCallOverlay />
+                <ErrorBoundary>
+                  <Routes>
           {/* Guest-Only Auth Routes (Logged-in users automatically redirected to dashboard) */}
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<Login />} />
@@ -171,7 +205,9 @@ function App() {
           </Route>
           
           <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT']} />}>
-            <Route path="/live/:id" element={<LiveSession />} />
+            <Route path="/live/:id" element={<LiveSessionRoutePlaceholder />} />
+            <Route path="/consultations/:id" element={<ConsultationRedirectWrapper />} />
+            <Route path="/consultations" element={<Navigate to="/bookings" replace />} />
           </Route>
 
 
@@ -197,7 +233,8 @@ function App() {
               <BottomNav />
             </ThemeProvider>
           </CartProvider>
-        </Router>
+        </CallProvider>
+      </Router>
       </PlatformSettingsProvider>
     </AuthProvider>
   );

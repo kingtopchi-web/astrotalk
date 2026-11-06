@@ -97,7 +97,7 @@ function Header() {
       path: '#',
       dropdown: [
         { name: 'Chat with Expert', path: '/experts?mode=chat', icon: 'chat' },
-        { name: 'Audio Call with Expert', path: '/experts?mode=audio', icon: 'call' },
+        { name: 'Voice Call with Expert', path: '/experts?mode=audio', icon: 'call' },
         { name: 'Video Call with Expert', path: '/experts?mode=video', icon: 'videocam' },
         { name: 'My Consultations', path: '/bookings', icon: 'history' },
         { name: 'Upcoming Consultations', path: '/bookings?tab=upcoming', icon: 'event' },

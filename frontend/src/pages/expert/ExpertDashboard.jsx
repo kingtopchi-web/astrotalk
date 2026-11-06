@@ -255,7 +255,7 @@ function ExpertDashboard() {
           <div className="space-y-3">
             {[
               { label: 'Chat Session', value: expert?.rates?.chat },
-              { label: 'Audio Call', value: expert?.rates?.audio },
+              { label: 'Voice Call', value: expert?.rates?.audio },
               { label: 'Video Call', value: expert?.rates?.video },
             ].map(r => (
               <div key={r.label} className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-between">

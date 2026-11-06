@@ -5,6 +5,7 @@ import { Clock, Star, ShieldCheck, Sparkles, Phone, CheckCircle, AlertCircle } f
 import UserLayout from '../components/UserLayout';
 import { useAuth } from '../context/AuthContext';
 import { fetchFreeChatConfig, getApiUrl } from '../utils/apiConfig';
+import FreeCallShareModal from '../components/FreeCallShareModal';
 
 function FreeServices() {
   const { user } = useAuth();
@@ -13,6 +14,8 @@ function FreeServices() {
   const [error, setError] = useState('');
   const [freeChatStatus, setFreeChatStatus] = useState(null);
   const [startingCallId, setStartingCallId] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [pendingExpert, setPendingExpert] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,6 +76,12 @@ function FreeServices() {
       return;
     }
 
+    const exp = experts.find(e => e._id === expertId);
+    setPendingExpert(exp || { _id: expertId, name: 'Expert' });
+    setShowShareModal(true);
+  };
+
+  const proceedWithFreeCall = async (expertId) => {
     try {
       setStartingCallId(expertId);
       const token = localStorage.getItem('token');
@@ -91,6 +100,7 @@ function FreeServices() {
         hasUsedFreeChat: true
       }));
 
+      setShowShareModal(false);
       const consultationId = res.data?.consultation?._id;
       navigate(`/live/${consultationId}?type=audio`);
     } catch (err) {
@@ -284,6 +294,18 @@ function FreeServices() {
           )}
         </div>
       </div>
+
+      <FreeCallShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onProceed={() => {
+          if (pendingExpert?._id) {
+            proceedWithFreeCall(pendingExpert._id);
+          }
+        }}
+        expertName={pendingExpert?.name}
+        freeDuration={durationMinutes || 5}
+      />
     </UserLayout>
   );
 }
