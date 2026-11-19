@@ -67,7 +67,47 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   
-  const isExpert = user?.role === 'EXPERT';
+  const isExpert = Boolean(
+    user?.role === 'EXPERT' ||
+    (consultation?.expert && user?._id && (
+      (typeof consultation.expert === 'object' && consultation.expert._id?.toString() === user._id?.toString()) ||
+      consultation.expert.toString() === user._id?.toString()
+    ))
+  );
+
+  const consultationRef = useRef(consultation);
+  const secondsRef = useRef(seconds);
+  const isExpertRef = useRef(isExpert);
+  const onEndSessionRef = useRef(onEndSession);
+
+  useEffect(() => { consultationRef.current = consultation; }, [consultation]);
+  useEffect(() => { secondsRef.current = seconds; }, [seconds]);
+  useEffect(() => { isExpertRef.current = isExpert; }, [isExpert]);
+  useEffect(() => { onEndSessionRef.current = onEndSession; }, [onEndSession]);
+
+  const handleExitSession = (targetPath = null) => {
+    soundService.stopRing();
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => t.stop());
+      localStreamRef.current = null;
+    }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    if (socketRef.current) {
+      try {
+        socketRef.current.emit('leave_call_room', consultationId);
+        socketRef.current.disconnect();
+      } catch (e) {}
+      socketRef.current = null;
+    }
+    if (onEndSessionRef.current) {
+      onEndSessionRef.current();
+    }
+    const dest = targetPath || (isExpertRef.current ? '/expert/consultations' : '/bookings');
+    navigate(dest, { replace: true });
+  };
   const searchType = (new URLSearchParams(window.location.search).get('type') || '').toLowerCase();
   const consType = (consultation?.type || '').toLowerCase();
   // Any consultation that isn't explicitly video is an audio call (e.g. 'call', 'audio', etc.)
@@ -228,11 +268,13 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
 
     socket.on('connect', () => {
       socket.emit('join_call_room', consultationId);
-      socket.emit('join_user', user._id); 
+      if (user?._id) {
+        socket.emit('join_user', user._id);
+      }
     });
 
     socket.on('VIDEO_EXPERT_JOINED', () => {
-      if (!isExpert) {
+      if (!isExpertRef.current) {
         setSessionStatus('EXPERT_JOINED');
       }
     });
@@ -246,11 +288,14 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
       }
     });
 
-    const handleRemoteEnd = () => {
+    const handleRemoteEnd = (data) => {
+      console.log('[CALL] Remote participant ended call event:', data);
       soundService.stopRing();
       setIsIncoming(false);
       setCallAccepted(false);
       setIsConnected(false);
+      setSessionStatus('COMPLETED');
+
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(t => t.stop());
         localStreamRef.current = null;
@@ -259,26 +304,28 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
         peerConnectionRef.current.close();
         peerConnectionRef.current = null;
       }
+
       if (!isEndingRef.current) {
-        endCall(false, seconds);
+        endCall(false, secondsRef.current);
       }
-      if (!isExpert) {
+
+      const currentIsExpert = isExpertRef.current;
+      const currentConsultation = consultationRef.current;
+      const isFree = Boolean(currentConsultation?.isFree || currentConsultation?.cost === 0);
+      const callTookPlace = (secondsRef.current || 0) > 10;
+
+      if (!currentIsExpert) {
         setShowEndModal(false);
-        const isFree = Boolean(consultation?.isFree || consultation?.cost === 0);
-        if (!isFree) {
+        if (!isFree && callTookPlace) {
           setShowReviewModal(true);
-        } else {
-          setSessionStatus('COMPLETED');
-          navigate('/bookings', { replace: true });
         }
-      } else {
-        setSessionStatus('COMPLETED');
       }
     };
 
     socket.on('VIDEO_SESSION_ENDED', handleRemoteEnd);
     socket.on('session_ended', handleRemoteEnd);
     socket.on('VIDEO_USER_LEFT', handleRemoteEnd);
+    socket.on('user_left_call', handleRemoteEnd);
     socket.on('remote_camera_toggle', (data) => {
       if (data && typeof data.camOn === 'boolean') {
         setRemoteCamOn(data.camOn);
@@ -668,13 +715,27 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
     if (isEndingRef.current && !autoDisconnect) return;
     isEndingRef.current = true;
 
+    // Release media streams immediately so audio & camera cut off instantly
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+
+    setIsIncoming(false);
+    setCallAccepted(false);
+    setIsConnected(false);
+    setSessionStatus('COMPLETED');
+
+    const usedSeconds = finalSeconds !== null ? finalSeconds : secondsRef.current;
+    const actualDuration = Number((usedSeconds / 60).toFixed(2)) || 0.01;
+
     try {
       const token = localStorage.getItem('token');
-      const usedSeconds = finalSeconds !== null ? finalSeconds : seconds;
-      // Calculate actual duration in minutes based on seconds
-      const actualDuration = Number((usedSeconds / 60).toFixed(2)) || 0.01;
-
-      if (isExpert) {
+      if (isExpertRef.current) {
         await axios.post(getApiUrl(`/video/expert/sessions/${consultationId}/end`), {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(()=>{});
@@ -693,48 +754,37 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
       }).catch((e)=>{
         console.warn('Booking end response:', e?.response?.data || e.message);
       });
+    } catch (err) {
+      console.error('Failed to end session on backend:', err);
+    }
 
-      // Release media stream
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-        localStreamRef.current = null;
-      }
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-        peerConnectionRef.current = null;
-      }
+    // If disconnected due to low balance, keep modal open
+    if (autoDisconnect) {
+      setIsBalanceExhausted(true);
+      return;
+    }
 
-      setIsIncoming(false);
-      setCallAccepted(false);
-      setIsConnected(false);
-      setSessionStatus('COMPLETED');
-      if (onEndSession) onEndSession();
-
-      // If disconnected due to low balance, keep modal open
-      if (autoDisconnect) {
-        setIsBalanceExhausted(true);
+    // If user is client, show review prompt after consultation completion (only for paid sessions)
+    if (!isExpertRef.current) {
+      setShowEndModal(false);
+      const isFree = Boolean(consultationRef.current?.isFree || consultationRef.current?.cost === 0);
+      const callTookPlace = usedSeconds > 10;
+      if (!isFree && callTookPlace) {
+        setShowReviewModal(true);
         return;
       }
-
-      // If user is client, show review prompt after consultation completion (only for paid sessions)
-      if (!isExpert) {
-        setShowEndModal(false);
-        const isFree = Boolean(consultation?.isFree || consultation?.cost === 0);
-        if (!isFree) {
-          setShowReviewModal(true);
-          return;
-        } else {
-          navigate('/bookings', { replace: true });
-          return;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to end session', err);
-    }
-    if (!autoDisconnect) {
-      navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true });
     }
   };
+
+  // Auto redirect after session completion if no review modal is pending
+  useEffect(() => {
+    if (sessionStatus === 'COMPLETED' && !showReviewModal && !isBalanceExhausted) {
+      const timer = setTimeout(() => {
+        handleExitSession();
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [sessionStatus, showReviewModal, isBalanceExhausted]);
 
   const formatTime = (totalSeconds) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -752,18 +802,34 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
         <span className="material-symbols-outlined text-red-500 text-6xl mb-4">error</span>
         <h2 className="text-xl font-bold mb-2">Unable to Join</h2>
         <p className="text-on-surface/50 mb-6 text-center max-w-md">{errorMsg}</p>
-        <button onClick={() => navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true })} className="px-6 py-2 bg-slate-700 rounded-xl font-bold hover:bg-slate-600">Go Back</button>
+        <button 
+          onClick={() => handleExitSession()} 
+          className="px-6 py-2.5 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600 transition-all cursor-pointer shadow-md active:scale-95 flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-lg">arrow_back</span>
+          <span>Go Back</span>
+        </button>
       </div>
     );
   }
   
   if (sessionStatus === 'COMPLETED') {
+    if (isMinimized) {
+      handleExitSession();
+      return null;
+    }
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-slate-900 text-background p-6 relative">
         <span className="material-symbols-outlined text-green-500 text-6xl mb-4">task_alt</span>
         <h2 className="text-xl font-bold mb-2">Consultation Ended</h2>
         <p className="text-on-surface/50 mb-6 text-center max-w-md">This consultation has been completed successfully.</p>
-        <button onClick={() => navigate(isExpert ? '/expert/consultations' : '/bookings', { replace: true })} className="px-6 py-2 bg-primary rounded-xl font-bold hover:bg-primary/100">Go Back</button>
+        <button 
+          onClick={() => handleExitSession()} 
+          className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg active:scale-95 flex items-center gap-2 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-lg">arrow_back</span>
+          <span>Go Back {isExpert ? 'to Consultations' : 'to Bookings'}</span>
+        </button>
         
         {/* Post-Session Review Form Prompt */}
         {!isExpert && showReviewModal && (
@@ -771,16 +837,16 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
             consultationId={consultationId}
             expertName={remoteUser?.name || consultation?.expert?.name || 'Expert'}
             consultationType={isAudioOnly ? 'Audio' : 'Video'}
-          isFree={Boolean(consultation?.isFree || consultation?.cost === 0)}
+            isFree={Boolean(consultation?.isFree || consultation?.cost === 0)}
             onSuccess={() => {
               setTimeout(() => {
                 setShowReviewModal(false);
-                navigate('/bookings', { replace: true });
+                handleExitSession('/bookings');
               }, 1800);
             }}
             onClose={() => {
               setShowReviewModal(false);
-              navigate('/bookings', { replace: true });
+              handleExitSession('/bookings');
             }}
           />
         )}
@@ -1388,16 +1454,16 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
 
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate('/wallet')}
-                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+                onClick={() => handleExitSession('/wallet')}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">add_circle</span>
                 Add Balance to Wallet / बैलेंस जोड़ें
               </button>
               
               <button
-                onClick={() => navigate('/bookings')}
-                className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors text-sm"
+                onClick={() => handleExitSession('/bookings')}
+                className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors text-sm cursor-pointer"
               >
                 Go to Bookings
               </button>
@@ -1416,12 +1482,12 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
           onSuccess={() => {
             setTimeout(() => {
               setShowReviewModal(false);
-              navigate('/bookings', { replace: true });
+              handleExitSession('/bookings');
             }, 1800);
           }}
           onClose={() => {
             setShowReviewModal(false);
-            navigate('/bookings', { replace: true });
+            handleExitSession('/bookings');
           }}
         />
       )}
