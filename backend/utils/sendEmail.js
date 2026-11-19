@@ -60,8 +60,8 @@ const createGmailTransporter = (port = 465) => {
     secure: port === 465,
     family: 4, // Force IPv4
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: (process.env.EMAIL_USER || '').trim(),
+      pass: (process.env.EMAIL_PASS || '').trim().replace(/\s+/g, ''),
     },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
@@ -96,8 +96,8 @@ const sendEmail = async (options) => {
       secure: Number(process.env.EMAIL_PORT) === 465,
       family: 4,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: (process.env.EMAIL_USER || '').trim(),
+        pass: (process.env.EMAIL_PASS || '').trim().replace(/\s+/g, ''),
       },
       connectionTimeout: 10000,
       greetingTimeout: 10000,
