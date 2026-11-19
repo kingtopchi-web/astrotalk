@@ -433,37 +433,37 @@ const ExpertsList = () => {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse min-w-[1200px]">
               <thead>
-                <tr className="bg-white border-b border-slate-200 text-slate-700 text-sm">
-                  <th className="p-4 font-semibold">Expert</th>
-                  <th className="p-4 font-semibold">Category</th>
-                  <th className="p-4 font-semibold">Specialty</th>
-                  <th className="p-4 font-semibold">Profile Status</th>
-                  <th className="p-4 font-semibold">Bank & Passbook</th>
-                  <th className="p-4 font-semibold">Status</th>
-                  <th className="p-4 font-semibold">Joined</th>
-                  <th className="p-4 font-semibold text-right"></th>
+                <tr className="bg-white border-b border-slate-200 text-slate-700 text-sm whitespace-nowrap">
+                  <th className="p-4 font-semibold min-w-[200px]">Expert</th>
+                  <th className="p-4 font-semibold min-w-[130px]">Category</th>
+                  <th className="p-4 font-semibold min-w-[150px]">Specialty</th>
+                  <th className="p-4 font-semibold min-w-[150px]">Profile Status</th>
+                  <th className="p-4 font-semibold min-w-[170px]">Bank & Passbook</th>
+                  <th className="p-4 font-semibold min-w-[140px]">Status</th>
+                  <th className="p-4 font-semibold min-w-[100px]">Joined</th>
+                  <th className="p-4 font-semibold text-right min-w-[160px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {experts.map((expert) => (
                   <tr key={expert._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors text-sm">
-                    <td className="p-4">
+                    <td className="p-4 min-w-[200px]">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
                           {expert.name?.charAt(0)?.toUpperCase()}
                         </div>
-                        <div>
-                          <p className="font-medium text-slate-800 text-sm">{expert.name}</p>
-                          <p className="text-xs text-slate-400">{expert.email}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-800 text-sm truncate">{expert.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{expert.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-600">{expert.categoryId?.name || '—'}</td>
-                    <td className="p-4 text-slate-600">{expert.specialty || '—'}</td>
-                    <td className="p-4">
+                    <td className="p-4 text-slate-600 whitespace-nowrap">{expert.categoryId?.name || '—'}</td>
+                    <td className="p-4 text-slate-600 whitespace-nowrap">{expert.specialty || '—'}</td>
+                    <td className="p-4 whitespace-nowrap">
                       {expert.verificationStatus === 'APPROVED' ? (
                         expert.isAutoApproved ? (
                           <div className="flex flex-col gap-1 items-start">
@@ -550,13 +550,14 @@ const ExpertsList = () => {
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-slate-500 text-xs">{new Date(expert.createdAt).toLocaleDateString()}</td>
-                    <td className="p-4 flex justify-end items-center gap-2">
+                    <td className="p-4 text-slate-500 text-xs whitespace-nowrap">{new Date(expert.createdAt).toLocaleDateString()}</td>
+                    <td className="p-4 text-right whitespace-nowrap min-w-[160px]">
+                      <div className="inline-flex justify-end items-center gap-1.5">
                       {expert.status === 'SUSPENDED' ? (
                         <button
                           onClick={() => handleOpenReinstateModal(expert)}
                           disabled={actionLoading}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer whitespace-nowrap"
                           title="Reinstate Expert (Lift Suspension)"
                         >
                           <RotateCcw size={13} /> Reinstate
@@ -565,7 +566,7 @@ const ExpertsList = () => {
                         <button
                           onClick={() => handleOpenSuspendModal(expert)}
                           disabled={actionLoading}
-                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer whitespace-nowrap"
                           title="Suspend / Terminate Temporarily with Notice"
                         >
                           <AlertTriangle size={13} /> Suspend / Notice
@@ -577,7 +578,7 @@ const ExpertsList = () => {
                           <button
                             onClick={() => handleApprove(expert)}
                             disabled={actionLoading}
-                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50 transition cursor-pointer"
+                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50 transition cursor-pointer shrink-0"
                             title="Approve Expert"
                           >
                             <CheckCircle size={14} />
@@ -585,7 +586,7 @@ const ExpertsList = () => {
                           <button
                             onClick={() => openRejectModal(expert)}
                             disabled={actionLoading}
-                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition cursor-pointer"
+                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition cursor-pointer shrink-0"
                             title="Reject Expert"
                           >
                             <XCircle size={14} />
@@ -596,7 +597,7 @@ const ExpertsList = () => {
                           <button
                             onClick={() => handleApprove(expert)}
                             disabled={actionLoading}
-                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer whitespace-nowrap"
                             title="Officially Approve & Verify Auto-Approved Expert"
                           >
                             <CheckCircle size={13} />
@@ -605,7 +606,7 @@ const ExpertsList = () => {
                           <button
                             onClick={() => openRejectModal(expert)}
                             disabled={actionLoading}
-                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition cursor-pointer"
+                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition cursor-pointer shrink-0"
                             title="Reject / Revoke Auto-Approval"
                           >
                             <XCircle size={14} />
@@ -615,11 +616,12 @@ const ExpertsList = () => {
                       
                       <button 
                         onClick={() => handleDelete(expert)} 
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shrink-0 cursor-pointer"
                         title="Delete"
                       >
                         <Trash2 size={14} />
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

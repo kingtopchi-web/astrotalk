@@ -169,7 +169,7 @@ function Settings() {
   };
 
   const handleDeactivate = async () => {
-    if (!window.confirm('Are you sure you want to deactivate your account?')) return;
+    if (!window.confirm('Are you sure you want to deactivate your account? You can reactivate it anytime simply by logging back in.')) return;
     try {
       const token = localStorage.getItem('token');
       await axios.post(getApiUrl('/settings/deactivate'), {}, {
@@ -224,15 +224,15 @@ function Settings() {
             </div>
           </div>
 
-          {/* Danger Zone moved to left sidebar under Settings Menu */}
-          <div className="bg-red-50/90 rounded-xl border border-red-200/80 p-4 shadow-2xs">
-            <h4 className="text-sm font-bold text-red-700 mb-1">Danger Zone</h4>
-            <p className="text-red-600 text-xs mb-3 leading-relaxed">
-              Once you deactivate your account, there is no going back. Please be certain.
+          {/* Deactivate Account Zone */}
+          <div className="bg-amber-50/90 rounded-xl border border-amber-200/80 p-4 shadow-2xs">
+            <h4 className="text-sm font-bold text-amber-900 mb-1">Deactivate Account</h4>
+            <p className="text-amber-800 text-xs mb-3 leading-relaxed">
+              Deactivating will temporarily pause your account. You can easily reactivate it anytime simply by logging back in.
             </p>
             <button 
               onClick={handleDeactivate} 
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer shadow-2xs text-center active:scale-98"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer shadow-2xs text-center active:scale-98"
             >
               Deactivate Account
             </button>

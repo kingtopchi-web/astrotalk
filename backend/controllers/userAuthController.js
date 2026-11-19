@@ -526,9 +526,6 @@ const verifyOtpLogin = async (req, res) => {
       return res.status(400).json({ message: `Invalid verification code. ${attemptsLeft} attempt(s) remaining.` });
     }
 
-    // Delete verified OTP
-    await Otp.deleteMany({ email: normalizedEmail, purpose: 'LOGIN' });
-
     let user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       const expert = await Expert.findOne({ email: normalizedEmail });
@@ -550,13 +547,26 @@ const verifyOtpLogin = async (req, res) => {
     }
 
     if (user.status === 'BLOCKED') {
+      await Otp.deleteMany({ email: normalizedEmail, purpose: 'LOGIN' });
       return res.status(403).json({ message: 'Account is blocked. Please contact support.' });
     }
 
     if (user.status === 'SUSPENDED') {
+      const { reactivate } = req.body;
+      if (!reactivate) {
+        // Do not delete OTP yet; allow user to confirm reactivation with the checkbox
+        return res.status(403).json({ 
+          message: 'Your account is currently deactivated. Please check "Activate Account" to reactivate.',
+          isDeactivated: true,
+          status: 'SUSPENDED'
+        });
+      }
       user.status = 'ACTIVE';
       await user.save();
     }
+
+    // Delete verified OTP once login or reactivation is confirmed
+    await Otp.deleteMany({ email: normalizedEmail, purpose: 'LOGIN' });
 
     return res.status(200).json({
       _id: user._id,

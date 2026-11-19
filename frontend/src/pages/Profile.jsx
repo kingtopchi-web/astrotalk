@@ -45,9 +45,9 @@ function Profile({ autoEdit = false }) {
   const [shareToast, setShareToast] = useState(false);
   
   // Dynamic stats
-  const [activitiesCount, setActivitiesCount] = useState(12);
-  const [connectionsCount, setConnectionsCount] = useState(84);
-  const [savedCount, setSavedCount] = useState(4);
+  const [activitiesCount, setActivitiesCount] = useState(0);
+  const [connectionsCount, setConnectionsCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
 
   // If an expert visits /profile, route them smoothly to /expert/profile
   useEffect(() => {
@@ -95,13 +95,21 @@ function Profile({ autoEdit = false }) {
       // Fetch bookings to dynamically calculate activities & connections
       try {
         const bookingsRes = await axios.get(getApiUrl('/bookings/my-bookings'), { headers });
-        if (Array.isArray(bookingsRes.data) && bookingsRes.data.length > 0) {
+        if (Array.isArray(bookingsRes.data)) {
           setActivitiesCount(bookingsRes.data.length);
-          const uniqueExperts = new Set(bookingsRes.data.map(b => b.expertId?._id || b.expertId)).size;
-          setConnectionsCount(uniqueExperts || 1);
+          const uniqueExperts = new Set(
+            bookingsRes.data
+              .map(b => (typeof b.expertId === 'object' ? b.expertId?._id : b.expertId) || (typeof b.expert === 'object' ? b.expert?._id : b.expert))
+              .filter(Boolean)
+          ).size;
+          setConnectionsCount(uniqueExperts);
+        } else {
+          setActivitiesCount(0);
+          setConnectionsCount(0);
         }
       } catch (bErr) {
-        // Fallback gracefully
+        setActivitiesCount(0);
+        setConnectionsCount(0);
       }
 
       // Fetch saved experts count
@@ -109,12 +117,16 @@ function Profile({ autoEdit = false }) {
         const savedRes = await axios.get(getApiUrl('/user/saved-experts'), { headers });
         if (Array.isArray(savedRes.data)) {
           setSavedCount(savedRes.data.length);
-        } else if (res.data.savedExperts?.length) {
+        } else if (Array.isArray(res.data.savedExperts)) {
           setSavedCount(res.data.savedExperts.length);
+        } else {
+          setSavedCount(0);
         }
       } catch (sErr) {
-        if (res.data.savedExperts?.length) {
+        if (Array.isArray(res.data?.savedExperts)) {
           setSavedCount(res.data.savedExperts.length);
+        } else {
+          setSavedCount(0);
         }
       }
 
@@ -231,7 +243,7 @@ function Profile({ autoEdit = false }) {
     }
   };
 
-  const displayName = profile?.name || user?.name || 'Shiwank Singh';
+  const displayName = profile?.name || user?.name || 'User';
   const handleName = profile?.email 
     ? `@${profile.email.split('@')[0]}` 
     : `@${displayName.toLowerCase().replace(/\s+/g, '')}`;
@@ -464,8 +476,8 @@ function Profile({ autoEdit = false }) {
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
                     MOBILE NUMBER
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-800">
-                    {profile?.mobile || '+91 8755444354'}
+                  <span className={`text-xs sm:text-sm font-semibold ${profile?.mobile ? 'text-slate-800' : 'text-slate-400 italic'}`}>
+                    {profile?.mobile || 'Not added yet'}
                   </span>
                 </div>
               </div>
@@ -484,16 +496,18 @@ function Profile({ autoEdit = false }) {
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
                     LOCATION
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-800">
-                    {profile?.location || 'UP, India'}
+                  <span className={`text-xs sm:text-sm font-semibold ${profile?.location ? 'text-slate-800' : 'text-slate-400 italic'}`}>
+                    {profile?.location || 'Not added yet'}
                   </span>
                 </div>
               </div>
-              <span className="text-xs font-semibold text-slate-600 hidden sm:block">
-                {profile?.location?.includes(',') 
-                  ? profile.location.split(',')[0].trim() 
-                  : (profile?.location || 'Uttar Pradesh')}
-              </span>
+              {profile?.location && (
+                <span className="text-xs font-semibold text-slate-600 hidden sm:block">
+                  {profile.location.includes(',') 
+                    ? profile.location.split(',')[0].trim() 
+                    : profile.location}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -530,8 +544,8 @@ function Profile({ autoEdit = false }) {
           {/* Bio Quote Card */}
           <div className="bg-white rounded-xl p-4 border border-slate-100/90 shadow-2xs flex items-start gap-2.5 min-h-[60px]">
             <span className="text-amber-500 text-xl font-serif leading-none mt-0.5 select-none font-bold">“</span>
-            <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-              {profile?.bio || 'hgity'}
+            <p className={`text-xs sm:text-sm font-medium leading-relaxed ${profile?.bio ? 'text-slate-700' : 'text-slate-400 italic'}`}>
+              {profile?.bio || 'No bio added yet. Click Edit to tell others about yourself.'}
             </p>
           </div>
         </div>
@@ -598,7 +612,7 @@ function Profile({ autoEdit = false }) {
                   type="text"
                   value={form.mobile} 
                   onChange={e => setForm(f => ({ ...f, mobile: e.target.value }))}
-                  placeholder="e.g. +91 8755444354"
+                  placeholder="e.g. +91 9876543210"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-amber-400 focus:bg-white transition-all font-medium"
                 />
               </div>
@@ -610,7 +624,7 @@ function Profile({ autoEdit = false }) {
                   type="text"
                   value={form.location} 
                   onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
-                  placeholder="e.g. UP, India"
+                  placeholder="e.g. New Delhi, India"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-amber-400 focus:bg-white transition-all font-medium"
                 />
               </div>

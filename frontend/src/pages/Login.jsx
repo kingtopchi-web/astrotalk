@@ -18,6 +18,7 @@ function Login() {
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [showReactivateModal, setShowReactivateModal] = useState(false);
+  const [confirmActivate, setConfirmActivate] = useState(false);
   const [reactivating, setReactivating] = useState(false);
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ function Login() {
         err.response?.status === 403 &&
         (data?.isDeactivated || data?.status === 'SUSPENDED' || (data?.message && data.message.toLowerCase().includes('deactivated')))
       ) {
+        setConfirmActivate(false);
         setShowReactivateModal(true);
       } else {
         setError(data?.message || 'Invalid or expired code. Please try again.');
@@ -118,12 +120,17 @@ function Login() {
   };
 
   const handleReactivate = async () => {
+    if (!confirmActivate) {
+      setError('कृपया आगे बढ़ने के लिए "Activate Account" चेकबॉक्स को टिक करें।');
+      return;
+    }
     setReactivating(true);
     setError('');
     try {
       const res = await axios.post(getApiUrl('/auth/verify-otp-login'), {
         email: email.trim(),
-        otp: otp.trim()
+        otp: otp.trim(),
+        reactivate: true
       });
 
       if (res && res.data) {
@@ -394,44 +401,67 @@ function Login() {
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-5 border border-amber-200/80 shadow-sm">
+              <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 border border-amber-200/80 shadow-sm">
                 <UserCheck size={28} className="stroke-[2.5]" />
               </div>
 
-              <h3 className="font-heading font-bold text-2xl text-slate-900 mb-2">
-                Reactivate Your Account?
+              <h3 className="font-heading font-bold text-2xl text-slate-900 mb-1.5">
+                Activate Your Account / अकाउंट सक्रिय करें
               </h3>
 
-              <p className="text-slate-600 text-sm leading-relaxed mb-5">
-                Your account is currently deactivated. Would you like to reactivate it?
+              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-4">
+                आपका अकाउंट वर्तमान में निष्क्रिय (Deactivated) है। लॉगिन करके अंदर जाने के लिए कृपया नीचे दिए गए चेकबॉक्स को टिक करें।
               </p>
 
-              <div className="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 mb-6 flex items-center justify-between text-left">
+              <div className="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3 mb-4 flex items-center justify-between text-left">
                 <div className="min-w-0 pr-2">
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Account</p>
-                  <p className="text-sm font-semibold text-slate-800 truncate">{email}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Account</p>
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 truncate">{email}</p>
                 </div>
-                <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-1 rounded-full shrink-0">
+                <span className="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full shrink-0">
                   Deactivated
                 </span>
               </div>
+
+              {/* Mandatory Checkbox to Activate Account */}
+              <label className="w-full flex items-start gap-3 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 cursor-pointer select-none mb-5 text-left transition-colors hover:bg-amber-50">
+                <input
+                  type="checkbox"
+                  checked={confirmActivate}
+                  onChange={(e) => setConfirmActivate(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer accent-amber-600 shrink-0"
+                />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">
+                  Activate Account / मेरा अकाउंट पुनः सक्रिय (Activate) करें और मुझे लॉगिन करने दें
+                </span>
+              </label>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <button
                   type="button"
                   onClick={() => setShowReactivateModal(false)}
                   disabled={reactivating}
-                  className="flex-1 px-4 py-3 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-medium text-sm transition-all"
+                  className="flex-1 px-4 py-3 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-medium text-sm transition-all cursor-pointer"
                 >
-                  Cancel
+                  Cancel / रद्द करें
                 </button>
                 <button
                   type="button"
                   onClick={handleReactivate}
-                  disabled={reactivating}
-                  className="flex-1 px-5 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2"
+                  disabled={!confirmActivate || reactivating}
+                  className="flex-1 px-5 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-98"
                 >
-                  {reactivating ? 'Reactivating...' : 'Yes, Reactivate'}
+                  {reactivating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Activating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Activate & Login</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
