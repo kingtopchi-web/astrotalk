@@ -93,6 +93,8 @@ exports.checkout = async (req, res) => {
         platformCommissionAmount: commissionAmount,
         sellerEarnings,
         downloadCount: 0,
+        downloadLimit,
+        downloadExpiresAt,
         downloadAccessRevoked: false
       });
     }
@@ -317,8 +319,14 @@ exports.verifyPayment = async (req, res) => {
  */
 async function processOrderSettlement(order, io) {
   try {
+    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' }).lean();
+    const holdDays = Number(settings?.marketplacePayoutHoldDays ?? 7);
+    const isImmediate = holdDays <= 0;
+    const availableAt = isImmediate ? new Date() : new Date(Date.now() + holdDays * 24 * 3600 * 1000);
+    const earningStatus = isImmediate ? 'AVAILABLE' : 'PENDING';
+
     for (const item of order.items) {
-      // 1. Create seller earning record
+      // 1. Create seller earning record with hold period
       const earning = new MarketplaceEarning({
         sellerId: item.sellerId,
         sellerModel: item.sellerModel,
@@ -328,7 +336,9 @@ async function processOrderSettlement(order, io) {
         commissionRate: item.platformCommissionRate,
         commissionAmount: item.platformCommissionAmount,
         netEarnings: item.sellerEarnings,
-        status: 'AVAILABLE'
+        status: earningStatus,
+        availableAt,
+        holdDays
       });
       await earning.save();
 
@@ -406,6 +416,8 @@ exports.getMyPurchases = async (req, res) => {
           },
           sellerName: item.sellerName,
           downloadCount: item.downloadCount || 0,
+          downloadLimit: item.downloadLimit !== undefined ? item.downloadLimit : 5,
+          downloadExpiresAt: item.downloadExpiresAt || null,
           lastDownloadedAt: item.lastDownloadedAt,
           downloadAccessRevoked: item.downloadAccessRevoked || false
         });
@@ -460,6 +472,23 @@ exports.downloadProduct = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'Download access for this product has been revoked due to a refund or policy restriction'
+      });
+    }
+
+    
+    // Check download expiry window set by admin
+    if (orderItem.downloadExpiresAt && new Date() > new Date(orderItem.downloadExpiresAt)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Download link has expired. The access time window configured by platform policy has ended.'
+      });
+    }
+
+    // Check maximum download count limit set by admin
+    if (orderItem.downloadLimit > 0 && (orderItem.downloadCount || 0) >= orderItem.downloadLimit) {
+      return res.status(403).json({
+        success: false,
+        message: `Download limit reached (${orderItem.downloadCount}/${orderItem.downloadLimit} downloads used). You cannot download this file again.`
       });
     }
 

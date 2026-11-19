@@ -8,7 +8,13 @@ const paymentService = require('../services/RazorpayPaymentService');
 
 exports.getWallet = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    let user = await User.findById(req.user._id);
+    if (!user) {
+      user = await Expert.findById(req.user._id);
+    }
+    if (!user) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
     
     const transactions = await WalletTransaction.find({ user: user._id, status: 'SUCCESS' });
     
@@ -23,7 +29,7 @@ exports.getWallet = async (req, res) => {
     });
 
     res.json({
-      balance: user.walletBalance,
+      balance: user.walletBalance || 0,
       totalAdded,
       totalSpent,
       totalRefunded
@@ -78,12 +84,20 @@ exports.addMoney = async (req, res) => {
       if (foundCoupon && (!foundCoupon.validTill || new Date(foundCoupon.validTill) > new Date())) {
         if (!foundCoupon.minRechargeAmount || amount >= foundCoupon.minRechargeAmount) {
           if (foundCoupon.discountType === 'FLAT') {
-            appliedBonus = foundCoupon.discountValue;
+            appliedBonus = foundCoupon.discountValue || foundCoupon.flatBonus || 0;
           } else if (foundCoupon.discountType === 'PERCENTAGE') {
-            appliedBonus = (amount * foundCoupon.discountValue) / 100;
+            appliedBonus = (amount * (foundCoupon.discountValue || foundCoupon.percentageBonus || 0)) / 100;
             if (foundCoupon.maxDiscountAmount > 0 && appliedBonus > foundCoupon.maxDiscountAmount) {
               appliedBonus = foundCoupon.maxDiscountAmount;
             }
+          } else if (foundCoupon.discountType === 'BOTH') {
+            const pct = foundCoupon.percentageBonus || foundCoupon.discountValue || 0;
+            const flat = foundCoupon.flatBonus || 0;
+            let pctBonus = (amount * pct) / 100;
+            if (foundCoupon.maxDiscountAmount > 0 && pctBonus > foundCoupon.maxDiscountAmount) {
+              pctBonus = foundCoupon.maxDiscountAmount;
+            }
+            appliedBonus = pctBonus + flat;
           }
           appliedBonus = Math.round(appliedBonus * 100) / 100;
           validatedCoupon = foundCoupon;
@@ -195,11 +209,18 @@ exports.verifyPayment = async (req, res) => {
     const totalCredit = transaction.amount + (transaction.bonusAmount || 0);
 
     // Atomic update of user wallet balance with base amount + bonus
-    const user = await User.findOneAndUpdate(
+    let user = await User.findOneAndUpdate(
       { _id: transaction.user },
-      { $inc: { walletBalance: totalCredit } },
+      { $inc: { walletBalance: totalCredit }, $set: { hasRechargedWallet: true } },
       { new: false }
     );
+    if (!user) {
+      user = await Expert.findOneAndUpdate(
+        { _id: transaction.user },
+        { $inc: { walletBalance: totalCredit }, $set: { hasRechargedWallet: true } },
+        { new: false }
+      );
+    }
     if (!user) {
       transaction.status = 'FAILED';
       await transaction.save();
@@ -315,11 +336,21 @@ exports.payConsultation = async (req, res) => {
       return res.status(400).json({ message: 'Consultation is already paid' });
     }
 
-    const user = await User.findOneAndUpdate(
+    let user = await User.findOneAndUpdate(
       { _id: req.user._id, walletBalance: { $gte: consultation.cost } },
       { $inc: { walletBalance: -consultation.cost } },
       { new: false }
     );
+
+    let isExpertClient = false;
+    if (!user) {
+      user = await Expert.findOneAndUpdate(
+        { _id: req.user._id, walletBalance: { $gte: consultation.cost } },
+        { $inc: { walletBalance: -consultation.cost } },
+        { new: false }
+      );
+      if (user) isExpertClient = true;
+    }
 
     if (!user) {
       return res.status(400).json({ message: 'Insufficient wallet balance' });
@@ -527,6 +558,19 @@ exports.verifyCallPayment = async (req, res) => {
           expertId: expertId,
           serviceName: `${callType === 'video' ? 'Video' : 'Audio'} Consultation`
         });
+
+        // Trigger Web Push Notification to expert's device
+        try {
+          const pushService = require('../services/pushNotificationService');
+          pushService.sendIncomingCallPush(expertId, {
+            consultationId: consultation._id,
+            type: callType,
+            userName: req.user.name || 'Client',
+            isFree: false
+          }).catch(err => console.error('[PushWallet] Push error:', err));
+        } catch (err) {
+          console.error('[PushWallet] Error dispatching push:', err.message);
+        }
       }
     }
 
@@ -556,14 +600,25 @@ exports.payCallWithWallet = async (req, res) => {
     const totalCost = rate * minutes;
 
     // Atomic debit to prevent race conditions and double spending
-    const user = await User.findOneAndUpdate(
+    let user = await User.findOneAndUpdate(
       { _id: req.user._id, walletBalance: { $gte: totalCost } },
       { $inc: { walletBalance: -totalCost } },
       { new: false }
     );
 
+    let isExpertClient = false;
     if (!user) {
-      const freshUser = await User.findById(req.user._id);
+      // Allow Expert to use their Expert wallet balance to consult other experts
+      user = await Expert.findOneAndUpdate(
+        { _id: req.user._id, walletBalance: { $gte: totalCost } },
+        { $inc: { walletBalance: -totalCost } },
+        { new: false }
+      );
+      if (user) isExpertClient = true;
+    }
+
+    if (!user) {
+      const freshUser = (await User.findById(req.user._id)) || (await Expert.findById(req.user._id));
       return res.status(400).json({
         success: false,
         requiresRecharge: true,
@@ -597,6 +652,7 @@ exports.payCallWithWallet = async (req, res) => {
 
     // Create Consultation record
     const consultation = new Consultation({
+      clientModel: isExpertClient ? 'Expert' : 'User',
       user: user._id,
       expert: expertId,
       type: type || 'video',

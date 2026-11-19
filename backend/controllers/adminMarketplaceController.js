@@ -155,7 +155,7 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
   try {
-    const { name, description, icon, displayOrder } = req.body;
+    const { name, description, icon, displayOrder, image } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Category name is required' });
     }
@@ -171,6 +171,7 @@ exports.createCategory = async (req, res) => {
       slug,
       description: description || '',
       icon: icon || 'package',
+      image: image || '',
       displayOrder: Number(displayOrder) || 0
     });
     await category.save();
@@ -184,7 +185,7 @@ exports.createCategory = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, icon, status, displayOrder } = req.body;
+    const { name, description, icon, status, displayOrder, image } = req.body;
 
     const category = await MarketplaceCategory.findById(id);
     if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
@@ -192,6 +193,7 @@ exports.updateCategory = async (req, res) => {
     if (name) category.name = name.trim();
     if (description !== undefined) category.description = description;
     if (icon) category.icon = icon;
+    if (image !== undefined) category.image = image;
     if (status) category.status = status;
     if (displayOrder !== undefined) category.displayOrder = Number(displayOrder);
 
@@ -389,12 +391,17 @@ exports.getSettings = async (req, res) => {
     res.json({
       success: true,
       settings: {
+        enableMarketplace: settings ? settings.enableMarketplace !== false : true,
         marketplaceCommissionRate: settings?.marketplaceCommissionRate ?? 10,
         marketplaceAllowedExtensions: settings?.marketplaceAllowedExtensions || [
           'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg', 'zip', 'rar', 'csv', 'txt', 'mp3', 'mp4'
         ],
         marketplaceMaxFileSizeMb: settings?.marketplaceMaxFileSizeMb ?? 50,
-        marketplaceAutoApprove: !!settings?.marketplaceAutoApprove
+        marketplaceAutoApprove: !!settings?.marketplaceAutoApprove,
+        marketplacePayoutHoldDays: settings?.marketplacePayoutHoldDays ?? 7,
+        marketplaceDownloadLimit: settings?.marketplaceDownloadLimit ?? 5,
+        marketplaceDownloadExpiryDays: settings?.marketplaceDownloadExpiryDays ?? 30,
+        platformTaxRate: settings?.platformTaxRate ?? 18
       }
     });
   } catch (error) {
@@ -405,24 +412,37 @@ exports.getSettings = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   try {
     const {
+      enableMarketplace,
       marketplaceCommissionRate,
       marketplaceAllowedExtensions,
       marketplaceMaxFileSizeMb,
-      marketplaceAutoApprove
+      marketplaceAutoApprove,
+      marketplacePayoutHoldDays,
+      marketplaceDownloadLimit,
+      marketplaceDownloadExpiryDays,
+      platformTaxRate
     } = req.body;
+
+    const updateFields = {
+      marketplaceCommissionRate: Number(marketplaceCommissionRate) || 10,
+      marketplaceAllowedExtensions: Array.isArray(marketplaceAllowedExtensions)
+        ? marketplaceAllowedExtensions.map(e => e.toLowerCase().trim().replace('.', ''))
+        : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg', 'zip', 'rar', 'csv', 'txt', 'mp3', 'mp4'],
+      marketplaceMaxFileSizeMb: Number(marketplaceMaxFileSizeMb) || 50,
+      marketplaceAutoApprove: !!marketplaceAutoApprove,
+      marketplacePayoutHoldDays: marketplacePayoutHoldDays !== undefined ? Math.max(0, Number(marketplacePayoutHoldDays) || 0) : 7,
+      marketplaceDownloadLimit: marketplaceDownloadLimit !== undefined ? Math.max(0, Number(marketplaceDownloadLimit) || 0) : 5,
+      marketplaceDownloadExpiryDays: marketplaceDownloadExpiryDays !== undefined ? Math.max(0, Number(marketplaceDownloadExpiryDays) || 0) : 30,
+      platformTaxRate: platformTaxRate !== undefined ? Math.max(0, Number(platformTaxRate) || 0) : 18
+    };
+
+    if (enableMarketplace !== undefined) {
+      updateFields.enableMarketplace = !!enableMarketplace;
+    }
 
     const settings = await Setting.findOneAndUpdate(
       { singletonKey: 'GLOBAL_SETTINGS' },
-      {
-        $set: {
-          marketplaceCommissionRate: Number(marketplaceCommissionRate) || 10,
-          marketplaceAllowedExtensions: Array.isArray(marketplaceAllowedExtensions)
-            ? marketplaceAllowedExtensions.map(e => e.toLowerCase().trim().replace('.', ''))
-            : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg', 'zip', 'rar', 'csv', 'txt', 'mp3', 'mp4'],
-          marketplaceMaxFileSizeMb: Number(marketplaceMaxFileSizeMb) || 50,
-          marketplaceAutoApprove: !!marketplaceAutoApprove
-        }
-      },
+      { $set: updateFields },
       { new: true, upsert: true }
     );
 

@@ -26,9 +26,16 @@ exports.getSettings = async (req, res) => {
 
 exports.updateSettings = async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData._id;
+    delete updateData.singletonKey;
+    delete updateData.createdAt;
+    delete updateData.updatedAt;
+    delete updateData.__v;
+
     const settings = await Setting.findOneAndUpdate(
       { singletonKey: 'GLOBAL_SETTINGS' },
-      { $set: req.body },
+      { $set: updateData },
       { new: true, upsert: true }
     );
     res.json(settings);
@@ -250,6 +257,18 @@ exports.getUsers = async (req, res) => {
 
     let query = {};
     if (req.query.status) query.status = req.query.status;
+    if (req.query.bankVerificationStatus) {
+      if (req.query.bankVerificationStatus === 'NOT_SUBMITTED') {
+        query.$or = [
+          { 'bankDetails.verificationStatus': 'NOT_SUBMITTED' },
+          { 'bankDetails.verificationStatus': { $exists: false } },
+          { 'bankDetails.accountNumber': { $exists: false } },
+          { 'bankDetails.accountNumber': '' }
+        ];
+      } else {
+        query['bankDetails.verificationStatus'] = req.query.bankVerificationStatus;
+      }
+    }
     
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search, 'i');
@@ -311,6 +330,137 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+exports.approveUserBankDetails = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!user.bankDetails || !user.bankDetails.accountNumber) {
+      return res.status(400).json({ message: 'No bank details submitted for this user.' });
+    }
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          'bankDetails.verificationStatus': 'APPROVED',
+          'bankDetails.rejectionReason': '',
+          'bankDetails.verifiedAt': new Date(),
+          'bankDetails.verifiedBy': adminId,
+          'bankDetails.isVerified': true
+        }
+      },
+      { new: true, runValidators: false }
+    ).select('-password');
+
+    // Notify user via In-App / Push Notification
+    try {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: user._id,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: 'Marketplace Bank Passbook Approved',
+        message: 'Your bank passbook and account details have been verified and approved by Administrator. Marketplace payouts are now enabled.',
+        actionText: 'View Earnings',
+        link: '/seller/dashboard',
+        type: 'bank_verified',
+        badge: 'Verified'
+      }, io).catch(() => {});
+
+      if (io) {
+        io.to(`user_${user._id}`).emit('bank_status_updated', {
+          userId: user._id,
+          verificationStatus: 'APPROVED',
+          bankDetails: updated.bankDetails,
+          message: 'Your marketplace bank passbook has been approved by Administrator!'
+        });
+        io.to(user._id.toString()).emit('bank_status_updated', {
+          userId: user._id,
+          verificationStatus: 'APPROVED',
+          bankDetails: updated.bankDetails,
+          message: 'Your marketplace bank passbook has been approved by Administrator!'
+        });
+      }
+    } catch (e) {}
+
+    res.json({ message: 'User bank details approved successfully', user: updated });
+  } catch (error) {
+    console.error('approveUserBankDetails error:', error);
+    res.status(500).json({ message: 'Error approving user bank details', error: error.message });
+  }
+};
+
+exports.rejectUserBankDetails = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Rejection reason is required.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          'bankDetails.verificationStatus': 'REJECTED',
+          'bankDetails.rejectionReason': reason.trim(),
+          'bankDetails.verifiedAt': new Date(),
+          'bankDetails.verifiedBy': adminId,
+          'bankDetails.isVerified': false
+        }
+      },
+      { new: true, runValidators: false }
+    ).select('-password');
+
+    // Notify user
+    try {
+      const io = req.app.get('io');
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: user._id,
+        recipientRole: 'USER',
+        recipientModel: 'User',
+        title: 'Bank Passbook Verification Rejected',
+        message: `Your bank verification was rejected. Reason: ${reason.trim()}. Please re-upload a clear passbook or cancelled cheque copy.`,
+        actionText: 'Update Bank Details',
+        link: '/seller/dashboard',
+        type: 'bank_rejected',
+        badge: 'Rejected'
+      }, io).catch(() => {});
+
+      if (io) {
+        io.to(`user_${user._id}`).emit('bank_status_updated', {
+          userId: user._id,
+          verificationStatus: 'REJECTED',
+          rejectionReason: reason.trim(),
+          bankDetails: updated.bankDetails,
+          message: `Your bank verification was rejected: ${reason.trim()}`
+        });
+        io.to(user._id.toString()).emit('bank_status_updated', {
+          userId: user._id,
+          verificationStatus: 'REJECTED',
+          rejectionReason: reason.trim(),
+          bankDetails: updated.bankDetails,
+          message: `Your bank verification was rejected: ${reason.trim()}`
+        });
+      }
+    } catch (e) {}
+
+    res.json({ message: 'User bank details rejected successfully', user: updated });
+  } catch (error) {
+    console.error('rejectUserBankDetails error:', error);
+    res.status(500).json({ message: 'Error rejecting user bank details', error: error.message });
+  }
+};
+
 // --- Experts ---
 exports.getExperts = async (req, res) => {
   try {
@@ -333,6 +483,22 @@ exports.getExperts = async (req, res) => {
         { mobile: searchRegex }
       ];
     }
+
+    // Auto-lift expired temporary suspensions
+    await Expert.updateMany(
+      {
+        status: 'SUSPENDED',
+        'suspensionDetails.type': 'TEMPORARY',
+        'suspensionDetails.suspendedUntil': { $lte: new Date() }
+      },
+      {
+        $set: {
+          status: 'ACTIVE',
+          'suspensionDetails.isSuspended': false,
+          'suspensionDetails.type': 'NONE'
+        }
+      }
+    ).exec().catch(() => {});
 
     const experts = await Expert.find(query)
       .select('-password')
@@ -406,7 +572,11 @@ exports.approveExpert = async (req, res) => {
       status: 'ACTIVE',
       approvedAt: new Date(),
       approvedBy: adminId,
-      rejectionReason: ''
+      rejectionReason: '',
+      isAutoApproved: false,
+      approvalSource: 'MANUAL_ADMIN',
+      manuallyApprovedAt: new Date(),
+      manuallyApprovedBy: adminId
     };
 
     if (!expert.rates || expert.rates.chat < 5 || expert.rates.audio < 10 || expert.rates.video < 20) {
@@ -475,7 +645,9 @@ exports.rejectExpert = async (req, res) => {
           verificationStatus: 'REJECTED',
           rejectionReason: reason.trim(),
           rejectedAt: new Date(),
-          rejectedBy: adminId
+          rejectedBy: adminId,
+          isAutoApproved: false,
+          approvalSource: 'NOT_APPROVED'
         }
       },
       { new: true, runValidators: false }
@@ -660,6 +832,224 @@ exports.updateExpertStatus = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/admin/experts/:id/suspend
+ * Temporarily suspend or indefinitely terminate an expert on disciplinary grounds,
+ * and dispatch an official explanation notice explaining what mistake they made.
+ */
+exports.suspendExpert = async (req, res) => {
+  try {
+    const {
+      type = 'TEMPORARY',
+      durationDays = 3,
+      customUntilDate,
+      reason,
+      noticeMessage
+    } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Violation reason / category is required' });
+    }
+
+    if (!noticeMessage || !noticeMessage.trim()) {
+      return res.status(400).json({ message: 'A detailed notice message explaining what mistake was made is required' });
+    }
+
+    const expert = await Expert.findById(req.params.id);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    let suspendedUntil = null;
+    let durationText = 'Indefinite / Permanent';
+
+    if (type === 'TEMPORARY') {
+      if (customUntilDate) {
+        suspendedUntil = new Date(customUntilDate);
+      } else {
+        const days = Math.max(1, Number(durationDays) || 3);
+        suspendedUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      }
+      durationText = `Until ${suspendedUntil.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    expert.status = 'SUSPENDED';
+    expert.onlineStatus = 'offline';
+    
+    if (!expert.suspensionDetails) {
+      expert.suspensionDetails = {};
+    }
+
+    expert.suspensionDetails.isSuspended = true;
+    expert.suspensionDetails.type = type === 'PERMANENT' ? 'PERMANENT' : 'TEMPORARY';
+    expert.suspensionDetails.reason = reason.trim();
+    expert.suspensionDetails.noticeMessage = noticeMessage.trim();
+    expert.suspensionDetails.suspendedAt = new Date();
+    expert.suspensionDetails.suspendedUntil = suspendedUntil;
+    expert.suspensionDetails.suspendedBy = adminId;
+
+    if (!Array.isArray(expert.suspensionDetails.actionHistory)) {
+      expert.suspensionDetails.actionHistory = [];
+    }
+
+    expert.suspensionDetails.actionHistory.push({
+      action: 'SUSPENDED',
+      type: expert.suspensionDetails.type,
+      reason: reason.trim(),
+      noticeMessage: noticeMessage.trim(),
+      suspendedUntil,
+      actionAt: new Date(),
+      actionBy: adminId
+    });
+
+    await expert.save();
+
+    const io = req.app.get('io');
+
+    // 1. Dispatch In-App Notification directly to Expert
+    try {
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: '⚠️ Account Action: Temporary Suspension Notice',
+        message: `Your account has been temporarily suspended by Administrator. Reason: ${reason.trim()}. Notice: "${noticeMessage.trim()}". Duration: ${durationText}. During this time, consultation services are restricted.`,
+        actionText: 'View Official Notice',
+        link: '/expert/dashboard',
+        type: 'account_suspended',
+        badge: 'Disciplinary'
+      }, io).catch(() => {});
+    } catch (notifErr) {
+      console.error('In-app notification error on suspend:', notifErr.message);
+    }
+
+    // 2. Dispatch Mobile Push Notification (PWA / Web Push)
+    try {
+      const pushService = require('../services/pushNotificationService');
+      pushService.sendPushToUser(expert._id, {
+        title: '⚠️ Official Action Notice from Admin',
+        body: `Aapka account suspend kiya gaya hai. Reason: ${reason.trim()}. Poori notice dekhne ke liye tap karein.`,
+        url: '/expert/dashboard',
+        tag: 'expert-suspension'
+      }).catch(() => {});
+    } catch (pushErr) {
+      console.error('Push notification error on suspend:', pushErr.message);
+    }
+
+    // 3. Real-time Socket.IO Broadcast to force offline & display immediate modal/alert
+    if (io) {
+      const payload = {
+        expertId: expert._id.toString(),
+        status: 'SUSPENDED',
+        isSuspended: true,
+        type: expert.suspensionDetails.type,
+        reason: reason.trim(),
+        noticeMessage: noticeMessage.trim(),
+        suspendedAt: expert.suspensionDetails.suspendedAt,
+        suspendedUntil,
+        durationText,
+        message: `Your expert account has been suspended by Administrator: "${reason.trim()}". Notice: ${noticeMessage.trim()}`
+      };
+
+      io.to(`user_${expert._id}`).emit('account_suspended', payload);
+      io.to(expert._id.toString()).emit('account_suspended', payload);
+      // Public broadcast so users see expert offline immediately
+      io.emit('expert_status_changed', { expertId: expert._id.toString(), onlineStatus: 'offline' });
+    }
+
+    res.json({
+      success: true,
+      message: `Expert account suspended successfully (${durationText}). Disciplinary notice delivered to expert.`,
+      expert
+    });
+  } catch (error) {
+    console.error('suspendExpert error:', error);
+    res.status(500).json({ message: 'Error suspending expert', error: error.message });
+  }
+};
+
+/**
+ * POST /api/admin/experts/:id/reinstate
+ * Lift an active suspension and restore the expert to ACTIVE status
+ */
+exports.reinstateExpert = async (req, res) => {
+  try {
+    const expert = await Expert.findById(req.params.id);
+    if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    const adminId = (req.user && req.user._id) ? req.user._id : null;
+
+    expert.status = 'ACTIVE';
+    if (!expert.suspensionDetails) expert.suspensionDetails = {};
+    expert.suspensionDetails.isSuspended = false;
+    expert.suspensionDetails.type = 'NONE';
+    expert.suspensionDetails.suspendedUntil = null;
+
+    if (!Array.isArray(expert.suspensionDetails.actionHistory)) {
+      expert.suspensionDetails.actionHistory = [];
+    }
+
+    expert.suspensionDetails.actionHistory.push({
+      action: 'REINSTATED',
+      actionAt: new Date(),
+      actionBy: adminId
+    });
+
+    await expert.save();
+
+    const io = req.app.get('io');
+
+    // 1. In-App Notification
+    try {
+      const { sendNotification } = require('../utils/notificationDispatcher');
+      sendNotification({
+        recipient: expert._id,
+        recipientRole: 'EXPERT',
+        recipientModel: 'Expert',
+        title: '✅ Account Suspension Lifted / अकाउंट पुनः सक्रिय',
+        message: 'Aapke account par lagaya gaya suspension administrator dwara hata diya gaya hai. Ab aap dashboard me jaakar online ho sakte hain aur consultation le sakte hain.',
+        actionText: 'Go to Dashboard',
+        link: '/expert/dashboard',
+        type: 'account_reinstated',
+        badge: 'Active'
+      }, io).catch(() => {});
+    } catch (e) {}
+
+    // 2. Mobile Push Notification
+    try {
+      const pushService = require('../services/pushNotificationService');
+      pushService.sendPushToUser(expert._id, {
+        title: '✅ Account Suspension Lifted',
+        body: 'Aapka account fir se active ho gaya hai. Consultation lene ke liye dashboard open karein.',
+        url: '/expert/dashboard',
+        tag: 'expert-reinstated'
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 3. Socket broadcast
+    if (io) {
+      const payload = {
+        expertId: expert._id.toString(),
+        status: 'ACTIVE',
+        isSuspended: false,
+        message: 'Your account suspension has been lifted by Administrator. You are now active.'
+      };
+      io.to(`user_${expert._id}`).emit('account_reinstated', payload);
+      io.to(expert._id.toString()).emit('account_reinstated', payload);
+    }
+
+    res.json({
+      success: true,
+      message: 'Expert suspension lifted. Account reinstated to ACTIVE status successfully.',
+      expert
+    });
+  } catch (error) {
+    console.error('reinstateExpert error:', error);
+    res.status(500).json({ message: 'Error reinstating expert', error: error.message });
+  }
+};
+
 exports.deleteExpert = async (req, res) => {
   try {
     const expert = await Expert.findByIdAndDelete(req.params.id);
@@ -685,7 +1075,7 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
   try {
-    const { name, slug, description, status, commissionRate } = req.body;
+    const { name, slug, description, status, commissionRate, image } = req.body;
     
     // Simple validation
     if (!name || !slug) return res.status(400).json({ message: 'Name and slug are required' });
@@ -706,6 +1096,7 @@ exports.createCategory = async (req, res) => {
       slug,
       description,
       status,
+      image: image || '',
       commissionRate: parsedCommission
     });
     await category.save();
@@ -727,6 +1118,7 @@ exports.updateCategory = async (req, res) => {
     if (slug) category.slug = slug;
     if (description !== undefined) category.description = description;
     if (status) category.status = status;
+    if (image !== undefined) category.image = image;
 
     if (commissionRate !== undefined) {
       if (commissionRate === null || commissionRate === '') {
@@ -1080,7 +1472,14 @@ exports.getAdministrators = async (req, res) => {
 // POST /api/admin/administrators
 exports.createAdministrator = async (req, res) => {
   try {
-    const { name, email, password, mobile, role } = req.body;
+    // Only SUPER_ADMIN can create other administrators
+    if (req.user && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ 
+        message: 'Forbidden: Only Super Administrators have permission to create or invite administrators.' 
+      });
+    }
+
+    const { name, email, password, mobile, role, permissions } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Administrator full name is required' });
@@ -1102,12 +1501,18 @@ exports.createAdministrator = async (req, res) => {
       return res.status(400).json({ message: 'An administrator with this email already exists' });
     }
 
+    const assignedRole = role && ['ADMIN', 'SUPER_ADMIN'].includes(role) ? role : 'ADMIN';
+    const assignedPermissions = assignedRole === 'SUPER_ADMIN' 
+      ? ['*'] 
+      : (Array.isArray(permissions) ? permissions : []);
+
     const newAdmin = new Admin({
       name: name.trim(),
       email: normalizedEmail,
       password, // hashed automatically by Admin pre('save') hook
       mobile: mobile ? mobile.trim() : '',
-      role: role && ['ADMIN', 'SUPER_ADMIN'].includes(role) ? role : 'ADMIN',
+      role: assignedRole,
+      permissions: assignedPermissions,
       status: 'ACTIVE'
     });
 
@@ -1123,9 +1528,55 @@ exports.createAdministrator = async (req, res) => {
   }
 };
 
+// PATCH /api/admin/administrators/:id/permissions
+exports.updateAdministratorPermissions = async (req, res) => {
+  try {
+    if (req.user && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Forbidden: Only Super Administrators can modify administrator roles and permissions' });
+    }
+
+    const { id } = req.params;
+    const { role, permissions } = req.body;
+
+    const targetAdmin = await Admin.findById(id);
+    if (!targetAdmin) {
+      return res.status(404).json({ message: 'Administrator not found' });
+    }
+
+    // Safety: Cannot demote self if target is the only remaining Super Admin
+    if (targetAdmin._id.toString() === req.user._id.toString() && role && role !== 'SUPER_ADMIN') {
+      const superAdminCount = await Admin.countDocuments({ role: 'SUPER_ADMIN', status: 'ACTIVE' });
+      if (superAdminCount <= 1) {
+        return res.status(400).json({ message: 'Cannot demote the only remaining active Super Administrator' });
+      }
+    }
+
+    if (role && ['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      targetAdmin.role = role;
+    }
+
+    if (targetAdmin.role === 'SUPER_ADMIN') {
+      targetAdmin.permissions = ['*'];
+    } else if (Array.isArray(permissions)) {
+      targetAdmin.permissions = permissions;
+    }
+
+    await targetAdmin.save();
+
+    const updated = await Admin.findById(id).select('-password');
+    res.json({ message: 'Administrator permissions updated successfully', admin: updated });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating administrator permissions', error: error.message });
+  }
+};
+
 // PATCH /api/admin/administrators/:id/status
 exports.updateAdministratorStatus = async (req, res) => {
   try {
+    if (req.user && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Forbidden: Only Super Administrators can update administrator account status' });
+    }
+
     const { id } = req.params;
     const { status } = req.body;
 
@@ -1157,6 +1608,10 @@ exports.updateAdministratorStatus = async (req, res) => {
 // PATCH /api/admin/administrators/:id/password
 exports.updateAdministratorPassword = async (req, res) => {
   try {
+    if (req.user && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Forbidden: Only Super Administrators can reset administrator passwords' });
+    }
+
     const { id } = req.params;
     const { newPassword } = req.body;
 
@@ -1181,6 +1636,10 @@ exports.updateAdministratorPassword = async (req, res) => {
 // DELETE /api/admin/administrators/:id
 exports.deleteAdministrator = async (req, res) => {
   try {
+    if (req.user && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Forbidden: Only Super Administrators can delete administrators' });
+    }
+
     const { id } = req.params;
 
     // Safety: Admin cannot delete themselves

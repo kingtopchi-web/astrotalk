@@ -23,8 +23,12 @@ import {
   HelpCircle,
   Mail,
   Phone,
-  ShoppingBag
+  ShoppingBag,
+  AlertTriangle,
+  Ban,
+  ShieldAlert
 } from 'lucide-react';
+import { createSocket } from '../utils/socket';
 import NotificationDropdown from '../components/NotificationDropdown';
 import LogoutModal from '../components/LogoutModal';
 import ExpertSearchBar from '../components/ExpertSearchBar';
@@ -71,8 +75,57 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
     fetchProfile();
   }, [navigate]);
 
+  // Real-time socket sync for disciplinary actions (suspension & reinstatement)
+  useEffect(() => {
+    if (!expert?._id) return;
+    let socket = null;
+    try {
+      socket = createSocket();
+      socket.emit('join_user', expert._id);
+      socket.on('account_suspended', (data) => {
+        setExpert(prev => ({
+          ...prev,
+          status: 'SUSPENDED',
+          onlineStatus: 'offline',
+          suspensionDetails: {
+            isSuspended: true,
+            type: data?.type || 'TEMPORARY',
+            reason: data?.reason || 'Disciplinary violation',
+            noticeMessage: data?.noticeMessage,
+            suspendedUntil: data?.suspendedUntil
+          }
+        }));
+      });
+      socket.on('account_reinstated', () => {
+        setExpert(prev => ({
+          ...prev,
+          status: 'ACTIVE',
+          suspensionDetails: {
+            isSuspended: false,
+            type: 'NONE'
+          }
+        }));
+      });
+    } catch (err) {
+      console.warn('ExpertLayout socket error:', err);
+    }
+    return () => {
+      if (socket) {
+        socket.off('account_suspended');
+        socket.off('account_reinstated');
+        socket.disconnect();
+      }
+    };
+  }, [expert?._id]);
+
   const toggleOnlineStatus = async () => {
     if (!expert) return;
+
+    if (expert.status === 'SUSPENDED' || expert.suspensionDetails?.isSuspended) {
+      alert(`Account Suspended:\nYour account is currently suspended by administration on disciplinary grounds.\n\nReason: ${expert.suspensionDetails?.reason || 'Violation of guidelines'}\n\nYou cannot go online or accept consultation requests during the suspension period.`);
+      return;
+    }
+
     const currentStatus = expert.onlineStatus || 'offline';
     const newStatus = currentStatus === 'online' ? 'offline' : 'online';
     
@@ -418,6 +471,64 @@ const ExpertLayout = ({ children, title = '', subtitle = '', hideTitleOnMobile =
                 {subtitle && <p className="text-xs sm:text-sm text-on-surface/60 mt-0.5 md:mt-1">{subtitle}</p>}
               </div>
             )}
+            {/* Disciplinary Suspension Notice Banner */}
+            {expert?.status === 'SUSPENDED' && (
+              <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-rose-200 dark:border-rose-900/60">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Ban size={20} />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black text-rose-900 dark:text-rose-100 flex items-center gap-2">
+                        Account Suspended by Administration
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 font-black uppercase">
+                          {expert.suspensionDetails?.type === 'TEMPORARY' ? 'Temporary' : 'Indefinite'}
+                        </span>
+                      </h2>
+                      {expert.suspensionDetails?.suspendedUntil ? (
+                        <p className="text-xs text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-0.5">
+                          <Clock size={13} />
+                          Suspension Active Until: {new Date(expert.suspensionDetails.suspendedUntil).toLocaleString()} (Auto-lifts on expiry)
+                        </p>
+                      ) : (
+                        <p className="text-xs text-rose-700 dark:text-rose-300 font-semibold mt-0.5">
+                          Suspended indefinitely by Administration
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-600 text-white self-start sm:self-auto shrink-0 shadow-xs">
+                    Consultations Restricted
+                  </span>
+                </div>
+
+                <div className="mt-3.5 space-y-2 text-xs sm:text-sm text-rose-900 dark:text-rose-200">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 block mb-0.5">
+                      Violation / Disciplinary Reason:
+                    </span>
+                    <p className="font-bold text-rose-950 dark:text-rose-100 text-sm">
+                      {expert.suspensionDetails?.reason || 'Violation of platform guidelines'}
+                    </p>
+                  </div>
+
+                  {expert.suspensionDetails?.noticeMessage && (
+                    <div className="mt-2.5 p-3.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-rose-200 dark:border-rose-900 text-slate-800 dark:text-slate-200 font-sans whitespace-pre-wrap leading-relaxed text-xs">
+                      <div className="font-bold text-rose-800 dark:text-rose-300 mb-1 flex items-center gap-1">
+                        <AlertTriangle size={13} /> Official Notice from Administration:
+                      </div>
+                      {expert.suspensionDetails.noticeMessage}
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-rose-700 dark:text-rose-400 mt-2">
+                    ⚠️ While your account is suspended, you cannot go online, receive incoming audio/video calls, or accept new chat consultations.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

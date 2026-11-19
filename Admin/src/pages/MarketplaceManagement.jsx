@@ -62,6 +62,7 @@ export default function MarketplaceManagement() {
     slug: '',
     description: '',
     icon: '',
+    image: '',
     displayOrder: 0
   });
 
@@ -83,10 +84,15 @@ export default function MarketplaceManagement() {
 
   // SETTINGS STATE
   const [settings, setSettings] = useState({
+    enableMarketplace: true,
     marketplaceCommissionRate: 10,
     marketplaceAllowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'zip', 'rar', 'csv', 'txt', 'mp3', 'mp4'],
     marketplaceMaxFileSizeMb: 50,
-    marketplaceAutoApprove: false
+    marketplaceAutoApprove: false,
+    marketplacePayoutHoldDays: 7,
+    marketplaceDownloadLimit: 5,
+    marketplaceDownloadExpiryDays: 30,
+    platformTaxRate: 18
   });
   const [extInput, setExtInput] = useState('');
 
@@ -137,6 +143,9 @@ export default function MarketplaceManagement() {
           totalOrders: orders
         }));
       }
+
+      // Also fetch settings on initial load so toggle status is always up to date
+      loadSettings();
 
       if (tab === 'products') {
         loadProducts();
@@ -222,6 +231,7 @@ export default function MarketplaceManagement() {
         slug: categoryModal.slug,
         description: categoryModal.description,
         icon: categoryModal.icon,
+        image: categoryModal.image || '',
         displayOrder: Number(categoryModal.displayOrder) || 0
       };
 
@@ -232,7 +242,7 @@ export default function MarketplaceManagement() {
         await axios.post(`${API}/marketplace/categories`, payload, { headers });
         showAlert('success', 'Category created successfully');
       }
-      setCategoryModal({ open: false, editingId: null, name: '', slug: '', description: '', icon: '', displayOrder: 0 });
+      setCategoryModal({ open: false, editingId: null, name: '', slug: '', description: '', icon: '', image: '', displayOrder: 0 });
       loadCategories();
     } catch (err) {
       showAlert('error', err.response?.data?.message || 'Failed to save category');
@@ -331,6 +341,7 @@ export default function MarketplaceManagement() {
       const res = await axios.get(`${API}/marketplace/settings`, { headers });
       if (res.data?.success && res.data.settings) {
         setSettings({
+          enableMarketplace: res.data.settings.enableMarketplace !== false,
           marketplaceCommissionRate: res.data.settings.marketplaceCommissionRate ?? 10,
           marketplaceAllowedExtensions: res.data.settings.marketplaceAllowedExtensions || [],
           marketplaceMaxFileSizeMb: res.data.settings.marketplaceMaxFileSizeMb ?? 50,
@@ -339,6 +350,34 @@ export default function MarketplaceManagement() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const toggleMarketplaceActive = async () => {
+    const nextState = !settings.enableMarketplace;
+    const confirmMsg = nextState
+      ? 'Enable Marketplace System?\n\n• Bottom-Nav will show 5 buttons: Home | Experts | Sell | Products | Account\n• Marketplace store, cart, purchases, and seller dashboard will be visible.'
+      : 'Disable & Hide Marketplace System?\n\n• Bottom-Nav will be reduced to 3 buttons: Home | Experts | Account (Sell & Products hidden)\n• Marketplace routes, cart, and seller access will be locked.';
+    if (!window.confirm(confirmMsg)) return;
+
+    setActionLoading(true);
+    try {
+      const headers = getAuthHeaders();
+      const updated = { ...settings, enableMarketplace: nextState };
+      const res = await axios.put(`${API}/marketplace/settings`, updated, { headers });
+      if (res.data?.success) {
+        setSettings(updated);
+        showAlert(
+          'success',
+          nextState
+            ? 'Marketplace is now ACTIVE and visible (5 bottom-nav tabs)!'
+            : 'Marketplace is now HIDDEN and locked (3 bottom-nav tabs)!'
+        );
+      }
+    } catch (err) {
+      showAlert('error', err.response?.data?.message || 'Failed to toggle marketplace status');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -408,13 +447,38 @@ export default function MarketplaceManagement() {
           </div>
         </div>
 
-        <button
-          onClick={() => loadOverviewAndTab(activeTab)}
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleMarketplaceActive}
+            disabled={actionLoading}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-all shadow-sm ${
+              settings.enableMarketplace
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
+            }`}
+            title="Click to toggle marketplace system on/off"
+          >
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                settings.enableMarketplace ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+              }`}
+            />
+            <span>
+              {settings.enableMarketplace
+                ? 'Marketplace: Visible (5 Tabs)'
+                : 'Marketplace: Hidden (3 Tabs)'}
+            </span>
+          </button>
+
+          <button
+            onClick={() => loadOverviewAndTab(activeTab)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* KPI METRIC CARDS */}
@@ -688,6 +752,7 @@ export default function MarketplaceManagement() {
                     slug: '',
                     description: '',
                     icon: 'Layers',
+                    image: '',
                     displayOrder: categories.length
                   })
                 }
@@ -708,7 +773,19 @@ export default function MarketplaceManagement() {
                       <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">{cat.slug}</span>
                       <span className="text-xs text-slate-400 font-mono">Order: {cat.displayOrder}</span>
                     </div>
-                    <h4 className="font-bold text-slate-900 text-base">{cat.name}</h4>
+                    <div className="flex items-center gap-3 mb-2">
+                      {cat.image ? (
+                        <img src={cat.image} alt={cat.name} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold text-xs uppercase">
+                          {cat.name.slice(0, 2)}
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-base">{cat.name}</h4>
+                        <span className="text-[11px] text-slate-400">{cat.image ? 'Custom image set' : 'Default placeholder'}</span>
+                      </div>
+                    </div>
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{cat.description || 'No description provided'}</p>
                   </div>
 
@@ -722,6 +799,7 @@ export default function MarketplaceManagement() {
                           slug: cat.slug,
                           description: cat.description || '',
                           icon: cat.icon || '',
+                          image: cat.image || '',
                           displayOrder: cat.displayOrder || 0
                         })
                       }
@@ -972,6 +1050,46 @@ export default function MarketplaceManagement() {
         {/* ========================================================= */}
         {activeTab === 'settings' && (
           <form onSubmit={handleSaveSettings} className="max-w-2xl space-y-6">
+            {/* MASTER SYSTEM TOGGLE */}
+            <div
+              className={`p-5 rounded-2xl border transition-all ${
+                settings.enableMarketplace
+                  ? 'bg-emerald-50/50 border-emerald-200'
+                  : 'bg-rose-50/50 border-rose-200'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        settings.enableMarketplace ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                      }`}
+                    />
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Enable Digital Marketplace & Products System
+                    </h4>
+                  </div>
+                  <p className="text-xs text-slate-600 max-w-xl">
+                    Jab ye enabled rahega, mobile footer navbar mei 5 tabs{' '}
+                    <b>(Home | Experts | Sell | Products | Account)</b> aur website header mei Marketplace, Cart
+                    dikhenge. Jab ise hide/disable karenge, marketplace system lock ho jayega aur footer navbar mei sirf 3
+                    tabs <b>(Home | Experts | Account)</b> dikhenge.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={settings.enableMarketplace}
+                    onChange={(e) =>
+                      setSettings({ ...settings, enableMarketplace: e.target.checked })
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-1">
                 Platform Marketplace Commission Rate (%)
@@ -987,6 +1105,102 @@ export default function MarketplaceManagement() {
                   value={settings.marketplaceCommissionRate}
                   onChange={(e) =>
                     setSettings({ ...settings, marketplaceCommissionRate: Number(e.target.value) })
+                  }
+                  className="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                />
+                <span className="absolute right-3 top-2 text-slate-400 font-bold">%</span>
+              </div>
+            </div>
+
+
+            {/* Payout Clearance & Holding Period */}
+            <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/30 space-y-3">
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-1">
+                  Marketplace Seller Payout Clearance / Holding Time (Days)
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Kitne din tak product bikne ke baad paisa hold pe rahega. Hold time poora hone ke baad hi seller ko withdraw/payout ke liye amount Available hoga. (Set 0 for instant clearance).
+                </p>
+                <div className="relative w-44">
+                  <input
+                    type="number"
+                    min="0"
+                    max="90"
+                    value={settings.marketplacePayoutHoldDays ?? 7}
+                    onChange={(e) =>
+                      setSettings({ ...settings, marketplacePayoutHoldDays: Math.max(0, Number(e.target.value) || 0) })
+                    }
+                    className="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="absolute right-3 top-2 text-slate-400 font-bold">Days</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Buyer Download Limit & Expiry Window */}
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-1">
+                  Product Download Limit (Max Downloads)
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Ek buyer khareedne ke baad maximum kitni baar digital product download ya copy kar sakega. (Set 0 for unlimited downloads).
+                </p>
+                <div className="relative w-44">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={settings.marketplaceDownloadLimit ?? 5}
+                    onChange={(e) =>
+                      setSettings({ ...settings, marketplaceDownloadLimit: Math.max(0, Number(e.target.value) || 0) })
+                    }
+                    className="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="absolute right-3 top-2 text-slate-400 font-bold">Times</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-1">
+                  Download Access Expiry Window (Days)
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Order complete hone ke kitne din tak buyer file download kar sakega. Time khatam hone par download link expire ho jayegi. (Set 0 for lifetime access).
+                </p>
+                <div className="relative w-44">
+                  <input
+                    type="number"
+                    min="0"
+                    max="365"
+                    value={settings.marketplaceDownloadExpiryDays ?? 30}
+                    onChange={(e) =>
+                      setSettings({ ...settings, marketplaceDownloadExpiryDays: Math.max(0, Number(e.target.value) || 0) })
+                    }
+                    className="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="absolute right-3 top-2 text-slate-400 font-bold">Days</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tax & GST Deduction Display */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-1">
+                Transparent Platform Tax / GST Rate (%)
+              </label>
+              <p className="text-xs text-slate-500 mb-2">
+                User aur expert ko transaction ke samay dikhne wala tax / GST rate percentage.
+              </p>
+              <div className="relative w-44">
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={settings.platformTaxRate ?? 18}
+                  onChange={(e) =>
+                    setSettings({ ...settings, platformTaxRate: Math.max(0, Number(e.target.value) || 0) })
                   }
                   className="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
                 />
@@ -1119,91 +1333,127 @@ export default function MarketplaceManagement() {
 
       {/* CATEGORY CREATE/EDIT MODAL */}
       {categoryModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleSaveCategory} className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">
-              {categoryModal.editingId ? 'Edit Category' : 'Create New Category'}
-            </h3>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Category Name *</label>
-              <input
-                type="text"
-                required
-                value={categoryModal.name}
-                onChange={(e) =>
-                  setCategoryModal({
-                    ...categoryModal,
-                    name: e.target.value,
-                    slug: categoryModal.editingId
-                      ? categoryModal.slug
-                      : e.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')
-                  })
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Category Slug *</label>
-              <input
-                type="text"
-                required
-                value={categoryModal.slug}
-                onChange={(e) => setCategoryModal({ ...categoryModal, slug: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
-              <textarea
-                rows={3}
-                value={categoryModal.description}
-                onChange={(e) => setCategoryModal({ ...categoryModal, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Icon Name</label>
-                <input
-                  type="text"
-                  value={categoryModal.icon}
-                  onChange={(e) => setCategoryModal({ ...categoryModal, icon: e.target.value })}
-                  placeholder="e.g. Layers, Book"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Display Order</label>
-                <input
-                  type="number"
-                  value={categoryModal.displayOrder}
-                  onChange={(e) => setCategoryModal({ ...categoryModal, displayOrder: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full my-auto max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/70 dark:bg-slate-900/60 shrink-0">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                {categoryModal.editingId ? 'Edit Category' : 'Create New Category'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setCategoryModal({ open: false, editingId: null, name: '', slug: '', description: '', icon: '', displayOrder: 0 })}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50"
+                className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center justify-center transition cursor-pointer"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={actionLoading}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                {categoryModal.editingId ? 'Save Changes' : 'Create Category'}
+                ✕
               </button>
             </div>
-          </form>
+
+            <form onSubmit={handleSaveCategory} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Category Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={categoryModal.name}
+                    onChange={(e) =>
+                      setCategoryModal({
+                        ...categoryModal,
+                        name: e.target.value,
+                        slug: categoryModal.editingId
+                          ? categoryModal.slug
+                          : e.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Category Slug *</label>
+                  <input
+                    type="text"
+                    required
+                    value={categoryModal.slug}
+                    onChange={(e) => setCategoryModal({ ...categoryModal, slug: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 font-mono focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Category Image URL (Unsplash / Direct Web Link)</label>
+                  <input
+                    type="url"
+                    value={categoryModal.image || ''}
+                    onChange={(e) => setCategoryModal({ ...categoryModal, image: e.target.value })}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-white bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 font-mono"
+                  />
+                  {categoryModal.image && (
+                    <div className="mt-2 flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <img
+                        src={categoryModal.image}
+                        alt="Category Preview"
+                        className="w-12 h-12 rounded-lg object-cover border border-slate-300 dark:border-slate-700 shrink-0"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">Image Live Preview</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    value={categoryModal.description}
+                    onChange={(e) => setCategoryModal({ ...categoryModal, description: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Icon Name</label>
+                    <input
+                      type="text"
+                      value={categoryModal.icon}
+                      onChange={(e) => setCategoryModal({ ...categoryModal, icon: e.target.value })}
+                      placeholder="e.g. Layers, Book"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Display Order</label>
+                    <input
+                      type="number"
+                      value={categoryModal.displayOrder}
+                      onChange={(e) => setCategoryModal({ ...categoryModal, displayOrder: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCategoryModal({ open: false, editingId: null, name: '', slug: '', description: '', icon: '', displayOrder: 0 })}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer active:scale-95"
+                >
+                  {categoryModal.editingId ? 'Save Changes' : 'Create Category'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

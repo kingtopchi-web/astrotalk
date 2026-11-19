@@ -9,7 +9,9 @@ const {
   getConsultations,
   updateConsultationStatus,
   getEarnings,
-  requestPayout
+  requestPayout,
+  confirmPennyDrop,
+  cancelPayout
 } = require('../controllers/expertController');
 const {
   getMyExpertDocuments,
@@ -24,6 +26,8 @@ router.get('/profile', getMyExpertProfile);
 router.get('/dashboard', getDashboardStats);
 router.get('/earnings', getEarnings);
 router.post('/payouts/request', requestPayout);
+router.post('/payouts/confirm-penny-drop', confirmPennyDrop);
+router.post('/payouts/cancel', cancelPayout);
 router.get('/consultations', getConsultations);
 router.patch('/consultations/:id/status', updateConsultationStatus);
 router.patch('/profile', updateMyExpertProfile);

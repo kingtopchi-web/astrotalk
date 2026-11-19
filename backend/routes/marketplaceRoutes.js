@@ -1,11 +1,31 @@
 const express = require('express');
 const router = express.Router();
+const Setting = require('../models/Setting');
 const marketplaceController = require('../controllers/marketplaceController');
 const cartController = require('../controllers/marketplaceCartController');
 const orderController = require('../controllers/marketplaceOrderController');
 const sellerController = require('../controllers/marketplaceSellerController');
 const reviewController = require('../controllers/marketplaceReviewController');
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
+
+// Check if marketplace system is globally enabled by admin
+const checkMarketplaceActive = async (req, res, next) => {
+  try {
+    const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' }).lean();
+    if (settings && settings.enableMarketplace === false) {
+      return res.status(403).json({
+        success: false,
+        isMarketplaceDisabled: true,
+        message: 'Digital marketplace is currently disabled by administrator.'
+      });
+    }
+    next();
+  } catch (err) {
+    next();
+  }
+};
+
+router.use(checkMarketplaceActive);
 
 // ─── PUBLIC BROWSING ENDPOINTS ──────────────────────────────────────────────
 router.get('/home', marketplaceController.getHomeData);
@@ -34,5 +54,11 @@ router.post('/seller/products', sellerController.addProduct);
 router.put('/seller/products/:id', sellerController.editProduct);
 router.delete('/seller/products/:id', sellerController.deleteProduct);
 
-module.exports = router;
+// Seller Payout & Bank Verification Routes (User & Expert)
+router.get('/seller/payout-status', sellerController.getSellerPayoutStatus);
+router.post('/seller/bank-details', sellerController.saveSellerBankDetails);
+router.post('/seller/request-payout', sellerController.requestSellerPayout);
+router.post('/seller/payout/confirm-penny-drop', sellerController.confirmSellerPennyDrop);
+router.post('/seller/payout/cancel', sellerController.cancelSellerPayout);
 
+module.exports = router;

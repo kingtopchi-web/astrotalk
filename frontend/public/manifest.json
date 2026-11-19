@@ -1,0 +1,49 @@
+{
+  "name": "ExpertHub - Expert Portal",
+  "short_name": "ExpertHub",
+  "description": "Professional consultation, audio call, video call and chat platform for verified experts.",
+  "start_url": "/expert/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B0F19",
+  "theme_color": "#F59E0B",
+  "categories": ["business", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Expert Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open your expert dashboard",
+      "url": "/expert/dashboard",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Consultations",
+      "short_name": "Calls & Sessions",
+      "description": "Manage incoming and scheduled consultations",
+      "url": "/expert/consultations",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Messages",
+      "short_name": "Chat",
+      "description": "Open expert conversations",
+      "url": "/expert/messages",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

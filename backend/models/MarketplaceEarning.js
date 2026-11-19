@@ -42,6 +42,14 @@ const marketplaceEarningSchema = new mongoose.Schema({
     enum: ['PENDING', 'AVAILABLE', 'WITHDRAWN', 'REFUNDED'],
     default: 'AVAILABLE'
   },
+  availableAt: {
+    type: Date,
+    default: Date.now
+  },
+  holdDays: {
+    type: Number,
+    default: 0
+  },
   withdrawalTransaction: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PayoutTransaction'

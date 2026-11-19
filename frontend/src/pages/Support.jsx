@@ -25,7 +25,8 @@ import {
   Sparkles,
   PhoneCall,
   Mail,
-  Video
+  Video,
+  Trash2
 } from 'lucide-react';
 import { createSocket } from '../utils/socket';
 import { getApiUrl } from '../utils/apiConfig';
@@ -307,6 +308,21 @@ export default function Support() {
     } catch (error) {
       console.error('Error sending reply', error);
       alert('Failed to send reply');
+    }
+  };
+
+  const handleDeleteUserTicket = async (ticket) => {
+    if (!window.confirm(`Delete resolved ticket #${ticket._id.slice(-6).toUpperCase()}? It will be moved to the Recycle Bin and auto-removed after 7 days.`)) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(getApiUrl(`/support/tickets/${ticket._id}`), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSelectedTicket(null);
+      fetchTickets();
+    } catch (err) {
+      console.error('Failed to delete ticket', err);
+      alert(err.response?.data?.message || 'Failed to delete ticket');
     }
   };
 
@@ -763,7 +779,7 @@ export default function Support() {
             {selectedTicket && (
               <div className="flex flex-col h-[640px] bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
                 {/* Header */}
-                <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+                <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-3 bg-slate-50/70">
                   <div>
                     <button 
                       onClick={() => setSelectedTicket(null)} 
@@ -781,6 +797,17 @@ export default function Support() {
                       Ticket #{selectedTicket._id.slice(-6).toUpperCase()} • Category: {selectedTicket.category}
                     </p>
                   </div>
+
+                  {(selectedTicket.status === 'RESOLVED' || selectedTicket.status === 'CLOSED') && (
+                    <button
+                      onClick={() => handleDeleteUserTicket(selectedTicket)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+                      title="Delete resolved ticket"
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete Ticket</span>
+                    </button>
+                  )}
                 </div>
                 
                 {/* Messages Thread */}

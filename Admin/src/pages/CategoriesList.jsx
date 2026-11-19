@@ -8,7 +8,7 @@ function CategoriesList() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState({ name: '', slug: '', description: '', status: 'ACTIVE', commissionRate: '' });
+  const [currentCategory, setCurrentCategory] = useState({ name: '', slug: '', image: '', description: '', status: 'ACTIVE', commissionRate: '' });
   const [error, setError] = useState('');
   // Document Requirements state
   const [showDocReqModal, setShowDocReqModal] = useState(false);
@@ -190,11 +190,12 @@ function CategoriesList() {
       setIsEditing(true);
       setCurrentCategory({
         ...category,
+        image: category.image || '',
         commissionRate: category.commissionRate !== null && category.commissionRate !== undefined ? category.commissionRate : ''
       });
     } else {
       setIsEditing(false);
-      setCurrentCategory({ name: '', slug: '', description: '', status: 'ACTIVE', commissionRate: '' });
+      setCurrentCategory({ name: '', slug: '', image: '', description: '', status: 'ACTIVE', commissionRate: '' });
     }
     setShowModal(true);
   };
@@ -378,55 +379,104 @@ function CategoriesList() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800">{isEditing ? 'Edit Category' : 'Add Category'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex justify-center items-start sm:items-center p-3 sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+        >
+          <div 
+            className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden"
+            style={{ maxHeight: 'min(88vh, 680px)' }}
+          >
+            {/* Pinned Header */}
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/90 shrink-0 z-10">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                {isEditing ? 'Edit Category' : 'Add Category'}
+              </h2>
+              <button 
+                type="button" 
+                onClick={() => setShowModal(false)} 
+                className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
             
-            <form onSubmit={handleSave} className="p-6">
-              {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
-              
-              <div className="space-y-4">
+            {/* Form */}
+            <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Body */}
+              <div 
+                className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain"
+                style={{ maxHeight: 'calc(88vh - 140px)' }}
+              >
+                {error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-sm rounded-xl">
+                    {error}
+                  </div>
+                )}
+                
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Name *</label>
                   <input 
                     type="text" 
                     required
                     value={currentCategory.name}
                     onChange={(e) => setCurrentCategory({...currentCategory, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
                     placeholder="e.g. Doctor"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Slug (optional)</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Slug (optional)</label>
                   <input 
                     type="text" 
                     value={currentCategory.slug}
                     onChange={(e) => setCurrentCategory({...currentCategory, slug: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
                     placeholder="e.g. doctor"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Leave blank to auto-generate from name.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Leave blank to auto-generate from name.</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Category Image URL</label>
+                  <input 
+                    type="url" 
+                    value={currentCategory.image || ''}
+                    onChange={(e) => setCurrentCategory({...currentCategory, image: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-xs text-slate-800 dark:text-white bg-white dark:bg-slate-900 font-mono"
+                    placeholder="https://images.unsplash.com/photo-..."
+                  />
+                  {currentCategory.image && (
+                    <div className="mt-2.5 flex items-center gap-2.5 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <img src={currentCategory.image} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 dark:border-slate-700 shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+                      <div className="overflow-hidden">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block">Image Preview</span>
+                        <span className="text-[10px] text-slate-400 block truncate">{currentCategory.image}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Description</label>
                   <textarea 
                     value={currentCategory.description}
                     onChange={(e) => setCurrentCategory({...currentCategory, description: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
                     rows="3"
+                    placeholder="Brief description of consultations under this category..."
                   ></textarea>
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-slate-700">Commission Rate (%)</label>
-                    <span className="text-[11px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded">Admin Dynamic Control</span>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">Commission Rate (%)</label>
+                    <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/80 px-2 py-0.5 rounded-full">
+                      Admin Dynamic Control
+                    </span>
                   </div>
                   <div className="relative">
                     <input 
@@ -436,34 +486,71 @@ function CategoriesList() {
                       step="0.5"
                       value={currentCategory.commissionRate ?? ''}
                       onChange={(e) => setCurrentCategory({...currentCategory, commissionRate: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none pr-8"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none pr-8 text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 font-bold"
                       placeholder="e.g. 15 (leave blank to inherit platform default)"
                     />
-                    <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">%</span>
+                    <span className="absolute right-3.5 top-2.5 text-xs font-extrabold text-slate-400">%</span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Take rate deducted from consultations in this category. Leave blank to use global platform default.
                   </p>
                 </div>
                 
                 {isEditing && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Status</label>
                     <select
                       value={currentCategory.status}
                       onChange={(e) => setCurrentCategory({...currentCategory, status: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 font-semibold cursor-pointer"
                     >
                       <option value="ACTIVE">Active</option>
                       <option value="INACTIVE">Inactive</option>
                     </select>
                   </div>
                 )}
+
+                {/* Registration Document Requirements Section */}
+                {isEditing && (
+                  <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-900/80 bg-amber-50/70 dark:bg-amber-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-200">
+                        <FileText size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>Registration Documents (Dynamic Requirements)</span>
+                      </div>
+                      <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-1 leading-relaxed">
+                        Configure which documents are <strong>Mandatory (Required)</strong> or <strong>Optional</strong> for experts registering under <strong>{currentCategory.name}</strong>.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleOpenDocReqs(currentCategory);
+                      }}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shrink-0 shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95"
+                    >
+                      <FileText size={14} />
+                      <span>Configure Documents</span>
+                    </button>
+                  </div>
+                )}
               </div>
               
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">Save Category</button>
+              {/* Sticky Footer */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0 z-10">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold rounded-xl transition shadow-sm cursor-pointer active:scale-95"
+                >
+                  Save Category
+                </button>
               </div>
             </form>
           </div>
@@ -472,8 +559,16 @@ function CategoriesList() {
 
       {/* Document Requirements Management Modal */}
       {showDocReqModal && selectedCatForDocs && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200">
+        <div 
+          className="fixed inset-0 bg-black/60 flex items-start sm:items-center justify-center z-50 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowDocReqModal(false);
+          }}
+        >
+          <div 
+            className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl my-auto overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700"
+            style={{ maxHeight: 'min(88vh, 700px)' }}
+          >
             {/* Header */}
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-3">
@@ -606,16 +701,28 @@ function CategoriesList() {
 
       {/* Add / Edit Requirement Modal */}
       {showEditReqModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-60 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="text-sm font-bold text-slate-900">
+        <div 
+          className="fixed inset-0 bg-black/70 flex items-start sm:items-center justify-center z-60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowEditReqModal(false);
+          }}
+        >
+          <div 
+            className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
+            style={{ maxHeight: 'min(88vh, 650px)' }}
+          >
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/90 shrink-0 z-10">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 {editingReqId ? 'Edit Document Requirement' : 'Add Document Requirement'}
               </h3>
-              <button onClick={() => setShowEditReqModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+              <button onClick={() => setShowEditReqModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleSaveReq} className="p-5 space-y-4">
+            <form onSubmit={handleSaveReq} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div 
+                className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain"
+                style={{ maxHeight: 'calc(88vh - 140px)' }}
+              >
               {reqError && (
                 <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl flex items-center gap-2">
                   <AlertCircle size={14} className="shrink-0" />
@@ -729,11 +836,13 @@ function CategoriesList() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+              </div>
+
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-900/90 shrink-0 z-10">
                 <button
                   type="button"
                   onClick={() => setShowEditReqModal(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>

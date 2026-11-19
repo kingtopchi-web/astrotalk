@@ -43,6 +43,7 @@ export default function RazorpayManagement() {
   const [processingPayoutId, setProcessingPayoutId] = useState(null);
   const [payoutActionFeedback, setPayoutActionFeedback] = useState(null);
   const [authError, setAuthError] = useState(false);
+  const [passbookModalImage, setPassbookModalImage] = useState(null);
 
   const getHeaders = () => {
     const token = localStorage.getItem('adminToken');
@@ -902,6 +903,18 @@ export default function RazorpayManagement() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {payoutsList.map(p => {
+                      const isUser = p.recipientModel === 'User' || p.payoutType === 'MARKETPLACE_SELLER';
+                      const recipientName = isUser
+                        ? (p.recipientId?.name || p.bankDetails?.accountHolderName || 'Marketplace Seller')
+                        : (p.expert?.name || p.bankDetails?.accountHolderName || 'Expert');
+                      const recipientSub = isUser
+                        ? (p.recipientId?.email || 'Digital Marketplace Seller')
+                        : (p.expert?.specialty || p.expert?.email || 'Consultant Specialist');
+                      
+                      const bVerificationStatus = p.bankDetails?.bankVerificationStatus || p.recipientId?.bankDetails?.verificationStatus || (isUser ? 'NOT_SUBMITTED' : 'APPROVED');
+                      const isBankVerified = bVerificationStatus === 'APPROVED';
+                      const passbookImg = p.bankDetails?.passbookImage || p.recipientId?.bankDetails?.passbookImage;
+
                       const canTakeAction = p.status === 'PENDING' || p.status === 'QUEUED' || p.status === 'FAILED';
                       const isProcessingThis = processingPayoutId === p._id;
 
@@ -909,12 +922,21 @@ export default function RazorpayManagement() {
                         <tr key={p._id} className="hover:bg-slate-50/70 transition-colors">
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-xs shrink-0">
-                                {(p.expert?.name || 'E').slice(0, 2).toUpperCase()}
+                              <div className={`w-9 h-9 rounded-xl font-bold flex items-center justify-center text-xs shrink-0 ${
+                                isUser ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {recipientName.slice(0, 2).toUpperCase()}
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-bold text-slate-900 text-sm">{p.expert?.name || 'Expert'}</span>
-                                <span className="text-slate-400 text-[11px]">{p.expert?.specialty || p.expert?.email || 'Specialist'}</span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-slate-900 text-sm">{recipientName}</span>
+                                  <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                    isUser ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  }`}>
+                                    {isUser ? 'Marketplace Seller' : 'Expert'}
+                                  </span>
+                                </div>
+                                <span className="text-slate-400 text-[11px]">{recipientSub}</span>
                                 <span className="text-slate-400 text-[10px] font-mono">{p.internalTransactionId}</span>
                               </div>
                             </div>
@@ -923,7 +945,7 @@ export default function RazorpayManagement() {
                             <span className="text-base font-black text-slate-900">₹{Number(p.amount).toLocaleString('en-IN')}</span>
                           </td>
                           <td className="px-5 py-4 font-mono text-[11px]">
-                            <div className="space-y-0.5">
+                            <div className="space-y-1">
                               <div className="font-sans font-bold text-slate-800 flex items-center gap-1">
                                 <Building2 size={12} className="text-slate-400" />
                                 <span>{p.bankDetails?.bankName || p.expert?.bankDetails?.bankName || 'Bank Account'}</span>
@@ -931,6 +953,30 @@ export default function RazorpayManagement() {
                               <div className="text-slate-600">A/C: ****{String(p.bankDetails?.accountNumber || p.expert?.bankDetails?.accountNumber || '').slice(-4)}</div>
                               <div className="text-slate-600 font-bold">IFSC: {p.bankDetails?.ifscCode || p.expert?.bankDetails?.ifscCode}</div>
                               <div className="text-slate-400 text-[10px] font-sans">Name: {p.bankDetails?.accountHolderName || p.expert?.bankDetails?.accountHolderName}</div>
+                              
+                              {/* Bank Passbook Verification Tag */}
+                              <div className="pt-0.5 flex items-center gap-2 flex-wrap">
+                                {isBankVerified ? (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1">
+                                    <CheckCircle2 size={10} /> Bank Approved
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-800 border border-amber-300 font-bold flex items-center gap-1 animate-pulse">
+                                    <Clock size={10} /> Passbook Pending
+                                  </span>
+                                )}
+
+                                {passbookImg && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPassbookModalImage(passbookImg)}
+                                    className="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer underline"
+                                    title="View Bank Passbook / Cheque Proof"
+                                  >
+                                    <Eye size={11} /> Passbook
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-5 py-4">
@@ -961,25 +1007,38 @@ export default function RazorpayManagement() {
                           <td className="px-5 py-4 text-right">
                             {canTakeAction ? (
                               <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                                <button
-                                  type="button"
-                                  onClick={() => handleProcessPayout(p._id, 'auto_razorpay', p.accountCode)}
-                                  disabled={isProcessingThis}
-                                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer flex items-center gap-1"
-                                  title="Transfer funds directly through RazorpayX API"
-                                >
-                                  {isProcessingThis ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
-                                  <span>{p.status === 'FAILED' ? 'Retry via Razorpay' : 'Pay via Razorpay'}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleProcessPayout(p._id, 'manual_transfer')}
-                                  disabled={isProcessingThis}
-                                  className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
-                                  title="Mark as paid if you transferred funds manually via UPI/NetBanking"
-                                >
-                                  <span>Mark Paid</span>
-                                </button>
+                                {!isBankVerified ? (
+                                  <div className="text-right">
+                                    <span className="text-[11px] font-bold text-amber-600 block">
+                                      ⚠️ Passbook Unverified
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 block">
+                                      Verify passbook under Users first
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleProcessPayout(p._id, 'auto_razorpay', p.accountCode)}
+                                      disabled={isProcessingThis}
+                                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                                      title="Transfer funds directly through RazorpayX API"
+                                    >
+                                      {isProcessingThis ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
+                                      <span>{p.status === 'FAILED' ? 'Retry via Razorpay' : 'Pay via Razorpay'}</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleProcessPayout(p._id, 'manual_transfer')}
+                                      disabled={isProcessingThis}
+                                      className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                                      title="Mark as paid if you transferred funds manually via UPI/NetBanking"
+                                    >
+                                      <span>Mark Paid</span>
+                                    </button>
+                                  </>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleQuickUpdateBank(p)}
@@ -1216,6 +1275,27 @@ export default function RazorpayManagement() {
               ))}
             </div>
           )}
+        </div>
+      )}
+      {/* FULLSCREEN LIGHTBOX FOR SELLER BANK PASSBOOK */}
+      {passbookModalImage && (
+        <div 
+          onClick={() => setPassbookModalImage(null)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img 
+              src={passbookModalImage} 
+              alt="Bank Passbook Full Proof" 
+              className="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain border border-white/20"
+            />
+            <button 
+              onClick={() => setPassbookModalImage(null)}
+              className="absolute -top-10 right-0 text-white font-bold text-sm bg-black/70 px-3 py-1.5 rounded-full hover:bg-black/90 flex items-center gap-1 cursor-pointer"
+            >
+              ✕ Close Preview
+            </button>
+          </div>
         </div>
       )}
     </div>

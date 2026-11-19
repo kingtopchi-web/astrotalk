@@ -6,6 +6,8 @@ const {
   getDashboardStats,
   getUsers,
   getUserById,
+  approveUserBankDetails,
+  rejectUserBankDetails,
   updateUserStatus,
   deleteUser,
   getExperts,
@@ -15,6 +17,8 @@ const {
   approveExpertBankDetails,
   rejectExpertBankDetails,
   updateExpertStatus,
+  suspendExpert,
+  reinstateExpert,
   deleteExpert,
   getCategories,
   createCategory,
@@ -38,6 +42,7 @@ const {
   globalSearch,
   getAdministrators,
   createAdministrator,
+  updateAdministratorPermissions,
   updateAdministratorStatus,
   updateAdministratorPassword,
   deleteAdministrator,
@@ -75,6 +80,7 @@ router.put('/settings', updateSettings);
 // Administrators Management
 router.get('/administrators', getAdministrators);
 router.post('/administrators', createAdministrator);
+router.patch('/administrators/:id/permissions', updateAdministratorPermissions);
 router.patch('/administrators/:id/status', updateAdministratorStatus);
 router.patch('/administrators/:id/password', updateAdministratorPassword);
 router.delete('/administrators/:id', deleteAdministrator);
@@ -88,6 +94,8 @@ router.get('/dashboard/stats', getDashboardStats);
 // Users
 router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
+router.patch('/users/:id/bank/approve', approveUserBankDetails);
+router.patch('/users/:id/bank/reject', rejectUserBankDetails);
 router.patch('/users/:id/status', updateUserStatus);
 router.delete('/users/:id', deleteUser);
 
@@ -99,6 +107,8 @@ router.patch('/experts/:id/reject', rejectExpert);
 router.patch('/experts/:id/bank/approve', approveExpertBankDetails);
 router.patch('/experts/:id/bank/reject', rejectExpertBankDetails);
 router.patch('/experts/:id/status', updateExpertStatus);
+router.post('/experts/:id/suspend', suspendExpert);
+router.post('/experts/:id/reinstate', reinstateExpert);
 router.delete('/experts/:id', deleteExpert);
 
 // Expert Document Verification
@@ -178,5 +188,14 @@ router.get('/contact-inquiries', getInquiries);
 router.put('/contact-inquiries/:id/status', updateInquiryStatus);
 router.post('/contact-inquiries/:id/reply', replyToInquiry);
 router.delete('/contact-inquiries/:id', deleteInquiry);
+
+// Chat History Retention & Deletion Management (Dynamic Admin Control)
+const {
+  getChatCleanupStats,
+  purgeExpiredChats
+} = require('../controllers/chatCleanupController');
+
+router.get('/chat-cleanup/stats', getChatCleanupStats);
+router.post('/chat-cleanup/purge', purgeExpiredChats);
 
 module.exports = router;

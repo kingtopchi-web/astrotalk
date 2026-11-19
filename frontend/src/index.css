@@ -124,6 +124,23 @@
     border-color: #334155 !important;
   }
 
+  /* Dark mode contrast fixes for custom cards & gradients */
+  .dark [class*="bg-[#FAF8F5]"],
+  .dark .bg-\[\#FAF8F5\] {
+    background-color: #0F172A !important;
+  }
+
+  .dark [class*="from-emerald-50"] {
+    background-image: linear-gradient(to right, #0F172A, #064E3B, #0F172A) !important;
+    border-color: #065F46 !important;
+  }
+
+  .dark [class*="from-emerald-50"] h4,
+  .dark [class*="from-emerald-50"] p,
+  .dark [class*="from-emerald-50"] strong {
+    color: #F8FAFC !important;
+  }
+
   .dark [class*="bg-slate-50"],
   .dark [class*="bg-slate-100"] {
     background-color: #1E293B !important;

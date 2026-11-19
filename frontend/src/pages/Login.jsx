@@ -15,6 +15,7 @@ function Login() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [reactivating, setReactivating] = useState(false);
@@ -43,6 +44,10 @@ function Login() {
   // Step 1: Send OTP to Email (Gmail)
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
+    if (!acceptTerms) {
+      setError('कृपया आगे बढ़ने से पहले नियम व शर्तों (Terms & Rules) को स्वीकार करें।');
+      return;
+    }
     if (!email || !email.trim()) {
       setError('Please enter your email address');
       return;
@@ -76,6 +81,10 @@ function Login() {
   // Step 2: Verify OTP & Login
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      setError('कृपया आगे बढ़ने से पहले नियम व शर्तों (Terms & Rules) को स्वीकार करें।');
+      return;
+    }
     if (!otp || otp.trim().length < 4) {
       setError('Please enter the 6-digit code received on your email');
       return;
@@ -246,9 +255,24 @@ function Login() {
                 </div>
               </div>
 
+              
+              <div className="flex items-start gap-2.5 pt-1 text-left">
+                <input
+                  type="checkbox"
+                  id="login-terms"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer shrink-0"
+                  required
+                />
+                <label htmlFor="login-terms" className="text-xs text-slate-600 select-none cursor-pointer leading-tight">
+                  मैं प्लेटफार्म के <Link to="/terms-of-service" target="_blank" className="text-primary font-semibold hover:underline">नियम एवं शर्तों (Rules & Regulations)</Link> तथा <Link to="/privacy-policy" target="_blank" className="text-primary font-semibold hover:underline">प्राइवेसी पॉलिसी</Link> से सहमत हूँ और अपनी सहमति व शर्तों पर लॉगिन कर रहा/रही हूँ।
+                </label>
+              </div>
+
               <button 
                 type="submit" 
-                disabled={loading}
+                disabled={loading || !acceptTerms}
                 className="w-full bg-primary text-white py-2.5 sm:py-3 rounded-xl font-body font-bold text-sm sm:text-base hover:bg-primary-dark transition-all disabled:opacity-70 mt-2 shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (

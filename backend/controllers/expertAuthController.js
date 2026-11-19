@@ -205,6 +205,9 @@ const registerExpert = async (req, res) => {
       mobile: typeof mobile === 'string' ? mobile.trim() : undefined,
       role: 'EXPERT',
       verificationStatus: initialStatus,
+      isAutoApproved: Boolean(isAutoApprove),
+      autoApprovedAt: isAutoApprove ? new Date() : null,
+      approvalSource: isAutoApprove ? 'SYSTEM_AUTO' : 'NOT_APPROVED',
       latitude: hasValidCoords ? parsedLat : null,
       longitude: hasValidCoords ? parsedLng : null,
       location: hasValidCoords ? {
@@ -341,6 +344,44 @@ const loginExpert = async (req, res) => {
     }
 
     if (expert && (await expert.matchPassword(password))) {
+      // 1. Check if an active temporary suspension has expired
+      if (
+        expert.status === 'SUSPENDED' &&
+        expert.suspensionDetails?.type === 'TEMPORARY' &&
+        expert.suspensionDetails?.suspendedUntil &&
+        new Date(expert.suspensionDetails.suspendedUntil) <= new Date()
+      ) {
+        expert.status = 'ACTIVE';
+        if (expert.suspensionDetails) {
+          expert.suspensionDetails.isSuspended = false;
+          expert.suspensionDetails.type = 'NONE';
+        }
+        await expert.save();
+      }
+
+      // 2. Check for active Admin Disciplinary Suspension / Termination
+      if (expert.status === 'SUSPENDED' && expert.suspensionDetails?.isSuspended) {
+        const untilDate = expert.suspensionDetails.suspendedUntil;
+        const formattedUntil = untilDate 
+          ? new Date(untilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : 'Indefinite / Permanent';
+
+        return res.status(403).json({
+          message: `Your expert account has been suspended by Administrator. Reason: ${expert.suspensionDetails.reason || 'Disciplinary Action'}.`,
+          isSuspendedByAdmin: true,
+          status: 'SUSPENDED',
+          suspensionType: expert.suspensionDetails.type || 'TEMPORARY',
+          suspensionReason: expert.suspensionDetails.reason || 'Policy Violation',
+          suspensionNotice: expert.suspensionDetails.noticeMessage || 'Your account is under disciplinary review. Consultations and active listings are paused.',
+          suspendedAt: expert.suspensionDetails.suspendedAt,
+          suspendedUntil: expert.suspensionDetails.suspendedUntil,
+          formattedUntil,
+          expertId: expert._id,
+          name: expert.name
+        });
+      }
+
+      // 3. User self-deactivation flow
       if (expert.status === 'SUSPENDED') {
         if (reactivate) {
           expert.status = 'ACTIVE';
@@ -360,7 +401,7 @@ const loginExpert = async (req, res) => {
         });
       }
 
-      // Auto-set expert status to online upon login
+      // Auto-set expert status to online upon login (only if active)
       expert.onlineStatus = 'online';
 
       // Update live coordinates on login if provided
@@ -421,7 +462,31 @@ const reactivateExpert = async (req, res) => {
         });
       }
 
-      expert.status = 'ACTIVE';
+      // Check if suspended by Admin
+      if (expert.status === 'SUSPENDED' && expert.suspensionDetails?.isSuspended) {
+        if (
+          expert.suspensionDetails.type === 'TEMPORARY' &&
+          expert.suspensionDetails.suspendedUntil &&
+          new Date(expert.suspensionDetails.suspendedUntil) <= new Date()
+        ) {
+          // Time expired, auto-lift
+          expert.status = 'ACTIVE';
+          expert.suspensionDetails.isSuspended = false;
+          expert.suspensionDetails.type = 'NONE';
+        } else {
+          return res.status(403).json({
+            message: `Account suspended by Administrator. Reason: ${expert.suspensionDetails.reason || 'Disciplinary Action'}. Cannot be self-reactivated.`,
+            isSuspendedByAdmin: true,
+            status: 'SUSPENDED',
+            suspensionReason: expert.suspensionDetails.reason,
+            suspensionNotice: expert.suspensionDetails.noticeMessage,
+            suspendedUntil: expert.suspensionDetails.suspendedUntil
+          });
+        }
+      } else {
+        expert.status = 'ACTIVE';
+      }
+
       await expert.save();
 
       res.json({

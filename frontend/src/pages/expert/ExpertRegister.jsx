@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { usePlatformSettings } from '../../context/PlatformSettingsContext';
 import Header from '../../components/Header';
 import { getApiUrl } from '../../utils/apiConfig';
 import { compressDocumentImage } from '../../utils/imageCompressor';
-import { FileText, Upload, CheckCircle2, Trash2, AlertCircle, Loader2, MapPin } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, Trash2, AlertCircle, Loader2, MapPin, Percent } from 'lucide-react';
 
 const ExpertRegister = () => {
+  const { platformCommissionRate = 20 } = usePlatformSettings();
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', specialty: '', mobile: '',
     categoryId: '', subCategoryId: '', manualCategory: '', manualSubCategory: ''
@@ -502,13 +504,106 @@ const ExpertRegister = () => {
                 name="categoryId"
                 value={formData.categoryId}
                 onChange={e => handleCategoryChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm appearance-none"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-background font-body text-sm appearance-none cursor-pointer"
               >
                 <option value="">Select a category</option>
-                {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                <option value="MANUAL">✍️ Other / Not Listed (Type Category Manually)</option>
+                {categories.map(c => {
+                  const hasCustomRate = c.commissionRate !== null && c.commissionRate !== undefined && !isNaN(c.commissionRate);
+                  const feeLabel = hasCustomRate ? `${c.commissionRate}% fee` : `${platformCommissionRate}% platform fee`;
+                  return (
+                    <option key={c._id} value={c._id}>
+                      {c.name} ({feeLabel})
+                    </option>
+                  );
+                })}
+                <option value="MANUAL">✍️ Other / Not Listed (Type Category Manually) — ({platformCommissionRate}% platform fee)</option>
               </select>
             </div>
+
+            {/* Dynamic Category Commission Preview Card */}
+            {formData.categoryId && (() => {
+              const selectedCat = categories.find(c => c._id === formData.categoryId);
+              const isManual = formData.categoryId === 'MANUAL';
+              const hasCustomRate = !isManual && selectedCat && selectedCat.commissionRate !== null && selectedCat.commissionRate !== undefined && !isNaN(selectedCat.commissionRate);
+              const rate = isManual ? platformCommissionRate : (hasCustomRate ? Number(selectedCat.commissionRate) : platformCommissionRate);
+              const expertShare = Math.max(0, 100 - rate);
+
+              return (
+                <div className={`p-3.5 rounded-xl border transition-all animate-in fade-in duration-200 ${
+                  hasCustomRate
+                    ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+                    : isManual
+                      ? 'bg-blue-50/90 border-blue-200 text-blue-950'
+                      : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-2xs mt-0.5 ${
+                        hasCustomRate
+                          ? 'bg-emerald-600 text-white'
+                          : isManual
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-700 text-white'
+                      }`}>
+                        %
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-black">
+                            {isManual
+                              ? `Global Platform Commission: ${rate}%`
+                              : hasCustomRate
+                                ? `${selectedCat.name} Special Commission: ${rate}%`
+                                : `${selectedCat?.name || 'Category'} Commission: ${rate}%`}
+                          </span>
+                          <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                            hasCustomRate
+                              ? 'bg-emerald-200/80 text-emerald-800'
+                              : isManual
+                                ? 'bg-blue-200/80 text-blue-800'
+                                : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {hasCustomRate ? 'Category Custom Rate' : isManual ? 'Standard Platform Rate' : 'Default Fallback Rate'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] opacity-85 mt-1 leading-relaxed">
+                          {isManual ? (
+                            <>
+                              Manually entered category par Admin ki configured <strong>Platform Fee ({rate}%)</strong> lagegi. Consultation hone par <strong>{expertShare}%</strong> seedhe aapke wallet me milega.
+                            </>
+                          ) : hasCustomRate ? (
+                            <>
+                              Admin dwara <strong>{selectedCat.name}</strong> category ke liye dynamic commission <strong>{rate}%</strong> set kiya gaya hai. Har consultation ka <strong>{expertShare}%</strong> share aapka hoga.
+                            </>
+                          ) : (
+                            <>
+                              Is category par platform ki standard default fee <strong>{rate}%</strong> lagegi. Aapko har consultation ka <strong>{expertShare}%</strong> payout milega.
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-black tracking-tight">{rate}%</div>
+                      <span className="text-[10px] font-bold opacity-75">Platform Fee</span>
+                    </div>
+                  </div>
+
+                  {/* Payout Earning Split Pill */}
+                  <div className="mt-2.5 pt-2 border-t border-black/5 flex items-center justify-between text-[11px] font-semibold">
+                    <span className="flex items-center gap-1 opacity-80">
+                      <span>• Your Earning Share:</span>
+                      <strong className="text-emerald-700 font-extrabold">{expertShare}%</strong>
+                    </span>
+                    <span className="flex items-center gap-1 opacity-80">
+                      <span>• Platform Share:</span>
+                      <strong className="opacity-95 font-bold">{rate}%</strong>
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Manual Category Input Fields */}
             {formData.categoryId === 'MANUAL' && (

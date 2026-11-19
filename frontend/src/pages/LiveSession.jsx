@@ -264,7 +264,13 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
       }
       if (!isExpert) {
         setShowEndModal(false);
-        setShowReviewModal(true);
+        const isFree = Boolean(consultation?.isFree || consultation?.cost === 0);
+        if (!isFree) {
+          setShowReviewModal(true);
+        } else {
+          setSessionStatus('COMPLETED');
+          navigate('/bookings', { replace: true });
+        }
       } else {
         setSessionStatus('COMPLETED');
       }
@@ -710,11 +716,17 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
         return;
       }
 
-      // If user is client, show review prompt after consultation completion
+      // If user is client, show review prompt after consultation completion (only for paid sessions)
       if (!isExpert) {
         setShowEndModal(false);
-        setShowReviewModal(true);
-        return;
+        const isFree = Boolean(consultation?.isFree || consultation?.cost === 0);
+        if (!isFree) {
+          setShowReviewModal(true);
+          return;
+        } else {
+          navigate('/bookings', { replace: true });
+          return;
+        }
       }
     } catch (err) {
       console.error('Failed to end session', err);
@@ -759,6 +771,7 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
             consultationId={consultationId}
             expertName={remoteUser?.name || consultation?.expert?.name || 'Expert'}
             consultationType={isAudioOnly ? 'Audio' : 'Video'}
+          isFree={Boolean(consultation?.isFree || consultation?.cost === 0)}
             onSuccess={() => {
               setTimeout(() => {
                 setShowReviewModal(false);
@@ -1399,6 +1412,7 @@ function LiveSession({ consultationId: propId, isMinimized: propMinimized, onTog
           consultationId={consultationId}
           expertName={remoteUser?.name || consultation?.expert?.name || 'Expert'}
           consultationType={isAudioOnly ? 'Audio' : 'Video'}
+          isFree={Boolean(consultation?.isFree || consultation?.cost === 0)}
           onSuccess={() => {
             setTimeout(() => {
               setShowReviewModal(false);

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useParams, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { PlatformSettingsProvider } from './context/PlatformSettingsContext';
+import { PlatformSettingsProvider, usePlatformSettings } from './context/PlatformSettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CallProvider, useCall } from './context/CallContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -71,6 +71,7 @@ import OrderSuccess from './pages/marketplace/OrderSuccess';
 import MyPurchases from './pages/marketplace/MyPurchases';
 import SellerDashboard from './pages/marketplace/SellerDashboard';
 import AddProduct from './pages/marketplace/AddProduct';
+import MarketplaceDisabledNotice from './components/MarketplaceDisabledNotice';
 
 import './index.css';
 
@@ -123,6 +124,15 @@ function LiveSessionRoutePlaceholder() {
   return <div className="min-h-screen bg-slate-900" />;
 }
 
+function MarketplaceGuard({ children }) {
+  const { enableMarketplace, loading } = usePlatformSettings();
+  if (loading) return null;
+  if (enableMarketplace === false) {
+    return <MarketplaceDisabledNotice />;
+  }
+  return children;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -169,18 +179,21 @@ function App() {
           <Route path="/terms-of-service" element={<TermsOfService />} />
 
           {/* Digital Marketplace - Public Browsing */}
-          <Route path="/marketplace" element={<MarketplaceHome />} />
-          <Route path="/marketplace/catalog" element={<MarketplaceCatalog />} />
-          <Route path="/marketplace/products/:slugOrId" element={<ProductDetails />} />
+          <Route path="/marketplace" element={<MarketplaceGuard><MarketplaceHome /></MarketplaceGuard>} />
+          <Route path="/products" element={<MarketplaceGuard><MarketplaceCatalog /></MarketplaceGuard>} />
+          <Route path="/marketplace-management" element={<Navigate to="/marketplace" replace />} />
+          <Route path="/marketplace/catalog" element={<MarketplaceGuard><MarketplaceCatalog /></MarketplaceGuard>} />
+          <Route path="/marketplace/products/:slugOrId" element={<MarketplaceGuard><ProductDetails /></MarketplaceGuard>} />
 
           {/* Digital Marketplace - Unified User & Expert Commerce */}
           <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT']} />}>
-            <Route path="/marketplace/cart" element={<Cart />} />
-            <Route path="/marketplace/order-success/:orderId" element={<OrderSuccess />} />
-            <Route path="/marketplace/purchases" element={<MyPurchases />} />
-            <Route path="/marketplace/seller" element={<SellerDashboard />} />
-            <Route path="/marketplace/sell" element={<AddProduct />} />
-            <Route path="/marketplace/edit/:id" element={<AddProduct />} />
+            <Route path="/marketplace/cart" element={<MarketplaceGuard><Cart /></MarketplaceGuard>} />
+            <Route path="/marketplace/order-success/:orderId" element={<MarketplaceGuard><OrderSuccess /></MarketplaceGuard>} />
+            <Route path="/marketplace/purchases" element={<MarketplaceGuard><MyPurchases /></MarketplaceGuard>} />
+            <Route path="/marketplace/seller" element={<MarketplaceGuard><SellerDashboard /></MarketplaceGuard>} />
+            <Route path="/sell" element={<MarketplaceGuard><SellerDashboard /></MarketplaceGuard>} />
+            <Route path="/marketplace/sell" element={<MarketplaceGuard><AddProduct /></MarketplaceGuard>} />
+            <Route path="/marketplace/edit/:id" element={<MarketplaceGuard><AddProduct /></MarketplaceGuard>} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['USER', 'EXPERT', 'ADMIN']} />}>

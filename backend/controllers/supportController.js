@@ -71,7 +71,10 @@ exports.createTicket = async (req, res) => {
 // Get user's tickets
 exports.getUserTickets = async (req, res) => {
   try {
-    const tickets = await SupportTicket.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const tickets = await SupportTicket.find({
+      user: req.user._id,
+      isDeleted: { $ne: true }
+    }).sort({ createdAt: -1 });
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tickets', error: error.message });
@@ -146,11 +149,23 @@ exports.addReply = async (req, res) => {
   }
 };
 
-// Admin: Get all tickets
+// Admin: Get all tickets (Excluding deleted tickets in Recycle Bin)
 exports.getAllTickets = async (req, res) => {
   try {
-    const tickets = await SupportTicket.find({}).sort({ createdAt: -1 }).populate('user', 'name email profileImage');
-    res.json(tickets);
+    const [tickets, recycleCount] = await Promise.all([
+      SupportTicket.find({ isDeleted: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .populate('user', 'name email profileImage'),
+      SupportTicket.countDocuments({ isDeleted: true })
+    ]);
+
+    // Return array with meta property or formatted response
+    // For backward compatibility, if caller checks Array.isArray, attach recycleCount
+    res.json({
+      success: true,
+      tickets,
+      recycleCount
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching all tickets', error: error.message });
   }
@@ -171,5 +186,139 @@ exports.updateTicketStatus = async (req, res) => {
     res.json({ message: 'Ticket status updated', ticket });
   } catch (error) {
     res.status(500).json({ message: 'Error updating ticket status', error: error.message });
+  }
+};
+
+// Soft Delete Ticket -> Move to Recycle Bin (Auto-deleted after 7 days)
+exports.deleteTicket = async (req, res) => {
+  try {
+    const ticket = await SupportTicket.findById(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    // Must be Admin or the ticket creator
+    const isAdmin = req.user.role === 'ADMIN';
+    const isOwner = ticket.user.toString() === req.user._id.toString();
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: 'Not authorized to delete this ticket' });
+    }
+
+    ticket.isDeleted = true;
+    ticket.deletedAt = new Date();
+    ticket.deletedBy = req.user._id;
+    ticket.deletedByModel = isAdmin ? 'Admin' : (req.user.role === 'EXPERT' ? 'Expert' : 'User');
+    await ticket.save();
+
+    res.json({
+      success: true,
+      message: 'Ticket moved to Recycle Bin. It will be permanently removed after 7 days unless restored.',
+      ticket
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error moving ticket to recycle bin', error: error.message });
+  }
+};
+
+// Admin: Get all tickets in Recycle Bin (with 7-day auto-expiry countdown)
+exports.getRecycleBinTickets = async (req, res) => {
+  try {
+    const deletedTickets = await SupportTicket.find({ isDeleted: true })
+      .sort({ deletedAt: -1 })
+      .populate('user', 'name email profileImage');
+
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const formatted = deletedTickets.map(t => {
+      const deletedTime = new Date(t.deletedAt || t.updatedAt).getTime();
+      const expiresAt = new Date(deletedTime + SEVEN_DAYS_MS);
+      const msRemaining = Math.max(0, expiresAt.getTime() - now);
+      const daysRemaining = Math.max(0, Math.ceil(msRemaining / (24 * 60 * 60 * 1000)));
+      const hoursRemaining = Math.max(0, Math.ceil(msRemaining / (60 * 60 * 1000)));
+
+      return {
+        ...t.toObject(),
+        expiresAt,
+        daysRemaining,
+        hoursRemaining
+      };
+    });
+
+    res.json({
+      success: true,
+      total: formatted.length,
+      tickets: formatted
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching recycle bin tickets', error: error.message });
+  }
+};
+
+// Admin: Restore Ticket from Recycle Bin back to active
+exports.restoreTicket = async (req, res) => {
+  try {
+    const ticket = await SupportTicket.findById(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    ticket.isDeleted = false;
+    ticket.deletedAt = null;
+    ticket.deletedBy = null;
+    ticket.deletedByModel = null;
+    await ticket.save();
+
+    res.json({
+      success: true,
+      message: 'Ticket restored successfully to active tickets.',
+      ticket
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error restoring ticket', error: error.message });
+  }
+};
+
+// Admin: Permanently Delete Ticket immediately
+exports.permanentlyDeleteTicket = async (req, res) => {
+  try {
+    const ticket = await SupportTicket.findById(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    await Promise.all([
+      SupportTicket.findByIdAndDelete(req.params.id),
+      SupportMessage.deleteMany({ ticket: req.params.id })
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Ticket and associated conversation history permanently deleted.'
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error permanently deleting ticket', error: error.message });
+  }
+};
+
+// Admin: Empty Recycle Bin permanently
+exports.emptyRecycleBin = async (req, res) => {
+  try {
+    const deletedTickets = await SupportTicket.find({ isDeleted: true }).select('_id');
+    const ticketIds = deletedTickets.map(t => t._id);
+
+    if (ticketIds.length > 0) {
+      await Promise.all([
+        SupportTicket.deleteMany({ _id: { $in: ticketIds } }),
+        SupportMessage.deleteMany({ ticket: { $in: ticketIds } })
+      ]);
+    }
+
+    res.json({
+      success: true,
+      message: `Permanently removed ${ticketIds.length} ticket(s) from Recycle Bin.`
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error emptying recycle bin', error: error.message });
   }
 };

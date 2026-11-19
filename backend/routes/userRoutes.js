@@ -13,9 +13,9 @@ const {
   notifyExpertConnect
 } = require('../controllers/userController');
 
-// All user routes require authentication and USER role
+// All user routes require authentication (USER or EXPERT)
 router.use(protect);
-router.use(authorizeRoles('USER'));
+router.use(authorizeRoles('USER', 'EXPERT'));
 
 // Profile
 router.get('/profile', getMyProfile);

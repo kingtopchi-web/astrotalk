@@ -111,8 +111,25 @@ const IncomingConsultationAlert = () => {
     socket.on('VIDEO_SESSION_ENDED', handleRemoteEnd);
     socket.on('session_ended', handleRemoteEnd);
 
+    // 4. Listen to ServiceWorker cross-device messages (e.g. accepted/declined via push notification)
+    const handleSwMessage = (event) => {
+      if (event.data?.type === 'CONSULTATION_DECLINED_BY_NOTIFICATION') {
+        soundService.stopRing();
+        setIncomingAlert((curr) => {
+          if (!curr || curr.consultationId === event.data.consultationId) return null;
+          return curr;
+        });
+      }
+    };
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+
     return () => {
       soundService.stopRing();
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+      }
       socket.off('VIDEO_USER_WAITING');
       socket.off('new_chat_consultation');
       socket.off('VIDEO_USER_LEFT');

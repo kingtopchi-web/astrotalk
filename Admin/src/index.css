@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-primary: #FF9E00;
@@ -12,4 +15,329 @@
   body {
     @apply bg-background text-secondary antialiased;
   }
+}
+
+/* ========================================================
+   HIGH-CONTRAST DARK MODE SYSTEM FOR ADMIN PANEL
+   ======================================================== */
+
+.dark body,
+.dark main {
+  background-color: #0B0F19 !important;
+  color: #F8FAFC !important;
+}
+
+/* 1. All White and Light Container Backgrounds */
+.dark .bg-white {
+  background-color: #162032 !important;
+  border-color: #334155 !important;
+}
+
+/* 2. All Slate / Gray Containers (matches bg-slate-50, bg-slate-50/50, bg-slate-50/70, etc.) */
+.dark [class*="bg-slate-50"],
+.dark [class*="bg-slate-100"],
+.dark [class*="bg-gray-50"],
+.dark [class*="bg-gray-100"],
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #182234 !important;
+  border-color: #334155 !important;
+}
+
+.dark .bg-\[\#f4f7fb\],
+.dark [class*="bg-[#f4f7fb]"],
+.dark [class*="bg-[#FAF8F5]"],
+.dark [class*="bg-[#faf8f5]"] {
+  background-color: #182234 !important;
+  border-color: #334155 !important;
+}
+
+/* 3. Colored Cards & Banners (Blue, Amber, Emerald, Rose) */
+.dark [class*="bg-blue-50"] {
+  background-color: rgba(30, 58, 138, 0.4) !important;
+  border-color: #2563EB !important;
+}
+.dark [class*="bg-blue-50"] p,
+.dark [class*="bg-blue-50"] span,
+.dark [class*="bg-blue-50"] label,
+.dark [class*="bg-blue-50"] div {
+  color: #DBEAFE !important;
+}
+.dark [class*="bg-blue-50"] h1,
+.dark [class*="bg-blue-50"] h2,
+.dark [class*="bg-blue-50"] h3,
+.dark [class*="bg-blue-50"] h4,
+.dark [class*="bg-blue-50"] strong {
+  color: #FFFFFF !important;
+}
+
+.dark [class*="bg-amber-50"] {
+  background-color: rgba(120, 53, 15, 0.4) !important;
+  border-color: #D97706 !important;
+}
+.dark [class*="bg-amber-50"] p,
+.dark [class*="bg-amber-50"] span,
+.dark [class*="bg-amber-50"] label,
+.dark [class*="bg-amber-50"] div {
+  color: #FEF3C7 !important;
+}
+.dark [class*="bg-amber-50"] h1,
+.dark [class*="bg-amber-50"] h2,
+.dark [class*="bg-amber-50"] h3,
+.dark [class*="bg-amber-50"] h4,
+.dark [class*="bg-amber-50"] strong {
+  color: #FFFFFF !important;
+}
+
+.dark [class*="bg-emerald-50"],
+.dark [class*="bg-green-50"] {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+  border-color: #059669 !important;
+}
+.dark [class*="bg-emerald-50"] p,
+.dark [class*="bg-emerald-50"] span,
+.dark [class*="bg-emerald-50"] label,
+.dark [class*="bg-emerald-50"] div {
+  color: #D1FAE5 !important;
+}
+.dark [class*="bg-emerald-50"] h1,
+.dark [class*="bg-emerald-50"] h2,
+.dark [class*="bg-emerald-50"] h3,
+.dark [class*="bg-emerald-50"] h4,
+.dark [class*="bg-emerald-50"] strong {
+  color: #FFFFFF !important;
+}
+
+.dark [class*="bg-rose-50"],
+.dark [class*="bg-red-50"] {
+  background-color: rgba(136, 19, 55, 0.4) !important;
+  border-color: #E11D48 !important;
+}
+.dark [class*="bg-rose-50"] p,
+.dark [class*="bg-rose-50"] span,
+.dark [class*="bg-rose-50"] label,
+.dark [class*="bg-rose-50"] div {
+  color: #FFE4E6 !important;
+}
+.dark [class*="bg-rose-50"] h1,
+.dark [class*="bg-rose-50"] h2,
+.dark [class*="bg-rose-50"] h3,
+.dark [class*="bg-rose-50"] h4,
+.dark [class*="bg-rose-50"] strong {
+  color: #FFFFFF !important;
+}
+
+/* 4. Colored Badges & Status Pills in Dark Mode */
+.dark .bg-green-100,
+.dark [class*="bg-green-100"],
+.dark [class*="bg-emerald-100"] {
+  background-color: rgba(34, 197, 94, 0.25) !important;
+  color: #4ADE80 !important;
+  border-color: #166534 !important;
+}
+
+.dark .bg-blue-100,
+.dark [class*="bg-blue-100"] {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  color: #93C5FD !important;
+  border-color: #1E40AF !important;
+}
+
+.dark .bg-amber-100,
+.dark [class*="bg-amber-100"],
+.dark [class*="bg-yellow-100"] {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+  color: #FDE047 !important;
+  border-color: #854D0E !important;
+}
+
+.dark .bg-rose-100,
+.dark .bg-red-100,
+.dark [class*="bg-rose-100"],
+.dark [class*="bg-red-100"] {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #FCA5A5 !important;
+  border-color: #991B1B !important;
+}
+
+.dark .bg-indigo-100,
+.dark [class*="bg-indigo-100"] {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+  color: #A5B4FC !important;
+  border-color: #3730A3 !important;
+}
+
+.dark .bg-purple-100,
+.dark [class*="bg-purple-100"] {
+  background-color: rgba(168, 85, 247, 0.25) !important;
+  color: #D8B4FE !important;
+  border-color: #6B21A8 !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+.dark .bg-slate-200 svg,
+.dark .bg-slate-200 [class*="text-slate"] {
+  color: #E2E8F0 !important;
+}
+
+/* 5. Typography Contrast (High Luminance for Maximum Readability) */
+h1, h2, h3, h4, h5, h6 {
+  color: #0F172A;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.dark label,
+.dark [class*="bg-slate-50"] label,
+.dark [class*="bg-slate-100"] label,
+.dark [class*="bg-slate-800"] label,
+.dark .bg-slate-800 label,
+.dark [class*="bg-blue-50"] label,
+.dark [class*="bg-amber-50"] label,
+.dark [class*="bg-emerald-50"] label,
+.dark [class*="bg-rose-50"] label {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-slate-700,
+.dark .text-gray-700 {
+  color: #FFFFFF !important;
+}
+
+.dark .text-slate-600,
+.dark .text-gray-600,
+.dark .text-slate-500,
+.dark .text-gray-500 {
+  color: #CBD5E1 !important;
+}
+
+.dark .text-slate-400,
+.dark .text-gray-400 {
+  color: #94A3B8 !important;
+}
+
+/* Specific high-contrast overrides for descriptions & spans inside all dark cards */
+.dark [class*="bg-slate-50"] p,
+.dark [class*="bg-slate-100"] p,
+.dark [class*="bg-slate-800"] p,
+.dark .bg-slate-800 p {
+  color: #CBD5E1 !important;
+}
+
+.dark [class*="bg-slate-50"] span:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-green"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-rose"]):not([class*="text-red"]),
+.dark [class*="bg-slate-100"] span:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-green"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-rose"]):not([class*="text-red"]),
+.dark [class*="bg-slate-800"] span:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-green"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-rose"]):not([class*="text-red"]),
+.dark .bg-slate-800 span:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-green"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-rose"]):not([class*="text-red"]) {
+  color: #F1F5F9 !important;
+  font-weight: 500 !important;
+}
+
+.dark [class*="bg-slate-50"] h1,
+.dark [class*="bg-slate-50"] h2,
+.dark [class*="bg-slate-50"] h3,
+.dark [class*="bg-slate-50"] h4,
+.dark [class*="bg-slate-50"] strong,
+.dark [class*="bg-slate-100"] h1,
+.dark [class*="bg-slate-100"] h2,
+.dark [class*="bg-slate-100"] h3,
+.dark [class*="bg-slate-100"] h4,
+.dark [class*="bg-slate-100"] strong,
+.dark [class*="bg-slate-800"] h1,
+.dark [class*="bg-slate-800"] h2,
+.dark [class*="bg-slate-800"] h3,
+.dark [class*="bg-slate-800"] h4,
+.dark [class*="bg-slate-800"] strong,
+.dark .bg-slate-800 h1,
+.dark .bg-slate-800 h2,
+.dark .bg-slate-800 h3,
+.dark .bg-slate-800 h4,
+.dark .bg-slate-800 strong {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* 6. Form Inputs & Selects */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0F172A !important;
+  color: #FFFFFF !important;
+  border-color: #475569 !important;
+}
+
+.dark select option {
+  background-color: #0F172A !important;
+  color: #FFFFFF !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* 7. Header & Navigation */
+.dark header {
+  background-color: #162032 !important;
+  border-color: #334155 !important;
+}
+
+.dark aside {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+.dark aside button:hover,
+.dark aside a:hover {
+  background-color: #162032 !important;
+  color: #FFFFFF !important;
+}
+
+.dark nav {
+  background-color: #162032 !important;
+  border-color: #334155 !important;
+}
+
+/* 8. Table Styling */
+.dark table thead {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+.dark table thead th {
+  color: #CBD5E1 !important;
+}
+
+.dark table tbody tr {
+  border-color: #1E293B !important;
+}
+
+.dark table tbody tr:hover {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.dark table td {
+  color: #F1F5F9 !important;
+}
+
+/* 9. Clean shadow effects in dark mode */
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xs {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
 }

@@ -51,7 +51,7 @@ function FreeServices() {
   const usedExpertIds = freeChatStatus?.usedExpertIds || [];
   const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
   const durationMinutes = freeChatStatus?.freeChatDurationMinutes || 5;
-  const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
+  const isFreeChatEnabled = freeChatStatus ? (freeChatStatus.enableFreeChat !== false && !freeChatStatus.hasRecharged && !user?.hasRechargedWallet) : true;
   const allExpertsClaimed = experts.length > 0 && experts.every(e => usedExpertIds.includes(e._id));
 
   const handleStartFreeCall = async (expertId) => {

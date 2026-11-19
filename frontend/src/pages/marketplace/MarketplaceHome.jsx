@@ -11,6 +11,39 @@ import ProductCard from '../../components/marketplace/ProductCard';
 import { getApiUrl } from '../../utils/apiConfig';
 import { useAuth } from '../../context/AuthContext';
 
+const categoryFallbackImages = {
+  'ebook': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+  'guide': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80',
+  'book': 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80',
+  'business': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80',
+  'finance': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=600&q=80',
+  'software': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80',
+  'code': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80',
+  'script': 'https://images.unsplash.com/photo-1516116211227-bbc83189d214?auto=format&fit=crop&w=600&q=80',
+  'legal': 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+  'contract': 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=600&q=80',
+  'health': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
+  'wellness': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80',
+  'fitness': 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80',
+  'design': 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=600&q=80',
+  'graphic': 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=600&q=80',
+  'creative': 'https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=600&q=80',
+  'marketing': 'https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?auto=format&fit=crop&w=600&q=80',
+  'education': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80'
+};
+
+const getCategoryImg = (cat) => {
+  if (cat?.image && typeof cat.image === 'string' && cat.image.trim()) {
+    return cat.image.trim();
+  }
+  const slug = (cat?.slug || '').toLowerCase();
+  const name = (cat?.name || '').toLowerCase();
+  for (const [key, url] of Object.entries(categoryFallbackImages)) {
+    if (slug.includes(key) || name.includes(key)) return url;
+  }
+  return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80';
+};
+
 export default function MarketplaceHome() {
   const navigate = useNavigate();
   const { auth } = useAuth();
@@ -174,23 +207,34 @@ export default function MarketplaceHome() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {homeData.categories.map((cat) => (
-              <Link
-                key={cat._id}
-                to={`/marketplace/catalog?category=${cat.slug}`}
-                className="group p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 hover:shadow-lg transition-all flex flex-col items-center text-center space-y-2 cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 group-hover:scale-110 flex items-center justify-center transition-transform">
-                  <Layers size={22} />
-                </div>
-                <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
-                  {cat.name}
-                </h3>
-                <span className="text-[11px] text-slate-400">
-                  {cat.productCount ? `${cat.productCount} assets` : 'Explore'}
-                </span>
-              </Link>
-            ))}
+            {homeData.categories.map((cat) => {
+              const catImg = getCategoryImg(cat);
+              return (
+                <Link
+                  key={cat._id}
+                  to={`/marketplace/catalog?category=${cat.slug}`}
+                  className="group p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 hover:shadow-lg transition-all flex flex-col items-center text-center space-y-2.5 cursor-pointer relative overflow-hidden"
+                >
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-xs group-hover:scale-105 transition-transform bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 relative shrink-0">
+                    <img
+                      src={catImg}
+                      alt={cat.name}
+                      className="w-full h-full object-cover group-hover:brightness-105 transition-all"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="w-full">
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      {cat.name}
+                    </h3>
+                    <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
+                      {cat.productCount ? `${cat.productCount} assets` : 'Explore'}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
 

@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { Share2, Copy, Check, X, Phone, Sparkles, MessageCircle } from 'lucide-react';
+import { Share2, Copy, Check, X, Phone, Sparkles } from 'lucide-react';
 
 export default function FreeCallShareModal({ 
   isOpen, 
   onClose, 
-  onProceed, 
+  onProceed,
+  onContinue,
   expertName = '', 
   freeDuration = 5 
 }) {
   const [copied, setCopied] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+
+  const handleContinue = onProceed || onContinue;
 
   if (!isOpen) return null;
 
@@ -23,14 +27,24 @@ export default function FreeCallShareModal({
     }
   };
 
-  const handleWhatsAppShare = () => {
-    const encoded = encodeURIComponent(shareText);
-    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleFacebookShare = () => {
-    const shareUrl = encodeURIComponent(currentUrl);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`, '_blank', 'noopener,noreferrer');
+  const handleShareAll = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'ExpertHub 100% Free Consultation',
+          text: shareText,
+          url: currentUrl
+        });
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 3000);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          handleCopyLink();
+        }
+      }
+    } else {
+      handleCopyLink();
+    }
   };
 
   return (
@@ -68,7 +82,7 @@ export default function FreeCallShareModal({
             Dosto ke sath share karein aur muft me baat karein!
           </p>
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            Isko apne friends me WhatsApp, Facebook wagaira par share karo aur free me baat karo, apni problem ko solve karo expert ke dwara!
+            Isko kisi bhi app par apne friends ya family ke sath share karein aur expert ke sath muft me call consultation shuru karein!
           </p>
           {freeDuration > 0 && (
             <div className="pt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
@@ -78,38 +92,32 @@ export default function FreeCallShareModal({
         </div>
 
         {/* Sharing Options */}
-        <div className="space-y-2 pt-1">
+        <div className="space-y-2.5 pt-1">
           <div className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-            Share on Social Media:
+            Share with Friends:
           </div>
           
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* WhatsApp Share Button */}
-            <button
-              type="button"
-              onClick={handleWhatsAppShare}
-              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
-            >
-              <MessageCircle size={16} />
-              WhatsApp Share
-            </button>
+          {/* Universal Share All Button */}
+          <button
+            type="button"
+            onClick={handleShareAll}
+            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md shadow-indigo-500/20 transition-all cursor-pointer active:scale-98"
+          >
+            <Share2 size={18} className="animate-pulse" />
+            <span>Share All / किसी भी ऐप पर शेयर करें</span>
+          </button>
 
-            {/* Facebook Share Button */}
-            <button
-              type="button"
-              onClick={handleFacebookShare}
-              className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
-            >
-              <Share2 size={16} />
-              Facebook Share
-            </button>
-          </div>
+          {shareSuccess && (
+            <p className="text-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              ✓ Shared successfully! Click Continue below to start your call.
+            </p>
+          )}
 
           {/* Copy Link Button */}
           <button
             type="button"
             onClick={handleCopyLink}
-            className="w-full py-2 px-3 rounded-xl bg-surface-muted hover:bg-border text-on-background font-semibold text-xs border border-border flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full py-2.5 px-3 rounded-xl bg-surface-muted hover:bg-border text-on-background font-semibold text-xs border border-border flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             {copied ? (
               <>
@@ -129,7 +137,7 @@ export default function FreeCallShareModal({
         <div className="pt-2 flex flex-col gap-2">
           <button
             type="button"
-            onClick={onProceed}
+            onClick={handleContinue}
             className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-sm shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <Phone size={17} />

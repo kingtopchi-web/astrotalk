@@ -1,9 +1,14 @@
 const mongoose = require('mongoose');
 
 const consultationSchema = new mongoose.Schema({
+  clientModel: {
+    type: String,
+    enum: ['User', 'Expert'],
+    default: 'User'
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    refPath: 'clientModel',
     required: true,
   },
   expert: {
@@ -76,6 +81,18 @@ const consultationSchema = new mongoose.Schema({
   },
   freeChatDurationMinutes: {
     type: Number,
+    default: null
+  },
+  giftAmount: {
+    type: Number,
+    default: 0
+  },
+  giftMessage: {
+    type: String,
+    default: ''
+  },
+  giftSentAt: {
+    type: Date,
     default: null
   }
 }, { timestamps: true });

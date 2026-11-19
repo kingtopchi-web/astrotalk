@@ -77,6 +77,19 @@ exports.userJoinSession = async (req, res) => {
         actionText: 'Join Call',
         badge: 'Incoming'
       }, io).catch(e => console.error('Incoming call notification error:', e));
+
+      // Trigger Web Push Notification to expert's mobile device
+      try {
+        const pushService = require('../services/pushNotificationService');
+        pushService.sendIncomingCallPush(consultation.expert._id, {
+          consultationId: consultation._id,
+          type: isVideo ? 'video' : 'audio',
+          userName: req.user.name || 'Client',
+          isFree: Boolean(consultation.isFree)
+        }).catch(err => console.error('[PushVideoController] Push error:', err));
+      } catch (err) {
+        console.error('[PushVideoController] Error preparing push:', err.message);
+      }
     }
 
     res.json({ message: 'Joined waiting room', session });

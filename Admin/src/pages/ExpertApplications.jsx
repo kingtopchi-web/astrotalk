@@ -3,14 +3,22 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   ClipboardList, Search, CheckCircle, XCircle, Eye, ChevronLeft,
-  ChevronRight, RefreshCw, X, AlertCircle, FileText, Clock
+  ChevronRight, RefreshCw, X, AlertCircle, FileText, Clock, Zap
 } from 'lucide-react';
 
 import { ADMIN_API_URL } from '../utils/apiConfig';
 
 const API = ADMIN_API_URL;
 
-const VerifBadge = ({ status }) => {
+const VerifBadge = ({ status, isAutoApproved }) => {
+  if (status === 'APPROVED' && isAutoApproved) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300">
+        <Zap size={11} className="fill-amber-500 text-amber-500" />
+        <span>Auto Approved</span>
+      </span>
+    );
+  }
   const map = {
     PENDING:  'bg-orange-50 text-orange-700 border-orange-200',
     APPROVED: 'bg-green-50 text-green-700 border-green-200',
@@ -18,7 +26,7 @@ const VerifBadge = ({ status }) => {
   };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${map[status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-      {status}
+      {status === 'APPROVED' ? 'Admin Verified' : status}
     </span>
   );
 };
@@ -229,7 +237,7 @@ const DetailModal = ({ expert, onClose, onAction }) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-lg font-bold text-slate-900 truncate">{expert.name}</h4>
-                <VerifBadge status={expert.verificationStatus} />
+                <VerifBadge status={expert.verificationStatus} isAutoApproved={expert.isAutoApproved} />
               </div>
               <p className="text-xs text-slate-500 truncate">{expert.email} • {expert.mobile || 'No mobile'}</p>
               
@@ -245,6 +253,26 @@ const DetailModal = ({ expert, onClose, onAction }) => {
               </div>
             </div>
           </div>
+
+          {/* Auto-Approval Notice Banner */}
+          {expert.isAutoApproved && (
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl flex items-start justify-between gap-3 text-xs">
+              <div className="flex items-start gap-2.5">
+                <Zap size={18} className="text-amber-600 dark:text-amber-400 fill-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <h5 className="font-bold text-amber-900 dark:text-amber-200">
+                    Auto-Approved by Platform Settings
+                  </h5>
+                  <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
+                    This expert was automatically approved upon registration. Admin can review documents and click <strong>"Confirm Admin Approval"</strong> below to officially record manual admin verification, or reject if requirements are not met.
+                  </p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 text-[10px] uppercase font-black bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full shrink-0">
+                ⚡ Auto Approved
+              </span>
+            </div>
+          )}
 
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3">
@@ -581,10 +609,15 @@ const DetailModal = ({ expert, onClose, onAction }) => {
         </div>
 
         {/* Modal Action Bar */}
-        {expert.verificationStatus === 'PENDING' && !showReject && (
+        {(expert.verificationStatus === 'PENDING' || expert.isAutoApproved) && !showReject && (
           <div className="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 bg-slate-50/50">
             <div>
-              {!canApprove ? (
+              {expert.isAutoApproved ? (
+                <p className="text-xs text-amber-700 font-semibold flex items-center gap-1.5">
+                  <Zap size={14} className="fill-amber-500 text-amber-500" />
+                  Currently Auto-Approved by system. Click "Confirm Admin Approval" to certify.
+                </p>
+              ) : !canApprove ? (
                 <p className="text-xs text-amber-700 font-semibold">
                   * Verify all mandatory documents above to enable final approval.
                 </p>
@@ -602,7 +635,7 @@ const DetailModal = ({ expert, onClose, onAction }) => {
                 disabled={loading}
                 className="flex-1 sm:flex-initial px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition disabled:opacity-60 cursor-pointer"
               >
-                Reject Application
+                {expert.isAutoApproved ? 'Reject / Revoke Approval' : 'Reject Application'}
               </button>
 
               <button
@@ -610,10 +643,10 @@ const DetailModal = ({ expert, onClose, onAction }) => {
                 onClick={approve}
                 disabled={loading || !canApprove}
                 className="flex-1 sm:flex-initial px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
-                title={!canApprove ? 'All mandatory qualification documents must be verified first' : 'Approve Expert'}
+                title={!canApprove ? 'All mandatory qualification documents must be verified first' : (expert.isAutoApproved ? 'Confirm Admin Approval' : 'Approve Expert')}
               >
                 <CheckCircle size={15} />
-                <span>{loading ? 'Processing...' : 'Approve Expert'}</span>
+                <span>{loading ? 'Processing...' : (expert.isAutoApproved ? 'Confirm Admin Approval' : 'Approve Expert')}</span>
               </button>
             </div>
           </div>
@@ -848,7 +881,7 @@ export default function ExpertApplications() {
                       <td className="px-4 py-3 text-sm text-slate-500">
                         {e.createdAt ? new Date(e.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : '—'}
                       </td>
-                      <td className="px-4 py-3"><VerifBadge status={e.verificationStatus} /></td>
+                      <td className="px-4 py-3"><VerifBadge status={e.verificationStatus} isAutoApproved={e.isAutoApproved} /></td>
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => setSelected(e)}

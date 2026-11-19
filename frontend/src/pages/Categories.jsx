@@ -4,6 +4,7 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Search, ArrowRight, Grid, ArrowLeft, Users } from 'lucide-react';
+import { safeNavigateBack } from '../utils/navigation';
 
 function Categories() {
   const [categories, setCategories] = useState([]);
@@ -61,10 +62,7 @@ function Categories() {
           <div className="flex items-center gap-2 mb-6">
             <button
               type="button"
-              onClick={() => {
-                if (window.history.length > 1) navigate(-1);
-                else navigate('/');
-              }}
+              onClick={() => safeNavigateBack(navigate, '/')}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white hover:text-primary dark:hover:text-amber-400 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95 group"
               title="Go Back"
               aria-label="Go Back"

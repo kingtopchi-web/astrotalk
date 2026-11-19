@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  hasRechargedWallet: {
+    type: Boolean,
+    default: false,
+  },
   hasUsedFreeChat: {
     type: Boolean,
     default: false,
@@ -92,6 +96,24 @@ const userSchema = new mongoose.Schema({
     profileVisibility: { type: String, enum: ['public', 'private', 'experts_only'], default: 'public' },
     onlineStatus: { type: Boolean, default: true },
     readReceipts: { type: Boolean, default: true }
+  },
+  // Bank details for Marketplace Seller Payouts
+  bankDetails: {
+    accountName: { type: String, default: '' },
+    accountNumber: { type: String, default: '' },
+    ifscCode: { type: String, default: '' },
+    bankName: { type: String, default: '' },
+    upiId: { type: String, default: '' },
+    passbookImage: { type: String, default: '' }, // URL or Base64 image of bank passbook / cancelled cheque
+    verificationStatus: {
+      type: String,
+      enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'],
+      default: 'NOT_SUBMITTED'
+    },
+    rejectionReason: { type: String, default: '' },
+    submittedAt: { type: Date, default: null },
+    verifiedAt: { type: Date, default: null },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null }
   },
   theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
   language: { type: String, default: 'en' },

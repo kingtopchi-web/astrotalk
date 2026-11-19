@@ -1,5 +1,6 @@
 const Consultation = require('../models/Consultation');
 const User = require('../models/User');
+const Expert = require('../models/Expert');
 
 /**
  * Returns start and end Date objects in UTC corresponding to 00:00:00 and 23:59:59.999
@@ -48,12 +49,57 @@ async function checkFreeChatEligibility(userId, expertId = null) {
     };
   }
 
-  const user = await User.findById(userId).select('freeChatUsedExperts lastFreeChatAt').lean();
+  let user = await User.findById(userId).select('freeChatUsedExperts lastFreeChatAt hasRechargedWallet').lean();
+  if (!user) {
+    user = await Expert.findById(userId).select('freeChatUsedExperts lastFreeChatAt hasRechargedWallet').lean();
+  }
   if (!user) {
     return {
       isEligible: false,
       reason: 'USER_NOT_FOUND',
-      message: 'User account not found.',
+      message: 'Account not found.',
+      hasUsedToday: false,
+      hasUsedWithExpert: false,
+      usedExpertIds: [],
+      hasRecharged: false
+    };
+  }
+
+  // 0. Check if user has ever recharged their wallet
+  // Free consultations are permanently disabled once a user has recharged their wallet
+  const WalletTransaction = require('../models/WalletTransaction');
+  let hasRecharged = Boolean(user.hasRechargedWallet);
+  if (!hasRecharged) {
+    const rechargeExists = await WalletTransaction.exists({
+      user: userId,
+      type: 'CREDIT',
+      status: 'SUCCESS',
+      transactionType: { $in: ['TOPUP', 'VOUCHER'] }
+    });
+    if (rechargeExists) {
+      hasRecharged = true;
+      User.findByIdAndUpdate(userId, { $set: { hasRechargedWallet: true } }).catch(() => {});
+      Expert.findByIdAndUpdate(userId, { $set: { hasRechargedWallet: true } }).catch(() => {});
+    }
+  }
+
+  if (hasRecharged) {
+    return {
+      isEligible: false,
+      reason: 'RECHARGE_ALREADY_DONE',
+      message: 'Free consultation is only available for new users before their first wallet recharge.',
+      hasUsedToday: true,
+      hasUsedWithExpert: true,
+      hasRecharged: true,
+      usedExpertIds: []
+    };
+  }
+
+  if (expertId && expertId.toString() === userId.toString()) {
+    return {
+      isEligible: false,
+      reason: 'SELF_CONSULTATION_NOT_ALLOWED',
+      message: 'You cannot book a consultation with yourself.',
       hasUsedToday: false,
       hasUsedWithExpert: false,
       usedExpertIds: []

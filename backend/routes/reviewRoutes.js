@@ -9,6 +9,8 @@ router.get('/expert/:expertId', reviewController.getExpertReviews);
 
 // Protected routes for users
 router.post('/', protect, authorizeRoles('USER'), reviewController.createReview);
+router.put('/:id', protect, authorizeRoles('USER'), reviewController.updateReview);
+router.put('/consultation/:consultationId', protect, authorizeRoles('USER'), reviewController.updateReview);
 router.get('/consultation/:consultationId', protect, authorizeRoles('USER'), reviewController.getConsultationReview);
 router.get('/my-reviews', protect, authorizeRoles('USER'), reviewController.getMyReviews);
 

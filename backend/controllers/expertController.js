@@ -15,6 +15,22 @@ exports.getMyExpertProfile = async (req, res) => {
       .populate('subCategoryId', 'name slug');
 
     if (!expert) return res.status(404).json({ message: 'Expert not found' });
+
+    // Check if temporary suspension has expired
+    if (
+      expert.status === 'SUSPENDED' &&
+      expert.suspensionDetails?.type === 'TEMPORARY' &&
+      expert.suspensionDetails?.suspendedUntil &&
+      new Date(expert.suspensionDetails.suspendedUntil) <= new Date()
+    ) {
+      expert.status = 'ACTIVE';
+      if (expert.suspensionDetails) {
+        expert.suspensionDetails.isSuspended = false;
+        expert.suspensionDetails.type = 'NONE';
+      }
+      await expert.save();
+    }
+
     res.json(expert);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -147,6 +163,29 @@ exports.updateMyExpertProfile = async (req, res) => {
       }
     }
 
+    const existingExpert = await Expert.findById(req.user._id);
+    if (!existingExpert) return res.status(404).json({ message: 'Expert not found' });
+
+    if (existingExpert.status === 'SUSPENDED') {
+      if (
+        existingExpert.suspensionDetails?.type === 'TEMPORARY' &&
+        existingExpert.suspensionDetails?.suspendedUntil &&
+        new Date(existingExpert.suspensionDetails.suspendedUntil) <= new Date()
+      ) {
+        existingExpert.status = 'ACTIVE';
+        if (existingExpert.suspensionDetails) {
+          existingExpert.suspensionDetails.isSuspended = false;
+          existingExpert.suspensionDetails.type = 'NONE';
+        }
+        await existingExpert.save();
+      } else if (updates.onlineStatus === 'online') {
+        return res.status(403).json({
+          message: `Your account is temporarily suspended. You cannot go online during the restriction period. Reason: ${existingExpert.suspensionDetails?.reason || 'Disciplinary Action'}.`,
+          code: 'EXPERT_SUSPENDED'
+        });
+      }
+    }
+
     const expert = await Expert.findByIdAndUpdate(
       req.user._id,
       updates,
@@ -267,21 +306,29 @@ exports.getEarnings = async (req, res) => {
 
     const history = completedConsultations.map(c => {
       const isFree = Boolean(c.isFree);
-      const earningAmount = isFree ? 0 : Number(c.expertEarning !== undefined ? c.expertEarning : (c.cost * 0.8) || 0);
+      const grossCost = isFree ? 0 : Number(c.cost || 0);
+      const commissionRate = c.commissionRate || 20;
+      const platformFee = isFree ? 0 : Number(c.platformFee !== undefined ? c.platformFee : Math.round(grossCost * (commissionRate / 100)));
+      const earningAmount = isFree ? 0 : Number(c.expertEarning !== undefined ? c.expertEarning : (grossCost - platformFee));
       return {
         _id: c._id,
         createdAt: c.endTime || c.startTime || new Date(),
         type: isFree ? 'FREE_PROMO' : 'EARNING',
         isFree,
+        grossCost,
+        platformFee,
+        commissionRate,
         description: isFree 
           ? `🎁 Free Consultation with ${c.user ? c.user.name : 'Client'} (Promo)` 
-          : `Consultation with ${c.user ? c.user.name : 'Client'}`,
+          : `Consultation with ${c.user ? c.user.name : 'Client'} (Gross: ₹${grossCost} | Fee/Tax: -₹${platformFee})`,
         amount: earningAmount,
         status: 'COMPLETED'
       };
     });
 
     const totalEarnings = history.reduce((sum, item) => sum + item.amount, 0);
+    const totalGross = history.reduce((sum, item) => sum + (item.grossCost || item.amount), 0);
+    const totalPlatformFee = history.reduce((sum, item) => sum + (item.platformFee || 0), 0);
 
     // Compute payouts already requested or processed
     const existingPayouts = await PayoutTransaction.find({
@@ -296,11 +343,48 @@ exports.getEarnings = async (req, res) => {
       ? Number(globalSetting.minPayoutAmount)
       : 100;
 
+    const payoutDaysInterval = Number(globalSetting?.payoutDaysInterval ?? 7);
+    const payoutEstimatedDays = Number(globalSetting?.payoutEstimatedDays ?? 3);
+
+    // Check latest payout for interval calculation
+    const latestPayout = await PayoutTransaction.findOne({
+      expert: expertId,
+      status: { $in: ['PENDING', 'QUEUED', 'PROCESSING', 'PROCESSED'] }
+    }).sort({ createdAt: -1 });
+
+    let canRequestPayout = true;
+    let daysRemaining = 0;
+    let nextEligiblePayoutDate = null;
+
+    if (payoutDaysInterval > 0 && latestPayout && latestPayout.createdAt) {
+      const msDiff = Date.now() - new Date(latestPayout.createdAt).getTime();
+      const daysSince = msDiff / (1000 * 60 * 60 * 24);
+      if (daysSince < payoutDaysInterval) {
+        canRequestPayout = false;
+        daysRemaining = Math.max(1, Math.ceil(payoutDaysInterval - daysSince));
+        nextEligiblePayoutDate = new Date(new Date(latestPayout.createdAt).getTime() + payoutDaysInterval * 24 * 60 * 60 * 1000).toISOString();
+      }
+    }
+
+    const activePayout = await PayoutTransaction.findOne({
+      expert: expertId,
+      status: { $in: ['VERIFICATION_PENDING', 'PENDING', 'QUEUED', 'PROCESSING'] }
+    }).sort({ createdAt: -1 });
+
     res.json({
       totalEarnings,
+      totalGross,
+      totalPlatformFee,
       availablePayout,
       minPayoutAmount,
+      activePayout,
       totalWithdrawn: totalWithdrawnOrPending,
+      payoutDaysInterval,
+      payoutEstimatedDays,
+      canRequestPayout,
+      daysRemaining,
+      nextEligiblePayoutDate,
+      lastPayoutDate: latestPayout?.createdAt || null,
       history
     });
   } catch (error) {
@@ -379,6 +463,31 @@ exports.requestPayout = async (req, res) => {
       });
     }
 
+    // Check dynamic payout interval configured by Admin
+    const payoutDaysInterval = Number(globalSetting?.payoutDaysInterval ?? 7);
+    if (payoutDaysInterval > 0) {
+      const latestPayout = await PayoutTransaction.findOne({
+        expert: expert._id,
+        status: { $in: ['PENDING', 'QUEUED', 'PROCESSING', 'PROCESSED'] }
+      }).sort({ createdAt: -1 });
+
+      if (latestPayout && latestPayout.createdAt) {
+        const msDiff = Date.now() - new Date(latestPayout.createdAt).getTime();
+        const daysSince = msDiff / (1000 * 60 * 60 * 24);
+        if (daysSince < payoutDaysInterval) {
+          const daysLeft = Math.max(1, Math.ceil(payoutDaysInterval - daysSince));
+          const nextDate = new Date(new Date(latestPayout.createdAt).getTime() + payoutDaysInterval * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          return res.status(400).json({
+            message: `Payout restriction: You can request a payout once every ${payoutDaysInterval} days. Next eligible payout date: ${nextDate} (${daysLeft} day(s) remaining).`,
+            code: 'PAYOUT_INTERVAL_RESTRICTION',
+            payoutDaysInterval,
+            daysLeft,
+            nextEligibleDate: nextDate
+          });
+        }
+      }
+    }
+
     const defaultPayoutAccount = globalSetting?.defaultPayoutAccount || 'RAZORPAY_1';
 
     const internalTransactionId = `PAYOUT_${Date.now()}_${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -430,5 +539,93 @@ exports.requestPayout = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// POST /api/expert/payouts/confirm-penny-drop
+exports.confirmPennyDrop = async (req, res) => {
+  try {
+    const expertId = req.user._id;
+    const { payoutId } = req.body;
+
+    const payout = await PayoutTransaction.findOne({
+      _id: payoutId,
+      expert: expertId,
+      status: 'VERIFICATION_PENDING'
+    });
+
+    if (!payout) {
+      return res.status(404).json({
+        success: false,
+        message: 'Active ₹1 verification request not found for this payout.'
+      });
+    }
+
+    payout.pennyDropConfirmed = true;
+    payout.pennyDropConfirmedAt = new Date();
+    payout.status = 'PENDING'; // Ready for remaining balance payout processing
+    await payout.save();
+
+    const io = req.app.get('io');
+    const { sendNotification } = require('../utils/notificationDispatcher');
+
+    // Notify Administrator
+    sendNotification({
+      recipientRole: 'ADMIN',
+      recipientModel: 'Admin',
+      title: '₹1 Verification Confirmed by Expert',
+      message: `${payout.bankDetails?.accountHolderName || 'Expert'} has confirmed receipt of ₹1. Remaining balance of ₹${payout.remainingAmount} is now approved for payout.`,
+      actionText: 'Disburse Payout',
+      link: '/razorpay-accounts',
+      type: 'payout_request',
+      badge: 'Verified'
+    }, io).catch(e => console.error(e));
+
+    // Notify Expert
+    sendNotification({
+      recipient: expertId,
+      recipientRole: 'EXPERT',
+      recipientModel: 'Expert',
+      title: '₹1 Received Confirmed!',
+      message: `Verification confirm ho gayi hai! Baki bacha amount ₹${payout.remainingAmount} (1 rupya deduct karke) process kiya ja raha hai.`,
+      actionText: 'View Earnings',
+      link: '/expert/earnings',
+      type: 'payout_processed',
+      badge: 'Processing'
+    }, io).catch(e => console.error(e));
+
+    res.json({
+      success: true,
+      message: `Verification successful! ₹1 confirm hone ke baad remaining ₹${payout.remainingAmount} payout ke liye schedule ho gaya hai.`,
+      payout
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to confirm verification', error: error.message });
+  }
+};
+
+// POST /api/expert/payouts/cancel
+exports.cancelPayout = async (req, res) => {
+  try {
+    const expertId = req.user._id;
+    const { payoutId } = req.body;
+
+    const payout = await PayoutTransaction.findOne({
+      _id: payoutId,
+      expert: expertId,
+      status: 'VERIFICATION_PENDING'
+    });
+
+    if (!payout) {
+      return res.status(404).json({ success: false, message: 'Active pending verification payout not found.' });
+    }
+
+    payout.status = 'CANCELLED';
+    payout.failureReason = 'Cancelled by expert prior to verification';
+    await payout.save();
+
+    res.json({ success: true, message: 'Payout request cancelled. Balance restored to your earnings.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to cancel payout', error: error.message });
   }
 };

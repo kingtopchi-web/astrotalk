@@ -8,13 +8,45 @@ const settingSchema = new mongoose.Schema({
     unique: true
   },
   
-  // General
+  // General & Branding
   platformName: { type: String, default: 'Stitch Consultation Marketplace' },
+  platformLogo: { type: String, default: '' },
   supportEmail: { type: String, default: 'support@stitchplatform.com' },
   contactPhone: { type: String, default: '+91 98765 43210' },
   currency: { type: String, default: 'INR' },
   timezone: { type: String, default: 'Asia/Kolkata (IST)' },
   address: { type: String, default: 'Plot 42, Tech Park, Bengaluru, Karnataka, India' },
+
+  // Dynamic Home Hero Slider (Admin Managed)
+  heroSlides: [
+    {
+      image: { type: String, required: true },
+      title: { type: String, default: '' },
+      subtitle: { type: String, default: '' },
+      link: { type: String, default: '' },
+      isActive: { type: Boolean, default: true },
+      order: { type: Number, default: 0 }
+    }
+  ],
+
+  // Dynamic Homepage 3-Column Stats Card
+  homeStats: {
+    stat1Value: { type: String, default: '100k+' },
+    stat1Label: { type: String, default: 'Consultations' },
+    stat2Value: { type: String, default: '4.9' },
+    stat2Label: { type: String, default: 'Avg. Rating' },
+    stat3Value: { type: String, default: 'Top 1%' },
+    stat3Label: { type: String, default: 'Vetted Minds' },
+  },
+
+  // Dynamic Footer Social Media Links
+  socialLinks: {
+    instagram: { type: String, default: '' },
+    facebook: { type: String, default: '' },
+    twitter: { type: String, default: '' },
+    linkedin: { type: String, default: '' },
+    youtube: { type: String, default: '' },
+  },
   
   // Consultation & Commission
   platformCommissionRate: { type: Number, default: 20 }, // stored as percentage (20 for 20%)
@@ -24,6 +56,7 @@ const settingSchema = new mongoose.Schema({
   enableInstantBooking: { type: Boolean, default: true },
   
   // Digital Products Marketplace Settings
+  enableMarketplace: { type: Boolean, default: true },
   marketplaceCommissionRate: { type: Number, default: 10 }, // percentage (e.g. 10%)
   marketplaceAllowedExtensions: {
     type: [String],
@@ -31,10 +64,20 @@ const settingSchema = new mongoose.Schema({
   },
   marketplaceMaxFileSizeMb: { type: Number, default: 50 },
   marketplaceAutoApprove: { type: Boolean, default: false },
+  marketplacePayoutHoldDays: { type: Number, default: 7 }, // Admin sets holding period in days before seller gets payout
+  marketplaceDownloadLimit: { type: Number, default: 5 }, // Max downloads per purchase (0 for unlimited)
+  marketplaceDownloadExpiryDays: { type: Number, default: 30 }, // Days download link is valid (0 for lifetime)
+  platformTaxRate: { type: Number, default: 18 }, // Tax / GST rate percentage (e.g. 18%)
   
   // Free Chat Settings (Dynamic Admin Control)
   enableFreeChat: { type: Boolean, default: true },
   freeChatDurationMinutes: { type: Number, default: 5 }, // Admin sets dynamic duration in minutes
+
+  // Chat History Retention & Deletion Policy (Dynamic Admin Control)
+  enableAutoDeleteOldChats: { type: Boolean, default: false },
+  chatRetentionDays: { type: Number, default: 30 }, // Delete messages older than X days (e.g. 7, 15, 30, 60, 90, 180)
+  lastChatCleanupAt: { type: Date, default: null },
+  lastCleanedMessagesCount: { type: Number, default: 0 },
   
   // Call Safety Guidelines & Privacy Tips (Dynamic Admin Control)
   callSafetyTips: {
@@ -61,7 +104,9 @@ const settingSchema = new mongoose.Schema({
   paymentGateway: { type: String, default: 'Razorpay' },
   gatewayMode: { type: String, default: 'test' },
   payoutCycle: { type: String, default: 'weekly' },
-  minPayoutAmount: { type: Number, default: 1000 },
+  payoutDaysInterval: { type: Number, default: 7 }, // Minimum interval (in days) between expert payout requests
+  payoutEstimatedDays: { type: Number, default: 3 }, // Estimated days to process payout
+  minPayoutAmount: { type: Number, default: 100 },
   defaultPaymentAccount: {
     type: String,
     enum: ['RAZORPAY_1', 'RAZORPAY_2', 'RAZORPAY_3'],

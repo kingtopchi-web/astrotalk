@@ -90,6 +90,13 @@ exports.createReview = async (req, res) => {
       });
     }
 
+    // 5.b Verify consultation is not a free trial consultation
+    if (consultation.isFree) {
+      return res.status(400).json({
+        message: 'Free consultations cannot be reviewed.'
+      });
+    }
+
     // 6. Check if a review already exists for this consultation (application-level check)
     const existingReview = await Review.findOne({ consultation: consultationId });
     if (existingReview) {
@@ -183,6 +190,8 @@ exports.createReview = async (req, res) => {
         rating: review.rating,
         feedback: review.feedback,
         status: review.status,
+        isEdited: review.isEdited,
+        editedAt: review.editedAt,
         createdAt: review.createdAt,
         updatedAt: review.updatedAt
       },
@@ -191,6 +200,152 @@ exports.createReview = async (req, res) => {
   } catch (error) {
     console.error('Create review error:', error);
     return res.status(500).json({ message: 'Internal server error while creating review' });
+  }
+};
+
+// @route   PUT /api/reviews/:id OR PUT /api/reviews/consultation/:consultationId
+// @desc    Edit/update an existing review by the user
+// @access  Private (USER only)
+exports.updateReview = async (req, res) => {
+  try {
+    const { id, consultationId } = req.params;
+    const { rating, feedback } = req.body;
+    const targetId = id || consultationId;
+
+    if (!targetId || !mongoose.Types.ObjectId.isValid(targetId)) {
+      return res.status(400).json({ message: 'Valid review or consultation ID is required' });
+    }
+
+    // 1. Find review by either review _id or consultation _id
+    const review = await Review.findOne({
+      $or: [
+        { _id: targetId },
+        { consultation: targetId }
+      ]
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    // 2. Authorization check: must be owner
+    if (review.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You are not authorized to edit this review' });
+    }
+
+    // 3. Validate rating if provided
+    let numericRating = review.rating;
+    if (rating !== undefined && rating !== null) {
+      numericRating = Number(rating);
+      if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+        return res.status(400).json({ message: 'Rating must be an integer between 1 and 5' });
+      }
+    }
+
+    // 4. Validate & sanitize feedback if provided
+    let trimmedFeedback = review.feedback;
+    if (feedback !== undefined && feedback !== null) {
+      trimmedFeedback = typeof feedback === 'string'
+        ? feedback.trim().replace(/[<>]/g, '')
+        : '';
+      if (trimmedFeedback.length > 2000) {
+        return res.status(400).json({ message: 'Feedback must not exceed 2000 characters' });
+      }
+    }
+
+    // 5. Save previous revision to editHistory
+    if (!review.editHistory) review.editHistory = [];
+    review.editHistory.push({
+      rating: review.rating,
+      feedback: review.feedback,
+      editedAt: review.editedAt || review.createdAt
+    });
+
+    // 6. Auto-moderation check on new feedback
+    const SUSPICIOUS_PATTERNS = [
+      /\b(fraud|scam|scammer|thief|fake|chor|dhokha|harass|idiot|stupid|bastard|abuse)\b/i
+    ];
+    const isSuspicious = SUSPICIOUS_PATTERNS.some(pat => pat.test(trimmedFeedback));
+    if (isSuspicious) {
+      review.status = 'FLAGGED';
+      review.flagReason = 'Auto-flagged on edit: feedback contains flagged sensitive/abusive keywords';
+    } else if (review.status === 'FLAGGED') {
+      review.status = 'PUBLISHED';
+      review.flagReason = '';
+    }
+
+    review.rating = numericRating;
+    review.feedback = trimmedFeedback;
+    review.isEdited = true;
+    review.editedAt = new Date();
+    await review.save();
+
+    // 7. Re-calculate expert aggregate rating & review count
+    const updatedStats = await updateExpertAggregateRating(review.expert);
+
+    // 8. Real-time Socket.IO broadcasts
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`expert_${review.expert}`).emit('expert_rating_updated', {
+        expertId: review.expert,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+      io.emit('public_expert_rating_updated', {
+        expertId: review.expert,
+        rating: updatedStats.rating,
+        reviewsCount: updatedStats.reviewsCount
+      });
+      io.emit('review_edited', {
+        reviewId: review._id,
+        expertId: review.expert,
+        rating: numericRating,
+        feedback: trimmedFeedback,
+        isEdited: true,
+        editedAt: review.editedAt
+      });
+    }
+
+    // 9. Notify expert of updated review
+    sendNotification({
+      recipient: review.expert,
+      recipientRole: 'EXPERT',
+      recipientModel: 'Expert',
+      title: 'Review Updated by Client',
+      message: `${req.user.name || 'A client'} updated their review to ${numericRating} stars.`,
+      actionText: 'View updated reviews',
+      link: '/expert/profile',
+      type: 'general',
+      badge: 'Updated'
+    }, io).catch(() => {});
+
+    await review.populate('user', 'name profileImage');
+
+    return res.json({
+      success: true,
+      message: 'Review updated successfully',
+      review: {
+        _id: review._id,
+        consultation: review.consultation,
+        expert: review.expert,
+        user: {
+          _id: review.user._id,
+          name: review.user.name,
+          profileImage: review.user.profileImage
+        },
+        rating: review.rating,
+        feedback: review.feedback,
+        status: review.status,
+        isEdited: review.isEdited,
+        editedAt: review.editedAt,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt
+      },
+      expertStats: updatedStats
+    });
+  } catch (error) {
+    console.error('Update review error:', error);
+    return res.status(500).json({ message: 'Internal server error while updating review' });
   }
 };
 
@@ -213,7 +368,7 @@ exports.getExpertReviews = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('rating feedback user createdAt'),
+        .select('rating feedback user createdAt isEdited editedAt'),
       Review.countDocuments(query),
       Review.aggregate([
         { $match: { expert: expertObjId, status: 'PUBLISHED' } },
@@ -262,7 +417,7 @@ exports.getConsultationReview = async (req, res) => {
     const review = await Review.findOne({
       consultation: consultationId,
       user: req.user._id
-    }).select('rating feedback createdAt status');
+    }).select('rating feedback createdAt status isEdited editedAt');
 
     return res.json({
       success: true,

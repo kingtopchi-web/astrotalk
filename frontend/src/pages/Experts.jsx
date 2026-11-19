@@ -126,7 +126,7 @@ function ExpertDiscovery() {
           userRole = u?.role;
         } catch (e) {}
       }
-      if (userRole && userRole !== 'USER') return;
+      if (userRole && userRole !== 'USER' && userRole !== 'EXPERT') return;
 
       try {
         const res = await axios.get(getApiUrl('/user/saved-experts'), {
@@ -157,7 +157,7 @@ function ExpertDiscovery() {
         userRole = u?.role;
       } catch (e) {}
     }
-    if (userRole && userRole !== 'USER') return;
+    if (userRole && userRole !== 'USER' && userRole !== 'EXPERT') return;
 
     const isCurrentlySaved = savedExpertIds.has(expertId);
     setSavedExpertIds(prev => {
@@ -209,7 +209,8 @@ function ExpertDiscovery() {
 
   const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
   const isExpertFreeEligible = (expertId) => {
-    if (!user || user.role !== 'USER' || !expertId) return false;
+    if (!user || (user.role !== 'USER' && user.role !== 'EXPERT') || !expertId) return false;
+    if (user._id && (user._id === expertId || user._id.toString() === expertId.toString())) return false;
     if (!isFreeChatEnabled) return false;
     const usedList = freeChatStatus?.usedExpertIds || [];
     const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);

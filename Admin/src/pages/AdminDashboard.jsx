@@ -6,7 +6,7 @@ import {
   BarChart, Bar,
   LineChart, Line
 } from 'recharts';
-import { Calendar, Settings, ChevronRight, Wand2 } from 'lucide-react';
+import { Calendar, Settings, ChevronRight, Wand2, Zap } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 import { ADMIN_API_URL } from '../utils/apiConfig';
 
@@ -79,20 +79,20 @@ function AdminDashboard() {
         </div>
       </div>
 
-      <h2 className="text-lg sm:text-xl font-bold">Overview</h2>
+      <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Overview</h2>
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Card 1 */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
           <div>
-            <p className="text-sm text-slate-500 font-medium mb-1">Total Users</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Total Users</p>
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-2xl font-bold">{stats ? stats.totalUsers : '...'}</h3>
-                <p className="text-xs text-slate-400 mt-1">Platform registrants</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats ? stats.totalUsers : '...'}</h3>
+                <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">Platform registrants</p>
               </div>
-              <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">+12%</span>
+              <span className="bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 text-xs font-bold px-2 py-1 rounded-full">+12%</span>
             </div>
           </div>
           <div className="h-12 mt-4 -mx-2">
@@ -105,15 +105,15 @@ function AdminDashboard() {
         </div>
 
         {/* Card 2 */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
           <div>
-            <p className="text-sm text-slate-500 font-medium mb-1">Total Experts</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Total Experts</p>
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-2xl font-bold">{stats ? stats.totalExperts : '...'}</h3>
-                <p className="text-xs text-slate-400 mt-1">Registered consultants</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats ? stats.totalExperts : '...'}</h3>
+                <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">Registered consultants</p>
               </div>
-              <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">+5%</span>
+              <span className="bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold px-2 py-1 rounded-full">+5%</span>
             </div>
           </div>
           <div className="h-12 mt-4 -mx-2">
@@ -126,15 +126,15 @@ function AdminDashboard() {
         </div>
 
         {/* Card 3 */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
           <div>
-            <p className="text-sm text-slate-500 font-medium mb-1">Pending Approvals</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Pending Approvals</p>
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-2xl font-bold">{stats ? stats.pendingExperts : '...'}</h3>
-                <p className="text-xs text-slate-400 mt-1">Experts waiting verification</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats ? stats.pendingExperts : '...'}</h3>
+                <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">Experts waiting verification</p>
               </div>
-              <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full">Action Needed</span>
+              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold px-2 py-1 rounded-full">Action Needed</span>
             </div>
           </div>
           <div className="h-12 mt-4 -mx-2">
@@ -146,17 +146,17 @@ function AdminDashboard() {
           </div>
         </div>
 
-        {/* Card 4 - Dark */}
-        <div className="bg-[#f4f7fb] p-4 sm:p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
+        {/* Card 4 - Categories */}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
           <div className="flex flex-col items-start gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center">
-              <Wand2 size={16} className="text-slate-700" />
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Wand2 size={16} />
             </div>
-            <h3 className="font-bold text-slate-800 text-sm sm:text-base">Platform Categories</h3>
-            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-0.5">
+            <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base tracking-tight">Platform Categories</h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed mb-0.5">
               {stats ? stats.totalCategories : '...'} Categories, {stats ? stats.totalSubCategories : '...'} Sub-categories available.
             </p>
-            <button onClick={() => navigate('/categories')} className="mt-1 bg-[#0f172a] text-white text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-lg hover:bg-slate-800 transition-colors">
+            <button onClick={() => navigate('/categories')} className="mt-1 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95">
               Manage Categories &rsaquo;
             </button>
           </div>
@@ -166,17 +166,17 @@ function AdminDashboard() {
       {/* Middle Row Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5 sm:gap-4 mb-4 sm:mb-5">
         {/* Sessions Chart */}
-        <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium">Daily Platform Registrations</p>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Daily Platform Registrations</p>
               <div className="flex items-center gap-2.5 mt-0.5">
-                <h3 className="text-xl sm:text-2xl font-bold">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   {stats?.last7Days ? stats.last7Days.reduce((sum, d) => sum + d.total, 0) : '...'}
                 </h3>
-                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">Last 7 Days</span>
+                <span className="bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 text-xs font-bold px-2 py-0.5 rounded-full">Last 7 Days</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">Combined User & Expert registrations</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">Combined User & Expert registrations</p>
             </div>
           </div>
           <div className="h-60 w-full">
@@ -192,7 +192,7 @@ function AdminDashboard() {
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
                 <Tooltip />
@@ -204,26 +204,26 @@ function AdminDashboard() {
         </div>
 
         {/* Page Views Chart */}
-        <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium">Monthly Registration Growth</p>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Monthly Registration Growth</p>
               <div className="flex items-center gap-2.5 mt-0.5">
-                <h3 className="text-xl sm:text-2xl font-bold">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   {stats?.last6Months ? stats.last6Months.reduce((sum, d) => sum + d.users + d.experts, 0) : '...'}
                 </h3>
-                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">Last 6 Months</span>
+                <span className="bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold px-2 py-0.5 rounded-full">Last 6 Months</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">Total account creations month-over-month</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">Total account creations month-over-month</p>
             </div>
           </div>
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.last6Months || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <Tooltip cursor={{ fill: '#f1f5f9' }} />
+                <Tooltip cursor={{ fill: 'rgba(51, 65, 85, 0.3)' }} />
                 <Bar dataKey="users" name="Users" stackId="a" fill="#0ea5e9" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="experts" name="Experts" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -232,15 +232,15 @@ function AdminDashboard() {
         </div>
       </div>
 
-      <h2 className="text-lg sm:text-xl font-bold">Recent Experts</h2>
+      <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Recent Experts</h2>
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Table */}
-        <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
-              <thead className="text-[11px] sm:text-xs text-slate-500 font-medium border-b border-slate-200 bg-slate-50/50">
+              <thead className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/60">
                 <tr>
                   <th className="px-3.5 py-2.5">Expert Name</th>
                   <th className="px-3.5 py-2.5">Email</th>
@@ -251,31 +251,35 @@ function AdminDashboard() {
               </thead>
               <tbody>
                 {recentExperts.length > 0 ? recentExperts.map((expert) => (
-                  <tr key={expert._id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                    <td className="px-3.5 py-2.5 font-medium text-slate-700">{expert.name}</td>
-                    <td className="px-3.5 py-2.5 text-slate-600">{expert.email}</td>
-                    <td className="px-3.5 py-2.5 text-slate-600">{expert.categoryId?.name || 'N/A'}</td>
+                  <tr key={expert._id} className="border-b border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 dark:hover:bg-slate-700/40">
+                    <td className="px-3.5 py-2.5 font-medium text-slate-800 dark:text-white">{expert.name}</td>
+                    <td className="px-3.5 py-2.5 text-slate-600 dark:text-slate-300">{expert.email}</td>
+                    <td className="px-3.5 py-2.5 text-slate-600 dark:text-slate-300">{expert.categoryId?.name || 'N/A'}</td>
                     <td className="px-3.5 py-2.5 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${Number(
-                        expert.verificationStatus === 'APPROVED' ? 'bg-green-100 text-green-700 border border-green-200' :
-                          expert.verificationStatus === 'PENDING' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                            'bg-red-100 text-red-700 border border-red-200'
-                      ).toFixed(2)}`}>
-                        {expert.verificationStatus}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                        expert.verificationStatus === 'APPROVED' ? (
+                          expert.isAutoApproved ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700' :
+                            'bg-green-100 dark:bg-green-950/70 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                        ) : expert.verificationStatus === 'PENDING' ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800' :
+                            'bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                      }`}>
+                        {expert.verificationStatus === 'APPROVED' && expert.isAutoApproved && (
+                          <Zap size={10} className="fill-amber-500 text-amber-500" />
+                        )}
+                        {expert.verificationStatus === 'APPROVED' ? (expert.isAutoApproved ? 'Auto Approved' : 'Approved') : expert.verificationStatus}
                       </span>
                     </td>
                     <td className="px-3.5 py-2.5 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${Number(
-                        expert.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
-                          'bg-slate-100 text-slate-600 border border-slate-200'
-                      ).toFixed(2)}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${expert.status === 'ACTIVE' ? 'bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' :
+                        'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
+                        }`}>
                         {expert.status}
                       </span>
                     </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="5" className="px-4 py-6 text-center text-slate-500">No recent experts found</td>
+                    <td colSpan="5" className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">No recent experts found</td>
                   </tr>
                 )}
               </tbody>
@@ -284,36 +288,36 @@ function AdminDashboard() {
         </div>
 
         {/* Tree Panel */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 h-full">
-          <h3 className="font-bold text-sm text-slate-800 mb-3">Platform Health</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 sm:p-5 h-full">
+          <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-3">Platform Health</h3>
           <div className="space-y-3 text-xs sm:text-sm">
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>Active Experts</span>
-                <span className="font-medium text-slate-800">{stats?.activeExperts || 0}</span>
+                <span className="font-medium text-slate-900 dark:text-white">{stats?.activeExperts || 0}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
                 <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.activeExperts / stats.totalExperts) * 100 : 0}%` }}></div>
               </div>
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>Approved Experts</span>
-                <span className="font-medium text-slate-800">{stats?.approvedExperts || 0}</span>
+                <span className="font-medium text-slate-900 dark:text-white">{stats?.approvedExperts || 0}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
                 <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.approvedExperts / stats.totalExperts) * 100 : 0}%` }}></div>
               </div>
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>Pending Verifications</span>
-                <span className="font-medium text-slate-800">{stats?.pendingExperts || 0}</span>
+                <span className="font-medium text-slate-900 dark:text-white">{stats?.pendingExperts || 0}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
                 <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${stats?.totalExperts ? (stats.pendingExperts / stats.totalExperts) * 100 : 0}%` }}></div>
               </div>
             </div>

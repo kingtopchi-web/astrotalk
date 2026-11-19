@@ -3,7 +3,8 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { getApiUrl } from '../utils/apiConfig';
+import { getApiUrl, fetchFreeChatConfig } from '../utils/apiConfig';
+import { safeNavigateBack } from '../utils/navigation';
 import { 
   BadgeCheck, 
   MapPin, 
@@ -20,13 +21,17 @@ import {
   Phone,
   X,
   Wallet,
-  Bell
+  Bell,
+  Sparkles
 } from 'lucide-react';
 import BookAppointmentModal from '../components/BookAppointmentModal';
+import FreeCallShareModal from '../components/FreeCallShareModal';
+import { useAuth } from '../context/AuthContext';
 
 function ExpertPublicProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [expert, setExpert] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +50,62 @@ function ExpertPublicProfile() {
   const [shortfallData, setShortfallData] = useState(null);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [appointmentInitialType, setAppointmentInitialType] = useState('call');
+
+  // 1-Day Free Call Benefit
+  const [freeChatStatus, setFreeChatStatus] = useState(null);
+  const [freeDurationMinutes, setFreeDurationMinutes] = useState(1);
+  const [showFreeCallShareModal, setShowFreeCallShareModal] = useState(false);
+
+  useEffect(() => {
+    fetchFreeChatConfig(id).then(cfg => {
+      if (cfg) {
+        setFreeChatStatus(cfg);
+        if (cfg.freeChatDurationMinutes) {
+          setFreeDurationMinutes(cfg.freeChatDurationMinutes);
+        }
+      }
+    }).catch(() => {});
+  }, [id]);
+
+  const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
+  const isExpertFreeEligible = () => {
+    if (user && user._id && (user._id === id || user._id.toString() === id.toString())) return false;
+    if (!isFreeChatEnabled) return false;
+    const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
+    if (hasUsedToday) return false;
+    const usedList = freeChatStatus?.usedExpertIds || [];
+    if (usedList.includes(id)) return false;
+    return true;
+  };
+
+  const proceedWithFreeCall = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(getApiUrl('/bookings/start-free-call'), {
+        expertId: id,
+        type: 'call'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setFreeChatStatus(prev => ({
+        ...(prev || {}),
+        usedExpertIds: [...(prev?.usedExpertIds || []), id],
+        hasUsedToday: true,
+        hasUsedFreeChat: true
+      }));
+
+      setShowFreeCallShareModal(false);
+      const consultationId = res.data?.consultation?._id;
+      if (consultationId) {
+        navigate(`/live/${consultationId}?type=audio`);
+      }
+    } catch (err) {
+      console.error('Error starting free call:', err);
+      showToast(err.response?.data?.message || 'Failed to start free audio call', 'error');
+      setShowFreeCallShareModal(false);
+    }
+  };
 
   const openAppointmentModal = (type = 'call') => {
     setAppointmentInitialType(type);
@@ -141,6 +202,12 @@ function ExpertPublicProfile() {
 
     setCallType(type);
     
+    // If eligible for 1-day free audio call, launch free call flow directly
+    if (type === 'audio' && isExpertFreeEligible()) {
+      setShowFreeCallShareModal(true);
+      return;
+    }
+
     const curBal = await fetchUserWallet();
     const rate = type === 'video' 
       ? Math.max(20, expert?.rates?.video || expert?.pricePerMinute || 20)
@@ -298,9 +365,10 @@ function ExpertPublicProfile() {
 
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    if (action && ['video', 'audio', 'chat'].includes(action)) {
+    const normalizedAction = (action === 'call' || action === 'voice') ? 'audio' : action;
+    if (normalizedAction && ['video', 'audio', 'chat'].includes(normalizedAction)) {
       setTimeout(() => {
-        openCallModal(action);
+        openCallModal(normalizedAction);
       }, 350);
     }
   }, [id]);
@@ -361,10 +429,7 @@ function ExpertPublicProfile() {
         <div className="flex items-center justify-between mb-3.5 md:hidden">
           <button
             type="button"
-            onClick={() => {
-              if (window.history.length > 1) navigate(-1);
-              else navigate('/experts');
-            }}
+            onClick={() => safeNavigateBack(navigate, '/experts')}
             className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white hover:text-amber-500 dark:hover:text-amber-400 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95 group"
             title="Go Back"
             aria-label="Go Back"
@@ -486,13 +551,24 @@ function ExpertPublicProfile() {
 
                 <button 
                   onClick={() => openCallModal('audio')}
-                  className="w-full bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between mb-2 text-xs cursor-pointer active:scale-95"
+                  className={`w-full font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between mb-2 text-xs cursor-pointer active:scale-95 ${
+                    isExpertFreeEligible()
+                      ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs animate-pulse ring-1 ring-emerald-400'
+                      : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200'
+                  }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Phone size={15} className="text-emerald-600" />
-                    <span>Voice Call Now</span>
+                    <Phone size={15} className={isExpertFreeEligible() ? "text-white" : "text-emerald-600"} />
+                    <span>{isExpertFreeEligible() ? `Start Free Call (${freeDurationMinutes}m Offer)` : 'Voice Call Now'}</span>
                   </div>
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">₹{audioRate}/min</span>
+                  {isExpertFreeEligible() ? (
+                    <div className="flex items-center gap-1.5 bg-black/20 px-2 py-0.5 rounded-md">
+                      <span className="text-[11px] line-through text-rose-200 font-black decoration-rose-300 decoration-2">₹{audioRate}/m</span>
+                      <span className="text-[11px] font-black text-white">FREE ({freeDurationMinutes}m)</span>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">₹{audioRate}/min</span>
+                  )}
                 </button>
                 
                 <button 
@@ -942,6 +1018,16 @@ function ExpertPublicProfile() {
         onClose={() => setShowAppointmentModal(false)}
         expert={expert}
         initialType={appointmentInitialType}
+      />
+
+      {/* Free Call Viral Share Modal */}
+      <FreeCallShareModal
+        isOpen={showFreeCallShareModal}
+        onClose={() => setShowFreeCallShareModal(false)}
+        onProceed={() => proceedWithFreeCall()}
+        onContinue={() => proceedWithFreeCall()}
+        expertName={expert?.name}
+        freeDuration={freeDurationMinutes}
       />
 
       <Footer />

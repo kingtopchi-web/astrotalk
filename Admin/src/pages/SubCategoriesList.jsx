@@ -224,24 +224,49 @@ function SubCategoriesList() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800">{isEditing ? 'Edit Sub-category' : 'Add Sub-category'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex justify-center items-start sm:items-center p-3 sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+        >
+          <div 
+            className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md my-auto flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            style={{ maxHeight: 'min(86vh, 650px)' }}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/70 dark:bg-slate-900/60 shrink-0 z-10">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                {isEditing ? 'Edit Sub-category' : 'Add Sub-category'}
+              </h2>
+              <button 
+                type="button"
+                onClick={() => setShowModal(false)} 
+                className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
             
-            <form onSubmit={handleSave} className="p-6">
-              {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
-              
-              <div className="space-y-4">
+            {/* Form */}
+            <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div 
+                className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain"
+                style={{ maxHeight: 'calc(86vh - 140px)' }}
+              >
+                {error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-sm rounded-xl">
+                    {error}
+                  </div>
+                )}
+                
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Parent Category *</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Parent Category *</label>
                   <select 
                     required
                     value={currentSubCategory.categoryId}
                     onChange={(e) => setCurrentSubCategory({...currentSubCategory, categoryId: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 font-medium cursor-pointer"
                   >
                     <option value="">Select a Category</option>
                     {categories.map(cat => (
@@ -253,43 +278,47 @@ function SubCategoriesList() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Sub-category Name *</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Sub-category Name *</label>
                   <input 
                     type="text" 
                     required
                     value={currentSubCategory.name}
                     onChange={(e) => setCurrentSubCategory({...currentSubCategory, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
+                    placeholder="e.g. Cardiologist"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Slug (optional)</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Slug (optional)</label>
                   <input 
                     type="text" 
                     value={currentSubCategory.slug}
                     onChange={(e) => setCurrentSubCategory({...currentSubCategory, slug: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
+                    placeholder="e.g. cardiologist"
                   />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Leave blank to auto-generate from name.</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Description</label>
                   <textarea 
                     value={currentSubCategory.description}
                     onChange={(e) => setCurrentSubCategory({...currentSubCategory, description: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900"
                     rows="3"
+                    placeholder="Brief description of this sub-category..."
                   ></textarea>
                 </div>
                 
                 {isEditing && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Status</label>
                     <select
                       value={currentSubCategory.status}
                       onChange={(e) => setCurrentSubCategory({...currentSubCategory, status: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-800 dark:text-white bg-white dark:bg-slate-900 font-semibold cursor-pointer"
                     >
                       <option value="ACTIVE">Active</option>
                       <option value="INACTIVE">Inactive</option>
@@ -298,9 +327,21 @@ function SubCategoriesList() {
                 )}
               </div>
               
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">Save Sub-category</button>
+              {/* Sticky Footer */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 shrink-0">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold rounded-xl transition shadow-sm cursor-pointer active:scale-95"
+                >
+                  Save Sub-category
+                </button>
               </div>
             </form>
           </div>

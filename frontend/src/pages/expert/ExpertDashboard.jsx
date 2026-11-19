@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl } from '../../utils/apiConfig';
+import ExpertPushNotificationCard from '../../components/ExpertPushNotificationCard';
 import { 
   CheckCircle2,
   AlertCircle,
@@ -50,7 +52,7 @@ function ExpertDashboard() {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('https://experthub.nextgoodtechnologies.in/api/expert/dashboard', {
+        const res = await axios.get(getApiUrl('/expert/dashboard'), {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(res.data);
@@ -66,7 +68,7 @@ function ExpertDashboard() {
     setResubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://experthub.nextgoodtechnologies.in/api/expert/resubmit', {}, {
+      await axios.post(getApiUrl('/expert/resubmit'), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setResubmitSuccess('Your profile has been resubmitted for review!');
@@ -162,6 +164,9 @@ function ExpertDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Push Notifications & Incoming Call Management */}
+      <ExpertPushNotificationCard />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">

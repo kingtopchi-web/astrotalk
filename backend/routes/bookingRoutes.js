@@ -35,7 +35,10 @@ router.get('/free-chat-status', async (req, res) => {
         const token = req.headers.authorization.split(' ')[1];
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
+        let user = await User.findById(decoded.id);
+        if (!user) {
+          user = await Expert.findById(decoded.id);
+        }
         if (user) {
           userId = user._id;
           const eligibility = await checkFreeChatEligibility(user._id, expertId);
@@ -45,8 +48,25 @@ router.get('/free-chat-status', async (req, res) => {
           isEligibleForExpert = eligibility.isEligible;
           reason = eligibility.reason;
           message = eligibility.message;
-          // hasUsedFreeChat reflects whether user is blocked right now (either today or with queried expert)
-          hasUsedFreeChat = expertId ? (!eligibility.isEligible) : eligibility.hasUsedToday;
+          const hasRecharged = Boolean(eligibility.hasRecharged);
+          // hasUsedFreeChat reflects whether user is blocked right now (recharged, today, or with queried expert)
+          hasUsedFreeChat = hasRecharged ? true : (expertId ? (!eligibility.isEligible) : eligibility.hasUsedToday);
+
+          if (hasRecharged) {
+            return res.json({
+              enableFreeChat: false,
+              freeChatDurationMinutes,
+              hasUsedFreeChat: true,
+              hasUsedToday: true,
+              hasRecharged: true,
+              usedExpertIds: [],
+              hasUsedWithExpert: true,
+              isEligibleForExpert: false,
+              reason: 'RECHARGE_ALREADY_DONE',
+              message: 'Free consultation is only available for new users before their first wallet recharge.',
+              userId
+            });
+          }
         }
       } catch (e) {}
     }
@@ -71,12 +91,15 @@ router.get('/free-chat-status', async (req, res) => {
 
 // @route   POST /api/bookings/start-free-call & /api/bookings/start-free-chat
 // @desc    Start one-time free consultation (audio call by default)
-// @access  Private (USER only)
+// @access  Private (USER or EXPERT)
 const handleStartFreeConsultation = async (req, res) => {
   try {
     const { expertId } = req.body;
     if (!expertId) {
       return res.status(400).json({ message: 'Expert ID is required to start free consultation' });
+    }
+    if (req.user._id.toString() === expertId.toString()) {
+      return res.status(400).json({ message: 'You cannot start a consultation with yourself.' });
     }
 
     const expert = await Expert.findById(expertId);
@@ -86,15 +109,23 @@ const handleStartFreeConsultation = async (req, res) => {
     if (expert.verificationStatus !== 'APPROVED') {
       return res.status(400).json({ message: 'This expert is not verified for consultations yet.', code: 'EXPERT_NOT_VERIFIED' });
     }
+    if (expert.status === 'SUSPENDED' || expert.status === 'BLOCKED') {
+      return res.status(400).json({ message: 'This expert is currently not accepting consultations.', code: 'EXPERT_UNAVAILABLE' });
+    }
 
     const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
     if (settings && settings.enableFreeChat === false) {
       return res.status(400).json({ message: 'Free consultation is currently disabled by administrator.' });
     }
 
-    const user = await User.findById(req.user._id);
+    let user = await User.findById(req.user._id);
+    let clientIsExpert = false;
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      user = await Expert.findById(req.user._id);
+      if (user) clientIsExpert = true;
+    }
+    if (!user) {
+      return res.status(404).json({ message: 'Account not found' });
     }
 
     // Verify 1-per-day and 1-per-expert eligibility
@@ -126,6 +157,7 @@ const handleStartFreeConsultation = async (req, res) => {
 
     // Create Free Consultation with isFree: true, zero cost, zero expert earning
     const consultation = new Consultation({
+      clientModel: clientIsExpert ? 'Expert' : 'User',
       user: req.user._id,
       expert: expertId,
       startTime: new Date(),
@@ -201,6 +233,28 @@ const handleStartFreeConsultation = async (req, res) => {
           conversationId
         });
       }
+
+      // Dispatch Web Push Notification to Expert's device (PWA background alert)
+      try {
+        const pushService = require('../services/pushNotificationService');
+        if (isCall) {
+          pushService.sendIncomingCallPush(expert._id, {
+            consultationId: consultation._id,
+            type: callType,
+            userName: req.user.name || 'Client',
+            isFree: true
+          }).catch(e => console.error('[PushBooking] Error sending free call push:', e));
+        } else {
+          pushService.sendIncomingChatPush(expert._id, {
+            consultationId: consultation._id,
+            conversationId,
+            userName: req.user.name || 'Client',
+            isFree: true
+          }).catch(e => console.error('[PushBooking] Error sending free chat push:', e));
+        }
+      } catch (err) {
+        console.error('[PushBooking] Push dispatch error:', err.message);
+      }
     }
 
     const isAudioCall = sessionType === 'call';
@@ -243,15 +297,19 @@ const handleStartFreeConsultation = async (req, res) => {
   }
 };
 
-router.post('/start-free-call', protect, authorizeRoles('USER'), handleStartFreeConsultation);
-router.post('/start-free-chat', protect, authorizeRoles('USER'), handleStartFreeConsultation);
+router.post('/start-free-call', protect, authorizeRoles('USER', 'EXPERT'), handleStartFreeConsultation);
+router.post('/start-free-chat', protect, authorizeRoles('USER', 'EXPERT'), handleStartFreeConsultation);
 
 // @route   POST /api/bookings
 // @desc    Create a new booking (consultation)
-// @access  Private (USER only)
-router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
+// @access  Private (USER or EXPERT)
+router.post('/', protect, authorizeRoles('USER', 'EXPERT'), async (req, res) => {
   try {
     const { expertId, serviceId, date, time, type, duration, notes, isFree } = req.body;
+
+    if (req.user._id.toString() === expertId.toString()) {
+      return res.status(400).json({ message: 'You cannot book a consultation with yourself.' });
+    }
 
     const expert = await Expert.findById(expertId);
     if (!expert) {
@@ -259,6 +317,9 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
     }
     if (expert.verificationStatus !== 'APPROVED') {
       return res.status(400).json({ message: 'This expert is not verified for consultations yet.', code: 'EXPERT_NOT_VERIFIED' });
+    }
+    if (expert.status === 'SUSPENDED' || expert.status === 'BLOCKED') {
+      return res.status(400).json({ message: 'This expert is currently not accepting consultations.', code: 'EXPERT_UNAVAILABLE' });
     }
 
     const settings = await Setting.findOne({ singletonKey: 'GLOBAL_SETTINGS' });
@@ -300,12 +361,20 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       platformFee = 0;
       amount = 0;
 
-      // Track free chat usage on user document
-      await User.findByIdAndUpdate(req.user._id, {
-        $addToSet: { freeChatUsedExperts: expertId },
-        lastFreeChatAt: new Date(),
-        hasUsedFreeChat: true
-      });
+      // Track free chat usage on user / expert document
+      if (req.user.role !== 'EXPERT') {
+        await User.findByIdAndUpdate(req.user._id, {
+          $addToSet: { freeChatUsedExperts: expertId },
+          lastFreeChatAt: new Date(),
+          hasUsedFreeChat: true
+        });
+      } else {
+        await Expert.findByIdAndUpdate(req.user._id, {
+          $addToSet: { freeChatUsedExperts: expertId },
+          lastFreeChatAt: new Date(),
+          hasUsedFreeChat: true
+        });
+      }
     } else {
       const lowerSessionType = type.toLowerCase();
       let ratePerMinute = 20;
@@ -338,13 +407,13 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
       // Check if user has at least 1 minute minimum balance in wallet to connect (PAID instant bookings only)
       const isScheduledBooking = req.body.isInstant === false || Boolean(req.body.isScheduled);
       if (!isScheduledBooking) {
-        const user = await User.findById(req.user._id);
+        const clientAccount = (await User.findById(req.user._id)) || (await Expert.findById(req.user._id));
         const minRequired = ratePerMinute;
-        if (!user || (user.walletBalance || 0) < minRequired) {
+        if (!clientAccount || (clientAccount.walletBalance || 0) < minRequired) {
           return res.status(400).json({ 
             message: `Insufficient balance. Minimum ₹${minRequired} (1 minute) required in your wallet to start.`,
             requiredBalance: minRequired,
-            currentBalance: user ? (user.walletBalance || 0) : 0
+            currentBalance: clientAccount ? (clientAccount.walletBalance || 0) : 0
           });
         }
       }
@@ -364,7 +433,9 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
     const isInstant = !isScheduledBooking && (req.body.isInstant !== undefined ? req.body.isInstant : !serviceId) && allowInstant;
     const initialStatus = isScheduledBooking ? 'scheduled' : ((isInstant || isFreeBooking) ? 'ongoing' : 'pending');
 
+    const isClientAnExpert = req.user.role === 'EXPERT';
     const consultation = new Consultation({
+      clientModel: isClientAnExpert ? 'Expert' : 'User',
       user: req.user._id,
       expert: expertId,
       service: serviceId || null,
@@ -420,6 +491,28 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
           userName: req.user.name || 'Client',
           consultation
         });
+      }
+
+      // Dispatch Web Push Notification to Expert's device (PWA background alert)
+      try {
+        const pushService = require('../services/pushNotificationService');
+        if (isCall) {
+          pushService.sendIncomingCallPush(expert._id, {
+            consultationId: consultation._id,
+            type: callType,
+            userName: req.user.name || 'Client',
+            isFree: isFreeBooking
+          }).catch(e => console.error('[PushBooking] Error sending call push:', e));
+        } else {
+          pushService.sendIncomingChatPush(expert._id, {
+            consultationId: consultation._id,
+            conversationId: consultation.conversationId,
+            userName: req.user.name || 'Client',
+            isFree: isFreeBooking
+          }).catch(e => console.error('[PushBooking] Error sending chat push:', e));
+        }
+      } catch (err) {
+        console.error('[PushBooking] Push dispatch error:', err.message);
       }
     }
 
@@ -529,9 +622,9 @@ router.post('/', protect, authorizeRoles('USER'), async (req, res) => {
 });
 
 // @route   GET /api/bookings/my-bookings
-// @desc    Get logged in user's bookings
-// @access  Private (USER)
-router.get('/my-bookings', protect, authorizeRoles('USER'), async (req, res) => {
+// @desc    Get logged in user's bookings (also supports EXPERT consulting other experts)
+// @access  Private (USER or EXPERT)
+router.get('/my-bookings', protect, authorizeRoles('USER', 'EXPERT'), async (req, res) => {
   try {
     const Review = require('../models/Review');
     const consultations = await Consultation.find({ user: req.user._id })
@@ -590,19 +683,14 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private (USER or EXPERT)
 router.get('/active-chat/:partnerId', protect, async (req, res) => {
   try {
-    const isExpert = req.user.role === 'EXPERT';
     const query = {
       type: 'chat',
-      status: { $in: ['scheduled', 'ongoing'] }
+      status: { $in: ['scheduled', 'ongoing'] },
+      $or: [
+        { user: req.user._id, expert: req.params.partnerId },
+        { expert: req.user._id, user: req.params.partnerId }
+      ]
     };
-
-    if (isExpert) {
-      query.expert = req.user._id;
-      query.user = req.params.partnerId;
-    } else {
-      query.user = req.user._id;
-      query.expert = req.params.partnerId;
-    }
 
     const consultation = await Consultation.findOne(query).sort({ startTime: -1 });
     if (!consultation) {
@@ -900,11 +988,18 @@ router.post('/:id/end', protect, async (req, res) => {
       });
 
       if (refundAmount > 0 && !existingRefund) {
-        const updatedUser = await User.findOneAndUpdate(
+        let updatedUser = await User.findOneAndUpdate(
           { _id: user._id },
           { $inc: { walletBalance: refundAmount } },
           { new: false }
         );
+        if (!updatedUser) {
+          updatedUser = await Expert.findOneAndUpdate(
+            { _id: user._id },
+            { $inc: { walletBalance: refundAmount } },
+            { new: false }
+          );
+        }
         const userBalanceBefore = updatedUser ? (updatedUser.walletBalance || 0) : 0;
         const userBalanceAfter = Number((userBalanceBefore + refundAmount).toFixed(2));
 
@@ -1129,6 +1224,155 @@ router.post('/:id/end', protect, async (req, res) => {
     console.error('End session error:', error);
     try { require('fs').appendFileSync('error_log.txt', 'End session error: ' + error.stack + '\n'); } catch (e) {}
     res.status(500).json({ message: 'Failed to end session' });
+  }
+});
+
+// @route   POST /api/bookings/:id/gift
+// @desc    Send an appreciation gift / tip to the expert for a completed consultation
+// @access  Private (Client / User)
+router.post('/:id/gift', protect, authorizeRoles('USER', 'EXPERT'), async (req, res) => {
+  try {
+    const { amount, message: giftMsg } = req.body;
+    const giftAmount = Math.round(Number(amount));
+
+    if (!giftAmount || isNaN(giftAmount) || giftAmount < 1) {
+      return res.status(400).json({ message: 'Please enter a valid gift amount (minimum ₹1)' });
+    }
+
+    const consultation = await Consultation.findById(req.params.id)
+      .populate('expert')
+      .populate('user');
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' });
+    }
+
+    // Free call check: NEVER allow gifts on free calls
+    if (consultation.isFree) {
+      return res.status(400).json({
+        message: 'Gifts cannot be sent on free consultations.'
+      });
+    }
+
+    // Only the consultation user/client can send gifts
+    const requesterId = req.user._id.toString();
+    if (consultation.user && consultation.user._id.toString() !== requesterId) {
+      return res.status(403).json({ message: 'Not authorized to send a gift for this consultation' });
+    }
+
+    const expert = consultation.expert;
+    if (!expert) {
+      return res.status(404).json({ message: 'Expert not found' });
+    }
+
+    // Deduct from client's wallet
+    let clientUser = await User.findOneAndUpdate(
+      { _id: req.user._id, walletBalance: { $gte: giftAmount } },
+      { $inc: { walletBalance: -giftAmount } },
+      { new: false }
+    );
+    if (!clientUser) {
+      clientUser = await Expert.findOneAndUpdate(
+        { _id: req.user._id, walletBalance: { $gte: giftAmount } },
+        { $inc: { walletBalance: -giftAmount } },
+        { new: false }
+      );
+    }
+
+    if (!clientUser) {
+      const freshUser = (await User.findById(req.user._id)) || (await Expert.findById(req.user._id));
+      const curBal = freshUser?.walletBalance || 0;
+      return res.status(400).json({
+        message: `Insufficient wallet balance (Current: ₹${curBal}, Required: ₹${giftAmount})`,
+        currentBalance: curBal,
+        requiredAmount: giftAmount,
+        shortfall: Math.max(0, giftAmount - curBal)
+      });
+    }
+
+    const clientBalBefore = clientUser.walletBalance;
+    const clientBalAfter = clientBalBefore - giftAmount;
+
+    // Credit 100% of the gift amount to Expert
+    const updatedExpert = await Expert.findByIdAndUpdate(
+      expert._id,
+      { $inc: { walletBalance: giftAmount } },
+      { new: true }
+    );
+    const expertBalAfter = updatedExpert ? updatedExpert.walletBalance : 0;
+    const expertBalBefore = expertBalAfter - giftAmount;
+
+    // Transaction records
+    const WalletTransaction = require('../models/WalletTransaction');
+    const clientTx = new WalletTransaction({
+      user: req.user._id,
+      type: 'DEBIT',
+      amount: giftAmount,
+      status: 'SUCCESS',
+      balanceBefore: clientBalBefore,
+      balanceAfter: clientBalAfter,
+      description: `Gift/Tip sent to ${expert.name || 'Expert'}`,
+      consultation: consultation._id,
+      transactionType: 'GIFT_SENT',
+      completedAt: new Date()
+    });
+    await clientTx.save();
+
+    const expertTx = new WalletTransaction({
+      user: expert._id,
+      type: 'CREDIT',
+      amount: giftAmount,
+      status: 'SUCCESS',
+      balanceBefore: expertBalBefore,
+      balanceAfter: expertBalAfter,
+      description: `Gift/Tip received from ${clientUser.name || 'Client'}`,
+      consultation: consultation._id,
+      transactionType: 'GIFT_RECEIVED',
+      completedAt: new Date()
+    });
+    await expertTx.save();
+
+    // Record on consultation
+    consultation.giftAmount = (consultation.giftAmount || 0) + giftAmount;
+    if (giftMsg) {
+      consultation.giftMessage = giftMsg;
+    }
+    consultation.giftSentAt = new Date();
+    await consultation.save();
+
+    // Real-time socket & notifications
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${expert._id}`).emit('GIFT_RECEIVED', {
+        amount: giftAmount,
+        senderName: clientUser.name || 'Client',
+        consultationId: consultation._id,
+        message: giftMsg || ''
+      });
+    }
+
+    const { sendNotification } = require('../utils/notificationDispatcher');
+    sendNotification({
+      recipient: expert._id,
+      recipientRole: 'EXPERT',
+      recipientModel: 'Expert',
+      title: 'Gift Received! 🎁',
+      message: `${clientUser.name || 'Client'} sent you a ₹${giftAmount} gift!`,
+      actionText: 'View earnings',
+      link: '/expert/earnings',
+      type: 'gift_received',
+      badge: 'Gift'
+    }, io).catch(() => {});
+
+    return res.json({
+      success: true,
+      message: `Gift of ₹${giftAmount} sent successfully to ${expert.name || 'Expert'}!`,
+      giftAmount,
+      newWalletBalance: clientBalAfter
+    });
+  } catch (error) {
+    console.error('Send gift error:', error);
+    return res.status(500).json({ message: error.message || 'Failed to send gift' });
   }
 });
 

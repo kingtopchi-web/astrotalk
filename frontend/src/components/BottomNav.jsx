@@ -10,7 +10,7 @@ function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, auth, logout } = useAuth();
-  const { platformName } = usePlatformSettings();
+  const { platformName, enableMarketplace } = usePlatformSettings();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
 
@@ -19,13 +19,8 @@ function BottomNav() {
   const isExpert = role === 'EXPERT';
   const isAdmin = role === 'ADMIN';
 
-  // Routes where BottomNav must be hidden on mobile
+  // Routes where BottomNav must be hidden on mobile (only auth and active live call)
   const hiddenRoutes = [
-    '/wallet',
-    '/messages',
-    '/expert/messages',
-    '/settings',
-    '/expert/settings',
     '/live',
     '/login',
     '/register',
@@ -100,11 +95,13 @@ function BottomNav() {
 
   // Bottom navigation tab active states
   const isHome = location.pathname === '/' || location.pathname.startsWith('/categories');
-  const isExperts = location.pathname.startsWith('/experts') || location.pathname.startsWith('/expert/');
+  const isExperts = location.pathname === '/experts' || location.pathname.startsWith('/experts/') || location.pathname.startsWith('/category/') || (!isExpert && location.pathname.startsWith('/expert/'));
   const isBookings = location.pathname.startsWith('/booking');
   const isExpertSessions = location.pathname.startsWith('/expert/consultation') || location.pathname.startsWith('/expert/schedule');
   const isExpertEarnings = location.pathname.startsWith('/expert/earnings');
   const isMarket = location.pathname.startsWith('/marketplace');
+  const isSell = location.pathname === '/marketplace/seller' || location.pathname.startsWith('/marketplace/seller') || location.pathname.startsWith('/marketplace/sell') || location.pathname.startsWith('/sell') || location.pathname.startsWith('/marketplace/edit');
+  const isProducts = location.pathname === '/marketplace' || location.pathname === '/products' || (location.pathname.startsWith('/marketplace') && !isSell);
 
   return (
     <>
@@ -527,7 +524,7 @@ function BottomNav() {
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 pb-safe bg-surface/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex justify-around items-center h-16 px-1.5">
           {isExpert ? (
-            /* Expert Bottom Tabs */
+            /* Expert Bottom Tabs: Home, Experts, (Sell, Products if enabled), Account */
             <>
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
@@ -541,33 +538,37 @@ function BottomNav() {
 
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  isExpertSessions ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                  isExperts ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
-                to="/expert/consultations"
+                to="/experts"
               >
-                <span className="material-symbols-outlined text-[22px]">event_available</span>
-                <span className="text-[11px] font-medium">Sessions</span>
+                <span className="material-symbols-outlined text-[22px]">support_agent</span>
+                <span className="text-[11px] font-medium">Experts</span>
               </Link>
 
-              <Link
-                className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  isExpertEarnings ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-                to="/expert/earnings"
-              >
-                <span className="material-symbols-outlined text-[22px]">payments</span>
-                <span className="text-[11px] font-medium">Earnings</span>
-              </Link>
+              {enableMarketplace !== false && (
+                <>
+                  <Link
+                    className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
+                      isSell ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                    to="/marketplace/seller"
+                  >
+                    <span className="material-symbols-outlined text-[22px]">sell</span>
+                    <span className="text-[11px] font-medium">Sell</span>
+                  </Link>
 
-              <Link
-                className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  isMarket ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-                to="/marketplace/seller"
-              >
-                <span className="material-symbols-outlined text-[22px]">storefront</span>
-                <span className="text-[11px] font-medium">Market</span>
-              </Link>
+                  <Link
+                    className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
+                      isProducts ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                    to="/marketplace/catalog"
+                  >
+                    <span className="material-symbols-outlined text-[22px]">inventory_2</span>
+                    <span className="text-[11px] font-medium">Products</span>
+                  </Link>
+                </>
+              )}
 
               <button
                 type="button"
@@ -593,15 +594,17 @@ function BottomNav() {
                 <span className="text-[11px] font-medium">Home</span>
               </Link>
 
-              <Link
-                className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  location.pathname.startsWith('/marketplace') ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-                to="/marketplace-management"
-              >
-                <span className="material-symbols-outlined text-[22px]">storefront</span>
-                <span className="text-[11px] font-medium">Market</span>
-              </Link>
+              {enableMarketplace !== false && (
+                <Link
+                  className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
+                    location.pathname.startsWith('/marketplace') ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                  to="/marketplace"
+                >
+                  <span className="material-symbols-outlined text-[22px]">storefront</span>
+                  <span className="text-[11px] font-medium">Market</span>
+                </Link>
+              )}
 
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
@@ -625,7 +628,7 @@ function BottomNav() {
               </button>
             </>
           ) : (
-            /* Client / Guest Bottom Tabs */
+            /* Client / Guest Bottom Tabs: Home, Experts, (Sell, Products if enabled), Account */
             <>
               <Link
                 className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
@@ -647,15 +650,29 @@ function BottomNav() {
                 <span className="text-[11px] font-medium">Experts</span>
               </Link>
 
-              <Link
-                className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
-                  isBookings ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-                to={currentUser ? '/bookings' : '/login'}
-              >
-                <span className="material-symbols-outlined text-[22px]">calendar_month</span>
-                <span className="text-[11px] font-medium">Bookings</span>
-              </Link>
+              {enableMarketplace !== false && (
+                <>
+                  <Link
+                    className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
+                      isSell ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                    to={currentUser ? "/marketplace/seller" : "/login"}
+                  >
+                    <span className="material-symbols-outlined text-[22px]">sell</span>
+                    <span className="text-[11px] font-medium">Sell</span>
+                  </Link>
+
+                  <Link
+                    className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-all gap-0.5 ${
+                      isProducts ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                    to="/marketplace/catalog"
+                  >
+                    <span className="material-symbols-outlined text-[22px]">inventory_2</span>
+                    <span className="text-[11px] font-medium">Products</span>
+                  </Link>
+                </>
+              )}
 
               <button
                 type="button"

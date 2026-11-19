@@ -54,7 +54,8 @@ app.use(helmet({
   },
   xContentTypeOptions: true,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
 }));
 
 // Block malicious probes for common PHP/WordPress/Env attack vectors
@@ -167,6 +168,8 @@ const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
 const publicRoutes = require('./routes/publicRoutes');
 app.use('/api/public', publicRoutes);
+const pushNotificationRoutes = require('./routes/pushNotificationRoutes');
+app.use('/api/push-notifications', pushNotificationRoutes);
 
 const { getCategoryRequirements, getDocumentFile } = require('./controllers/documentController');
 app.get('/api/categories/:categoryId/document-requirements', getCategoryRequirements);
@@ -709,5 +712,74 @@ io.on('connection', (socket) => {
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    // Run automated chat history retention cleanup worker if enabled
+    try {
+      const { runAutoChatCleanup } = require('./controllers/chatCleanupController');
+      setTimeout(runAutoChatCleanup, 15000);
+      setInterval(runAutoChatCleanup, 12 * 60 * 60 * 1000);
+    } catch (e) {
+      console.error('[AutoChatCleanup] Startup hook error:', e.message);
+    }
+
+    // Periodic auto-lift of expired temporary expert suspensions
+    setInterval(async () => {
+      try {
+        const Expert = require('./models/Expert');
+        const expired = await Expert.find({
+          status: 'SUSPENDED',
+          'suspensionDetails.type': 'TEMPORARY',
+          'suspensionDetails.suspendedUntil': { $lte: new Date() }
+        }).select('_id name');
+
+        if (expired.length > 0) {
+          await Expert.updateMany(
+            { _id: { $in: expired.map(e => e._id) } },
+            {
+              $set: {
+                status: 'ACTIVE',
+                'suspensionDetails.isSuspended': false,
+                'suspensionDetails.type': 'NONE'
+              }
+            }
+          );
+          expired.forEach(e => {
+            io.to(`user_${e._id}`).emit('account_reinstated', {
+              expertId: e._id.toString(),
+              status: 'ACTIVE',
+              isSuspended: false,
+              message: 'Your temporary suspension period has concluded. Your account is now active.'
+            });
+          });
+          console.log(`[SuspensionManager] Auto-lifted ${expired.length} expired expert suspensions.`);
+        }
+      } catch (err) {}
+    }, 2 * 60 * 1000);
+
+    // Periodic permanent deletion of Recycle Bin Support Tickets older than 7 days
+    const purgeExpiredRecycleBinTickets = async () => {
+      try {
+        const SupportTicket = require('./models/SupportTicket');
+        const SupportMessage = require('./models/SupportMessage');
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        
+        const expiredTickets = await SupportTicket.find({
+          isDeleted: true,
+          deletedAt: { $lte: sevenDaysAgo }
+        }).select('_id ticketId');
+
+        if (expiredTickets.length > 0) {
+          const expiredIds = expiredTickets.map(t => t._id);
+          await Promise.all([
+            SupportTicket.deleteMany({ _id: { $in: expiredIds } }),
+            SupportMessage.deleteMany({ ticket: { $in: expiredIds } })
+          ]);
+          console.log(`[SupportRecycleBin] Automatically purged ${expiredTickets.length} ticket(s) older than 7 days.`);
+        }
+      } catch (err) {
+        console.error('[SupportRecycleBin] Purge error:', err.message);
+      }
+    };
+    setTimeout(purgeExpiredRecycleBinTickets, 20000);
+    setInterval(purgeExpiredRecycleBinTickets, 60 * 60 * 1000); // Check every hour
   });
 });

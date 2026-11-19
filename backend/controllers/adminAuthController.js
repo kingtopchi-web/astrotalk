@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 
-const generateToken = (id) => {
-  return jwt.sign({ id, role: 'ADMIN' }, process.env.JWT_SECRET, {
+const generateToken = (id, role = 'ADMIN') => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     algorithm: 'HS256',
     expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
@@ -30,8 +30,9 @@ const loginAdmin = async (req, res) => {
         _id: admin._id,
         name: admin.name,
         email: admin.email,
-        role: admin.role,
-        token: generateToken(admin._id),
+        role: admin.role || 'ADMIN',
+        permissions: admin.role === 'SUPER_ADMIN' ? ['*'] : (admin.permissions || []),
+        token: generateToken(admin._id, admin.role || 'ADMIN'),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });

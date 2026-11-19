@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getApiUrl } from '../../utils/apiConfig';
 import { createSocket } from '../../utils/socket';
 import { compressDocumentImage } from '../../utils/imageCompressor';
+import ExpertPushNotificationCard from '../../components/ExpertPushNotificationCard';
 
 const ExpertSettings = () => {
   const { user, updateUser } = useAuth();
@@ -402,19 +403,19 @@ const ExpertSettings = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col md:flex-row w-full">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col md:flex-row w-full">
         {/* Sidebar tabs */}
-        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-100 bg-[#FAF8F5] flex md:flex-col p-4 sm:p-5 gap-2 shrink-0 overflow-x-auto">
+        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/90 flex md:flex-col p-4 sm:p-5 gap-2 shrink-0 overflow-x-auto">
           <button 
             type="button"
             onClick={() => {
               setActiveTab('notifications');
               setStatusMessage({ type: '', text: '' });
             }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
               activeTab === 'notifications' 
                 ? 'bg-[#D97706] text-white shadow-xs' 
-                : 'text-slate-600 hover:bg-slate-200/60'
+                : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-slate-800'
             }`}
           >
             <Bell size={18} />
@@ -427,10 +428,10 @@ const ExpertSettings = () => {
               setActiveTab('security');
               setStatusMessage({ type: '', text: '' });
             }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
               activeTab === 'security' 
                 ? 'bg-[#D97706] text-white shadow-xs' 
-                : 'text-slate-600 hover:bg-slate-200/60'
+                : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-slate-800'
             }`}
           >
             <Lock size={18} />
@@ -444,10 +445,10 @@ const ExpertSettings = () => {
               setStatusMessage({ type: '', text: '' });
               fetchExpertDocuments();
             }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
               activeTab === 'documents' 
                 ? 'bg-[#D97706] text-white shadow-xs' 
-                : 'text-slate-600 hover:bg-slate-200/60'
+                : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-slate-800'
             }`}
           >
             <FileText size={18} />
@@ -460,10 +461,10 @@ const ExpertSettings = () => {
               setActiveTab('bank');
               setStatusMessage({ type: '', text: '' });
             }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
               activeTab === 'bank' 
                 ? 'bg-[#D97706] text-white shadow-xs' 
-                : 'text-slate-600 hover:bg-slate-200/60'
+                : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-slate-800'
             }`}
           >
             <Building2 size={18} />
@@ -481,6 +482,9 @@ const ExpertSettings = () => {
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">Notification Preferences</h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">Control how you receive booking alerts and message updates.</p>
               </div>
+
+              {/* Mobile Push Notification & PWA Manager */}
+              <ExpertPushNotificationCard />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="flex items-start gap-4 p-5 rounded-2xl border border-slate-200/90 bg-slate-50/50 hover:bg-white cursor-pointer hover:border-amber-300 transition-all shadow-2xs">

@@ -525,15 +525,26 @@ function WalletRecharge() {
                         }`}
                       >
                         <div>
-                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
                             <span className="font-extrabold text-xs text-slate-900 tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
                               {c.code}
                             </span>
-                            {c.badge && (
-                              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                                {c.badge}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1">
+                              {c.discountType === 'BOTH' ? (
+                                <span className="text-[9px] font-extrabold text-blue-800 bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded">
+                                  {c.percentageBonus || c.discountValue}% + ₹{c.flatBonus} Extra
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                  {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% Extra` : `+₹${c.discountValue} Extra`}
+                                </span>
+                              )}
+                              {c.badge && (
+                                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                  {c.badge}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <p className="text-xs font-bold text-slate-800">{c.title}</p>
                           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{c.description}</p>

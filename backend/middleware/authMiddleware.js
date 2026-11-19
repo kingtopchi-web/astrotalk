@@ -42,13 +42,52 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: 'Not authorized, account not found' });
       }
 
-      // Enforce account status check: suspended or blocked users/experts cannot access protected routes
-      if (user.status === 'BLOCKED' || user.status === 'SUSPENDED') {
+      // Auto-lift expired temporary suspension for Expert
+      if (userType === 'EXPERT' || user.role === 'EXPERT') {
+        if (
+          user.status === 'SUSPENDED' &&
+          user.suspensionDetails?.type === 'TEMPORARY' &&
+          user.suspensionDetails?.suspendedUntil &&
+          new Date(user.suspensionDetails.suspendedUntil) <= new Date()
+        ) {
+          user.status = 'ACTIVE';
+          if (user.suspensionDetails) {
+            user.suspensionDetails.isSuspended = false;
+            user.suspensionDetails.type = 'NONE';
+          }
+          await user.save();
+        }
+      }
+
+      // Enforce account status check:
+      if (user.status === 'BLOCKED') {
         return res.status(403).json({
-          message: `Account is ${user.status.toLowerCase()}. Access denied. Please contact support.`,
-          code: 'ACCOUNT_SUSPENDED',
-          status: user.status
+          message: 'Account is blocked by administration. Access denied. Please contact support.',
+          code: 'ACCOUNT_BLOCKED',
+          status: 'BLOCKED'
         });
+      }
+
+      if (user.status === 'SUSPENDED') {
+        const path = req.originalUrl || req.baseUrl || req.path || '';
+        const isExpertReadOnly = (userType === 'EXPERT' || user.role === 'EXPERT') && (
+          (req.method === 'GET' && (
+            path.includes('/api/expert/profile') ||
+            path.includes('/api/expert/dashboard') ||
+            path.includes('/api/expert/earnings') ||
+            path.includes('/api/notifications') ||
+            path.includes('/api/push-notifications')
+          ))
+        );
+
+        if (!isExpertReadOnly) {
+          return res.status(403).json({
+            message: `Account is suspended by Administrator. Reason: ${user.suspensionDetails?.reason || 'Disciplinary Action'}.`,
+            code: 'ACCOUNT_SUSPENDED',
+            status: 'SUSPENDED',
+            suspensionDetails: user.suspensionDetails
+          });
+        }
       }
 
       req.user = user;
@@ -67,9 +106,18 @@ const protect = async (req, res, next) => {
 
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
       return res.status(403).json({ 
-        message: `Forbidden: Role ${req.user ? req.user.role : 'Unknown'} is not authorized to access this resource` 
+        message: 'Forbidden: No authenticated user' 
+      });
+    }
+    // SUPER_ADMIN has full access to any ADMIN endpoint
+    if (req.user.role === 'SUPER_ADMIN' && (roles.includes('ADMIN') || roles.includes('SUPER_ADMIN'))) {
+      return next();
+    }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: `Forbidden: Role ${req.user.role} is not authorized to access this resource` 
       });
     }
     next();

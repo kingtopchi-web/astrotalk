@@ -53,10 +53,37 @@ const expertSchema = new mongoose.Schema({
   rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
   approvedAt: { type: Date },
   approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+  isAutoApproved: { type: Boolean, default: false },
+  autoApprovedAt: { type: Date, default: null },
+  approvalSource: {
+    type: String,
+    enum: ['MANUAL_ADMIN', 'SYSTEM_AUTO', 'NOT_APPROVED'],
+    default: 'NOT_APPROVED'
+  },
+  manuallyApprovedAt: { type: Date, default: null },
+  manuallyApprovedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
   status: {
     type: String,
     enum: ['ACTIVE', 'SUSPENDED', 'BLOCKED'],
     default: 'ACTIVE',
+  },
+  suspensionDetails: {
+    isSuspended: { type: Boolean, default: false },
+    type: { type: String, enum: ['TEMPORARY', 'PERMANENT', 'NONE'], default: 'NONE' },
+    reason: { type: String, default: '' },
+    noticeMessage: { type: String, default: '' },
+    suspendedAt: { type: Date, default: null },
+    suspendedUntil: { type: Date, default: null },
+    suspendedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
+    actionHistory: [{
+      action: { type: String, enum: ['SUSPENDED', 'REINSTATED', 'BLOCKED'] },
+      type: { type: String },
+      reason: { type: String },
+      noticeMessage: { type: String },
+      suspendedUntil: { type: Date },
+      actionAt: { type: Date, default: Date.now },
+      actionBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
+    }]
   },
   onlineStatus: {
     type: String,
@@ -71,9 +98,19 @@ const expertSchema = new mongoose.Schema({
   }],
   notificationPreferences: {
     email: { type: Boolean, default: true },
-    push: { type: Boolean, default: true }
+    push: { type: Boolean, default: true },
+    chatPush: { type: Boolean, default: true },
+    audioCallPush: { type: Boolean, default: true },
+    videoCallPush: { type: Boolean, default: true },
+    sounds: { type: Boolean, default: true },
+    vibration: { type: Boolean, default: true }
   },
   walletBalance: { type: Number, default: 0 },
+  hasRechargedWallet: { type: Boolean, default: false },
+  hasUsedFreeChat: { type: Boolean, default: false },
+  lastFreeChatAt: { type: Date, default: null },
+  freeChatUsedExperts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expert' }],
+  savedExperts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expert' }],
   bankDetails: {
     accountName: { type: String, default: '' },
     accountNumber: { type: String, default: '' },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
@@ -15,80 +15,9 @@ import BookAppointmentModal from '../components/BookAppointmentModal';
 
 function Home() {
   const { user } = useAuth();
-  const { platformName, callSafetyTips } = usePlatformSettings();
+  const { platformName, platformLogo, heroSlides, homeStats, callSafetyTips, refreshSettings } = usePlatformSettings();
   const brandName = platformName || 'ExpertHub';
-  const [selectedDomain, setSelectedDomain] = useState('astrology');
 
-  const domainData = {
-    astrology: {
-      tag: '',
-      title: 'Online Astrology & Horoscope Consultations',
-      description: `Astrology has been India's guiding compass for millennia, illuminating path-defining choices in marriage, family, health, and finance. That is why ${brandName} brings together renowned Vedic astrologers, intuitive Tarot card readers, certified Numerologists, and expert Vastu shastra consultants on one trusted platform.`,
-      items: [
-        { icon: '🪐', title: 'Vedic Astrologers', subtitle: 'Kundali & Dasha' },
-        { icon: '🎴', title: 'Tarot Readers', subtitle: 'Intuitive Clarity' },
-        { icon: '🔢', title: 'Numerologists', subtitle: 'Name & Fate Numbers' },
-        { icon: '🏛️', title: 'Vastu Shastra', subtitle: 'Space & Harmony' }
-      ]
-    },
-    medicine: {
-      tag: 'TRUSTED MEDICAL & WELLNESS CARE',
-      title: 'Certified Doctors & Preventive Healthcare',
-      description: `Reliable medical advice should never be delayed by distance or crowded clinics. ${brandName} offers 24/7 access to licensed general physicians, certified clinical nutritionists, dietitians, and experienced ayurvedic doctors for second opinions and preventive care.`,
-      items: [
-        { icon: '🩺', title: 'General Physicians', subtitle: 'Instant 2nd Opinion' },
-        { icon: '🥗', title: 'Diet & Nutrition', subtitle: 'Tailored Meal Plans' },
-        { icon: '🌿', title: 'Ayurvedic Doctors', subtitle: 'Holistic Healing' },
-        { icon: '🔬', title: 'Specialist MDs', subtitle: 'Report Evaluations' }
-      ]
-    },
-    legal: {
-      tag: 'STRATEGIC LEGAL CLARITY & COUNSEL',
-      title: 'Legal Advisory & Corporate Counsel',
-      description: 'Navigating complex regulations requires experienced legal acumen. Connect with practicing high court advocates, seasoned corporate lawyers, and intellectual property attorneys for contracts, property title checks, and corporate advice.',
-      items: [
-        { icon: '⚖️', title: 'High Court Advocates', subtitle: 'Civil & Property Law' },
-        { icon: '📜', title: 'Corporate Lawyers', subtitle: 'Contracts & Founder Equity' },
-        { icon: '💡', title: 'IP & Trademark', subtitle: 'Brand Protection' },
-        { icon: '🤝', title: 'Family Legal Counsel', subtitle: 'Confidential Guidance' }
-      ]
-    },
-    career: {
-      tag: 'EXECUTIVE CAREER ACCELERATION',
-      title: 'Career Mentorship & Leadership Coaching',
-      description: 'Accelerate your professional trajectory with 1-on-1 mentorship from senior directors, tech leads, and executive coaches hailing from unicorn startups and global tech giants for architecture reviews and mock interviews.',
-      items: [
-        { icon: '🎯', title: 'Executive Coaching', subtitle: 'Promotion & Leadership' },
-        { icon: '💼', title: 'Resume & Interviews', subtitle: 'Mock Rounds & Pitching' },
-        { icon: '📈', title: 'Salary Negotiation', subtitle: 'Strategic Benchmarking' },
-        { icon: '🚀', title: 'Startup Mentors', subtitle: 'Fundraising Guidance' }
-      ]
-    },
-    'mental-health': {
-      tag: 'SAFE & CONFIDENTIAL SPACE',
-      title: 'Mental Wellness & Empathetic Therapy',
-      description: 'Navigate corporate burnout, anxiety, relationship distress, and personal grief. Connect with empathetic mental health psychologists and mindfulness coaches in a strictly confidential digital sanctuary.',
-      items: [
-        { icon: '🧠', title: 'CBT Therapists', subtitle: 'Anxiety & Stress' },
-        { icon: '🧘', title: 'Mindfulness Coaches', subtitle: 'Work-Life Balance' },
-        { icon: '❤️', title: 'Relationship Guides', subtitle: 'Family & Couples' },
-        { icon: '🌿', title: 'Emotional Healing', subtitle: 'Personal Coping' }
-      ]
-    },
-    tech: {
-      tag: 'INDUSTRY TECH ARCHITECTURE',
-      title: 'Software Architecture & AI Mentorship',
-      description: 'Gain competitive advantages with rigorous software architecture teardowns, cloud scalability roadmaps, and AI engineering guidance from seasoned tech managers and principal engineers.',
-      items: [
-        { icon: '💻', title: 'System Architecture', subtitle: 'High-Scale Systems' },
-        { icon: '🤖', title: 'AI & Data Science', subtitle: 'LLMs & ML Pipelines' },
-        { icon: '☁️', title: 'Cloud & DevOps', subtitle: 'AWS, GCP & Kubernetes' },
-        { icon: '🔐', title: 'Cybersecurity', subtitle: 'Vulnerability Vetting' }
-      ]
-    }
-  };
-
-  const currentDomainData = domainData[selectedDomain] || domainData.astrology;
   // Top Online / Recommended Experts (always all online experts across all categories - unaffected by categories below)
   const [topOnlineExperts, setTopOnlineExperts] = useState([]);
   const [loadingTopExperts, setLoadingTopExperts] = useState(true);
@@ -127,6 +56,30 @@ function Home() {
     setAppointmentExpert(expert);
     setAppointmentInitialType(type);
     setShowAppointmentModal(true);
+  };
+
+  // Touch Swipe Handlers for Mobile Hero Image Carousel
+  const [heroTouchStart, setHeroTouchStart] = useState(null);
+  const [heroTouchEnd, setHeroTouchEnd] = useState(null);
+
+  const handleHeroTouchStart = (e) => {
+    setHeroTouchEnd(null);
+    setHeroTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleHeroTouchMove = (e) => {
+    setHeroTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleHeroTouchEnd = () => {
+    if (!heroTouchStart || !heroTouchEnd) return;
+    const distance = heroTouchStart - heroTouchEnd;
+    const count = activeHeroSlides.length || 1;
+    if (distance > 45) {
+      setCurrentHeroImgIndex((prev) => (prev + 1) % count);
+    } else if (distance < -45) {
+      setCurrentHeroImgIndex((prev) => (prev - 1 + count) % count);
+    }
   };
   const categoryScrollRef = useRef(null);
 
@@ -269,8 +222,8 @@ function Home() {
       navigate('/login?redirect=/');
       return;
     }
-    if (user.role !== 'USER') {
-      alert('Only client/user accounts can access free consultations.');
+    if (user.role !== 'USER' && user.role !== 'EXPERT') {
+      alert('Only client and expert accounts can access free consultations.');
       return;
     }
 
@@ -413,20 +366,69 @@ function Home() {
       }
     };
     fetchPlatformStats();
-  }, []);
+    if (typeof refreshSettings === 'function') {
+      refreshSettings();
+    }
+  }, [refreshSettings]);
 
-  const heroImages = [
-    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=400&q=80",
-    "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80",
+  const fallbackHeroSlides = [
+    {
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
+      title: "Verified Experts",
+      link: "/category/all"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80",
+      title: "Top Consultants",
+      link: "/category/all"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80",
+      title: "Instant Guidance",
+      link: "/category/all"
+    },
   ];
 
+  const activeHeroSlides = useMemo(() => {
+    if (Array.isArray(heroSlides) && heroSlides.length > 0) {
+      const active = heroSlides.filter(s => s && s.isActive !== false && typeof s.image === 'string' && s.image.trim());
+      if (active.length > 0) {
+        return active.sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+    }
+    return fallbackHeroSlides;
+  }, [heroSlides]);
+
   useEffect(() => {
+    if (activeHeroSlides.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentHeroImgIndex((prev) => (prev + 1) % heroImages.length);
-    }, 3000);
+      setCurrentHeroImgIndex((prev) => (prev + 1) % activeHeroSlides.length);
+    }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeHeroSlides.length]);
+
+  const resolveHeroImageUrl = (rawUrl) => {
+    if (!rawUrl || typeof rawUrl !== 'string') return '';
+    const trimmed = rawUrl.trim();
+    // Auto-convert Unsplash webpage URL to direct CDN downloadable image
+    const unsplashMatch = trimmed.match(/unsplash\.com\/photos\/(?:[^\/]+-)?([a-zA-Z0-9_-]+)/);
+    if (unsplashMatch && unsplashMatch[1]) {
+      return `https://unsplash.com/photos/${unsplashMatch[1]}/download?w=1200&q=80`;
+    }
+    return trimmed;
+  };
+
+  const handleHeroSlideClick = (slide) => {
+    if (!slide?.link || !slide.link.trim()) return;
+    const url = slide.link.trim();
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (url.includes('.') || url.startsWith('www.')) {
+      window.open(`https://${url}`, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(url.startsWith('/') ? url : `/${url}`);
+    }
+  };
 
   // 1. Fetch Top Experts (Runs on mount, ALWAYS independent of category selection)
   useEffect(() => {
@@ -511,7 +513,8 @@ function Home() {
 
   const isFreeChatEnabled = freeChatStatus ? freeChatStatus.enableFreeChat !== false : true;
   const isExpertFreeEligible = (expertId) => {
-    if (!user || user.role !== 'USER' || !expertId) return false;
+    if (!user || (user.role !== 'USER' && user.role !== 'EXPERT') || !expertId) return false;
+    if (user._id && (user._id === expertId || user._id.toString() === expertId.toString())) return false;
     if (!isFreeChatEnabled) return false;
     const usedList = freeChatStatus?.usedExpertIds || [];
     const hasUsedToday = Boolean(freeChatStatus?.hasUsedToday);
@@ -679,7 +682,7 @@ function Home() {
           userRole = u?.role;
         } catch (e) {}
       }
-      if (userRole && userRole !== 'USER') return;
+      if (userRole && userRole !== 'USER' && userRole !== 'EXPERT') return;
 
       try {
         const res = await axios.get(getApiUrl('/user/saved-experts'), {
@@ -708,7 +711,7 @@ function Home() {
         userRole = u?.role;
       } catch (e) {}
     }
-    if (userRole && userRole !== 'USER') return;
+    if (userRole && userRole !== 'USER' && userRole !== 'EXPERT') return;
 
     const isCurrentlySaved = savedExpertIds.has(expertId);
     setSavedExpertIds(prev => {
@@ -756,11 +759,11 @@ function Home() {
       <main className="flex-1 w-full pt-[72px]">
 
         {/* HERO SECTION - Carousel Concept */}
-        <section className="relative overflow-hidden bg-background text-on-background pt-2 sm:pt-4 pb-0 sm:pb-1 px-3 sm:px-5 lg:px-6">
+        <section className="relative overflow-hidden bg-background text-on-background pt-1.5 sm:pt-3 md:pt-4 pb-0 sm:pb-1 px-2.5 sm:px-4 md:px-5 lg:px-6">
           <div className="relative max-w-screen-2xl mx-auto z-10">
-            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 pt-1 sm:pt-2 pb-2 sm:pb-3 px-1 sm:px-2">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 pt-0.5 md:pt-2 pb-2 sm:pb-3 px-0 md:px-2">
               {/* Left Content (Text - placed below images on mobile with order-2) */}
-              <div className="flex-1 space-y-3 sm:space-y-4 text-center md:text-left order-2 md:order-1 w-full">
+              <div className="flex-1 space-y-3 sm:space-y-4 text-center md:text-left order-2 md:order-1 w-full px-2 sm:px-4 md:px-0">
                 {/* Verified Network Badge - Hidden on mobile view as requested */}
                 <div className="hidden md:flex items-center gap-2.5 justify-start mb-1">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
@@ -787,23 +790,24 @@ function Home() {
                   </div>
                 </div>
 
-                <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto max-w-sm sm:max-w-none mx-auto sm:mx-0">
+                {/* Action CTA Buttons - Positioned on Top-Left in the Hero Space */}
+                <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-3 w-full max-w-[340px] xs:max-w-[380px] sm:max-w-none mx-auto md:mx-0">
                   <button 
                     onClick={handleStartFreeChatClick}
-                    className="w-full sm:w-auto px-6 py-2.5 sm:px-7 sm:py-3 bg-primary text-background rounded-full font-heading font-bold text-sm sm:text-base hover:bg-primary-light transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95"
+                    className="w-full sm:w-auto py-3 sm:py-3.5 px-6 sm:px-7 bg-primary text-slate-950 rounded-full font-heading font-black text-sm xs:text-base sm:text-lg hover:bg-primary-light transition-all flex items-center justify-center gap-2.5 group cursor-pointer shadow-lg hover:shadow-primary/30 active:scale-98 whitespace-nowrap"
                   >
-                    <span>Free Audio call for tension free</span>
-                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <span className="font-black tracking-wide whitespace-nowrap">{freeChatStatus?.hasRecharged || user?.hasRechargedWallet ? 'Consult Top Experts' : 'Free Call for Tension Free'}</span>
+                    <span className="material-symbols-outlined text-[20px] sm:text-[22px] font-bold shrink-0 group-hover:translate-x-1.5 transition-transform">arrow_forward</span>
                   </button>
 
-                  {/* Become an Expert button - Hidden if already logged in as an Expert */}
+                  {/* Become an Expert button */}
                   {user?.role !== 'EXPERT' && (
                     <button 
                       onClick={() => navigate('/expert/register')}
-                      className="w-full sm:w-auto px-5 py-2.5 sm:px-6 sm:py-3 bg-surface-card text-on-surface border-2 border-primary/40 hover:border-primary hover:bg-primary/10 rounded-full font-heading font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
+                      className="w-full sm:w-auto py-3 sm:py-3.5 px-6 sm:px-7 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-primary hover:bg-primary/10 rounded-full font-heading font-bold text-sm xs:text-base sm:text-lg transition-all flex items-center justify-center gap-2.5 group cursor-pointer shadow-xs hover:shadow-md active:scale-98 whitespace-nowrap"
                     >
-                      <span className="material-symbols-outlined text-primary text-[20px]">workspace_premium</span>
-                      <span>Become an Expert</span>
+                      <span className="material-symbols-outlined text-primary text-[20px] sm:text-[22px] font-bold shrink-0">workspace_premium</span>
+                      <span className="font-bold tracking-wide whitespace-nowrap">Become an Expert</span>
                     </button>
                   )}
                 </div>
@@ -843,662 +847,351 @@ function Home() {
                 </div>
               </div>
 
-              {/* Right Image area - placed at TOP on mobile with order-1 */}
-              <div className="flex-1 relative w-full flex flex-col items-center justify-center mt-1 md:mt-0 order-1 md:order-2">
-                <div className="relative w-full max-w-[340px] sm:max-w-[460px] lg:max-w-[540px] h-[210px] sm:h-[280px] md:h-[320px] flex items-center justify-center">
-                  {heroImages.map((img, idx) => {
-                    let positionClass = '';
+              {/* Right Image area - Single Image Scrolling Carousel for Both Mobile & Desktop */}
+              <div className="flex-1 relative w-full flex flex-col items-center justify-center mt-0 order-1 md:order-2">
+                
+                <div 
+                  className="relative w-full max-w-full md:max-w-[580px] lg:max-w-[640px] xl:max-w-[700px] select-none mx-auto"
+                  onTouchStart={handleHeroTouchStart}
+                  onTouchMove={handleHeroTouchMove}
+                  onTouchEnd={handleHeroTouchEnd}
+                >
+                  {/* Single Image Carousel Container - Soft rounded corners on mobile with slight margin, grand card on desktop */}
+                  <div className="relative w-full h-[235px] xs:h-[265px] sm:h-[300px] md:h-[370px] lg:h-[420px] xl:h-[450px] rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden border-2 sm:md:border-3.5 border-primary shadow-md md:shadow-[0_16px_36px_rgba(247,200,60,0.35)] bg-surface-card">
+                    {/* Horizontal sliding track */}
+                    <div 
+                      className="flex h-full transition-transform duration-600 ease-out"
+                      style={{ transform: `translateX(-${currentHeroImgIndex * 100}%)` }}
+                    >
+                      {activeHeroSlides.map((slide, idx) => {
+                        const hasLink = Boolean(slide?.link && slide.link.trim());
+                        return (
+                          <div 
+                            key={idx} 
+                            onClick={() => handleHeroSlideClick(slide)}
+                            className={`w-full h-full shrink-0 relative ${hasLink ? 'cursor-pointer group' : ''}`}
+                            title={hasLink ? `Click to open: ${slide.link}` : (slide?.title || '')}
+                          >
+                            <img 
+                              src={resolveHeroImageUrl(slide.image)} 
+                              alt={slide.title || ''} 
+                              className={`w-full h-full object-cover object-center ${hasLink ? 'group-hover:scale-[1.02] transition-transform duration-500' : ''}`}
+                              draggable={false}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1200&q=80";
+                              }}
+                            />
 
-                    if (idx === currentHeroImgIndex) {
-                      positionClass = 'w-36 h-48 sm:w-48 sm:h-64 md:w-56 md:h-72 z-20 translate-x-0 border-3 sm:border-4 border-primary shadow-[0_12px_32px_rgba(247,200,60,0.35)] opacity-100 scale-100';
-                    } else if (idx === (currentHeroImgIndex + 1) % heroImages.length) {
-                      positionClass = 'w-28 h-38 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 translate-x-18 sm:translate-x-28 md:translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
-                    } else {
-                      positionClass = 'w-28 h-38 sm:w-40 sm:h-52 md:w-44 md:h-60 z-10 -translate-x-18 sm:-translate-x-28 md:-translate-x-32 border-2 border-primary/40 shadow-lg opacity-85 scale-95';
-                    }
+                            {/* Caption / Title Overlay (If Title configured by Admin) */}
+                            {slide?.title && (
+                              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 sm:p-4 text-white z-10 pointer-events-none">
+                                <p className="font-heading font-black text-sm sm:text-base md:text-lg line-clamp-1">{slide.title}</p>
+                                {slide?.subtitle && <p className="text-xs text-slate-200 line-clamp-1 mt-0.5">{slide.subtitle}</p>}
+                              </div>
+                            )}
 
-                    return (
-                      <div key={idx} className={`absolute rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-700 ease-in-out ${positionClass}`}>
-                        <img src={img} alt={`Expert ${idx}`} className="w-full h-full object-cover" />
-                      </div>
-                    );
-                  })}
-                </div>
+                            {/* Clickable Badge Indicator when Link is set by Admin */}
+                            {hasLink && (
+                              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md z-10 pointer-events-none group-hover:bg-primary group-hover:text-slate-950 transition-colors">
+                                <span>Visit</span>
+                                <ChevronRight size={12} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
 
-                {/* Mobile dots indicator under 3 hero images */}
-                <div className="flex items-center justify-center gap-1.5 mt-2 md:hidden">
-                  {heroImages.map((_, i) => (
+                    {/* Previous Button */}
                     <button
-                      key={i}
                       type="button"
-                      onClick={() => setCurrentHeroImgIndex(i)}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${i === currentHeroImgIndex ? 'w-5 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'}`}
-                      aria-label={`Slide ${i + 1}`}
-                    />
-                  ))}
+                      onClick={() => setCurrentHeroImgIndex((prev) => (prev - 1 + activeHeroSlides.length) % activeHeroSlides.length)}
+                      className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-black/45 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 hover:scale-105 cursor-pointer shadow-lg z-20"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft size={22} />
+                    </button>
+
+                    {/* Next Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentHeroImgIndex((prev) => (prev + 1) % activeHeroSlides.length)}
+                      className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-black/45 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 hover:scale-105 cursor-pointer shadow-lg z-20"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight size={22} />
+                    </button>
+
+                    {/* Dots indicator */}
+                    {activeHeroSlides.length > 1 && (
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                        {activeHeroSlides.map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentHeroImgIndex(i);
+                            }}
+                            className={`h-1.5 rounded-full transition-all cursor-pointer ${i === currentHeroImgIndex ? 'w-5 bg-primary shadow-xs' : 'w-1.5 bg-white/70 hover:bg-white'}`}
+                            aria-label={`Slide ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action CTA Buttons (Mobile View only - On Desktop they are in the Top-Left Hero Space) */}
+                  <div className="pt-3 sm:pt-4 flex md:hidden flex-col items-center gap-2.5 sm:gap-3 w-full max-w-[340px] xs:max-w-[380px] sm:max-w-[420px] mx-auto">
+                    <button 
+                      onClick={handleStartFreeChatClick}
+                      className="w-full py-3 sm:py-3.5 px-6 bg-primary text-slate-950 rounded-full font-heading font-black text-sm xs:text-base sm:text-lg hover:bg-primary-light transition-all flex items-center justify-center gap-2.5 group cursor-pointer shadow-lg hover:shadow-primary/30 active:scale-98 whitespace-nowrap"
+                    >
+                      <span className="font-black tracking-wide whitespace-nowrap">{freeChatStatus?.hasRecharged || user?.hasRechargedWallet ? 'Consult Top Experts' : 'Free Call for Tension Free'}</span>
+                      <span className="material-symbols-outlined text-[20px] sm:text-[22px] font-bold shrink-0 group-hover:translate-x-1.5 transition-transform">arrow_forward</span>
+                    </button>
+
+                    {/* Become an Expert button - Matches width & height for clean symmetry */}
+                    {user?.role !== 'EXPERT' && (
+                      <button 
+                        onClick={() => navigate('/expert/register')}
+                        className="w-full py-3 sm:py-3.5 px-6 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-primary hover:bg-primary/10 rounded-full font-heading font-bold text-sm xs:text-base sm:text-lg transition-all flex items-center justify-center gap-2.5 group cursor-pointer shadow-xs hover:shadow-md active:scale-98 whitespace-nowrap"
+                      >
+                        <span className="material-symbols-outlined text-primary text-[20px] sm:text-[22px] font-bold shrink-0">workspace_premium</span>
+                        <span className="font-bold tracking-wide whitespace-nowrap">Become an Expert</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Explore Categories - Mobile View (Clean, No Card Background, Big Images with Text Below, 2 per row) */}
+                  <div className="w-full mt-4 px-1 block md:hidden">
+                    {/* 2 items per row grid - Pure Images & Text without card background */}
+                    <div className="grid grid-cols-2 gap-y-5 gap-x-3.5">
+                      {/* Database Categories */}
+                      {dbCategories.map((cat) => (
+                        <button 
+                          key={cat._id} 
+                          type="button"
+                          onClick={() => navigate(`/category/${cat._id}`)}
+                          className="flex flex-col items-center justify-center gap-2 p-1 group cursor-pointer active:scale-95 transition-all text-center"
+                        >
+                          <div className="w-[135px] h-[135px] xs:w-[150px] xs:h-[150px] sm:w-[160px] sm:h-[160px] rounded-full overflow-hidden shadow-xl border-3 sm:border-4 border-white ring-2 ring-white/30 group-hover:border-primary group-hover:scale-105 transition-all duration-300 bg-slate-800">
+                            <img 
+                              src={getCatImage(cat)} 
+                              alt={cat.name} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                          <span className="text-base xs:text-lg sm:text-xl font-heading font-black text-center leading-tight line-clamp-2 max-w-[170px] text-slate-900 dark:text-white group-hover:text-primary transition-colors mt-1.5 tracking-tight">
+                            {cat.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+
               </div>
             </div>
           </div>
         </section>
 
-        {/* POPULAR EXPERTS SECTION (RECOMMENDED EXPERTS) */}
-        {user?.role !== 'EXPERT' && (
-          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
+        {/* Explore Categories - Desktop View (Directly after Hero, before Recommended Experts) */}
+        <section className="hidden md:block max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6 relative z-20">
+          <div className="bg-surface-card rounded-2xl sm:rounded-3xl shadow-xs border border-border p-4 sm:p-5 md:p-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-5">
               <div>
-                <h2 className="font-heading font-bold text-xl sm:text-2xl md:text-3xl text-on-background">Recommended Experts</h2>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Top-rated professionals ready to help you.</p>
+                <h2 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-on-background">Explore Categories</h2>
+                <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Find experts specialized in your domain</p>
               </div>
-              <button 
-                type="button"
-                onClick={() => navigate('/experts')} 
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary/15 text-primary hover:bg-primary hover:text-white rounded-full font-bold text-xs sm:text-sm transition-all shadow-xs cursor-pointer"
-              >
-                <span>View All ({experts.length})</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
 
-            {loadingTopExperts ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-                  <div key={n} className="bg-surface-muted rounded-2xl p-5 border border-border shadow-xs animate-pulse">
-                    <div className="w-20 h-20 bg-surface-card rounded-full mx-auto mb-3"></div>
-                    <div className="h-4 bg-surface-card rounded w-2/3 mx-auto mb-2"></div>
-                    <div className="h-3 bg-surface-card rounded w-1/2 mx-auto mb-4"></div>
-                    <div className="h-9 bg-surface-card rounded-xl w-full"></div>
-                  </div>
-                ))}
-              </div>
-            ) : experts.length === 0 ? (
-              <div className="bg-surface-muted border border-border shadow-xs rounded-2xl p-8 sm:p-10 text-center text-on-surface-variant flex flex-col items-center">
-                <span className="material-symbols-outlined text-4xl mb-2 opacity-50">search_off</span>
-                <p className="text-sm">No experts available at the moment. Please check back later.</p>
-              </div>
-            ) : (
-              <>
-                {/* 4 Cards per row responsive grid (showing 3 to 5 rows = up to 16 experts) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                  {experts.slice(0, 16).map((expert) => (
-                    <div 
-                      key={expert._id} 
-                      onClick={() => navigate(`/expert/${expert._id}`)} 
-                      className="w-full bg-surface-muted rounded-2xl border border-border shadow-xs hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group flex flex-col overflow-hidden relative"
-                    >
-
-                      {/* Heart Save Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleToggleSave(expert._id, e)}
-                        aria-label="Save expert"
-                        title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
-                        className={`absolute top-3.5 left-3.5 w-7 h-7 rounded-full flex items-center justify-center transition-all z-10 border ${
-                          savedExpertIds.has(expert._id)
-                            ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-xs'
-                            : 'bg-background/90 backdrop-blur border-border text-on-surface/50 hover:text-rose-500 hover:bg-rose-50'
-                        }`}
-                      >
-                        <Heart
-                          size={14}
-                          className={`transition-colors ${
-                            savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
-                          }`}
-                        />
-                      </button>
-
-                      {/* Status Badge */}
-                      {(() => {
-                        const isOnline = expert.onlineStatus === 'online';
-                        return (
-                          <div className="absolute top-3.5 right-3.5 bg-background/90 backdrop-blur px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 border border-border">
-                            <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-success animate-pulse' : 'bg-slate-400'}`}></div>
-                            <span className={`text-[9px] font-bold uppercase tracking-wider ${isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
-                              {isOnline ? 'Online' : 'Offline'}
-                            </span>
-                          </div>
-                        );
-                      })()}
-
-                      <div className="p-5 flex flex-col items-center text-center relative flex-1">
-                        <div className="relative mt-1">
-                          <img
-                            className="w-20 h-20 rounded-full object-cover border-2 border-primary shadow-sm relative z-10"
-                            alt={expert.name}
-                            src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`}
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=FFD700&color=000&font-size=0.33&bold=true`;
-                            }}
-                          />
-                          {expert.isVerified && (
-                            <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 z-20 shadow-xs text-primary">
-                              <ShieldCheck size={16} className="fill-primary text-background" />
-                            </div>
-                          )}
-                        </div>
-
-                        <h3 className="font-heading font-bold text-base text-on-background mt-3 group-hover:text-primary transition-colors truncate max-w-full text-center">
-                          {expert.name}
-                        </h3>
-
-                        <p className="font-body text-xs font-semibold text-primary mt-0.5 truncate max-w-full text-center h-4.5 flex items-center justify-center">
-                          {expert.category?.name || expert.specialty || 'Professional Consultant'}
-                        </p>
-
-                        <div className="h-4.5 flex items-center justify-center mt-1 mb-2">
-                          {expert.experience ? (
-                            <p className="text-[11px] font-medium text-on-surface-variant">
-                              {expert.experience} Years Exp.
-                            </p>
-                          ) : (
-                            <p className="text-[11px] font-medium text-on-surface-variant/70">
-                              Verified Expert
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-center gap-1.5 text-xs mb-2 w-full">
-                          <div className="flex items-center gap-1 bg-warning/15 text-warning px-2.5 py-0.5 rounded-full font-bold">
-                            <Star size={11} className="fill-warning text-warning" />
-                            <span className="text-xs">{expert.rating || '4.9'}</span>
-                          </div>
-                          <span className="text-on-surface-variant text-[11px] font-medium">
-                            ({expert.reviewsCount || 0} reviews)
-                          </span>
-                        </div>
-
-                        {/* Distance Badge & Consultation Languages */}
-                        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-3 w-full px-1">
-                          {typeof expert.distanceKm === 'number' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200/60" title={`Calculated distance: ${expert.distanceKm} KM`}>
-                              <MapPin size={11} className="text-emerald-600 shrink-0" />
-                              <span>{Math.round(expert.distanceKm)} km away</span>
-                            </span>
-                          )}
-                          <span 
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-0.5 rounded-full border border-slate-200/60 transition-colors truncate max-w-full"
-                            title={Array.isArray(expert.languages) && expert.languages.length > 0 ? expert.languages.join(', ') : 'English, Hindi'}
-                          >
-                            <Globe size={11} className="text-amber-500 shrink-0" />
-                            <span className="truncate">
-                              {Array.isArray(expert.languages) && expert.languages.length > 0 
-                                ? (expert.languages.length <= 2 
-                                    ? expert.languages.join(', ') 
-                                    : `${expert.languages.slice(0, 2).join(', ')} +${expert.languages.length - 2}`)
-                                : 'English, Hindi'}
-                            </span>
-                          </span>
-                        </div>
-
-                        {/* Dynamic Consultation Rates */}
-                        <div className="grid grid-cols-3 gap-1 w-full mb-4 py-2 px-1 bg-surface-card rounded-xl border border-border/70 text-center">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (expert.onlineStatus === 'online') {
-                                openCallModal(expert, 'chat');
-                              } else {
-                                openAppointmentModal(expert, 'chat');
-                              }
-                            }}
-                            className="flex flex-col items-center justify-center py-0.5 cursor-pointer hover:bg-primary/10 rounded-lg transition-colors"
-                            title="Start Chat Consultation"
-                          >
-                            <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                              <MessageCircle size={10} className="text-primary shrink-0" /> Chat
-                            </span>
-                            <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
-                              ₹{Math.max(5, expert.rates?.chat > 0 ? expert.rates.chat : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 5))}
-                              <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (expert.onlineStatus === 'online') {
-                                openCallModal(expert, 'audio');
-                              } else {
-                                openAppointmentModal(expert, 'call');
-                              }
-                            }}
-                            className="flex flex-col items-center justify-center py-0.5 border-x border-border/60 cursor-pointer hover:bg-success/10 rounded-lg transition-colors"
-                            title="Start Voice Call Consultation"
-                          >
-                            <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                              <Phone size={10} className="text-success shrink-0" /> Voice Call
-                            </span>
-                            <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
-                              ₹{Math.max(10, expert.rates?.audio > 0 ? expert.rates.audio : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 10))}
-                              <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (expert.onlineStatus === 'online') {
-                                openCallModal(expert, 'video');
-                              } else {
-                                openAppointmentModal(expert, 'video');
-                              }
-                            }}
-                            className="flex flex-col items-center justify-center py-0.5 cursor-pointer hover:bg-warning/10 rounded-lg transition-colors"
-                            title="Start Video Call Consultation"
-                          >
-                            <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                              <Video size={10} className="text-warning shrink-0" /> Video
-                            </span>
-                            <span className="text-xs font-bold text-on-background mt-1 flex items-baseline justify-center">
-                              ₹{Math.max(20, expert.rates?.video > 0 ? expert.rates.video : (expert.pricePerMinute > 0 ? expert.pricePerMinute : 20))}
-                              <span className="text-[9px] font-normal text-on-surface-variant ml-0.5">/m</span>
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Action Buttons */}
-                        {expert.onlineStatus === 'online' ? (
-                          <div className="mt-auto w-full grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openCallModal(expert, 'chat');
-                              }}
-                              className="flex items-center justify-center gap-1.5 py-2.5 bg-background border border-border text-on-background hover:border-primary hover:text-primary rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
-                            >
-                              <MessageCircle size={14} className="text-primary" /> Chat
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openCallModal(expert, 'audio');
-                              }}
-                              className="flex items-center justify-center gap-1.5 py-2.5 bg-success/15 border border-success/30 text-success hover:bg-success hover:text-background rounded-xl font-bold text-xs transition-colors cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
-                            >
-                              <Phone size={14} /> Voice Call
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="mt-auto w-full">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openAppointmentModal(expert, 'call');
-                              }}
-                              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-sm"
-                              title="एक्सपर्ट अभी ऑफलाइन है। अपनी सुविधानुसार अपॉइंटमेंट बुक करें।"
-                            >
-                              <Calendar size={13} className="shrink-0" />
-                              <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* View All Experts Bottom CTA */}
-                <div className="mt-8 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Category Horizontal Scroll Buttons */}
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => navigate('/experts')}
-                    className="px-8 py-3.5 bg-gradient-to-r from-amber-500 via-[#F5B52E] to-amber-500 hover:from-amber-600 hover:to-amber-600 text-slate-950 font-bold rounded-2xl text-xs sm:text-sm transition-all shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                    onClick={() => scrollCategory('left')}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border bg-surface-muted hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer"
+                    aria-label="Scroll categories left"
+                    title="Previous categories"
                   >
-                    <span>View All Experts ({experts.length})</span>
-                    <ChevronRight size={18} />
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollCategory('right')}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border bg-surface-muted hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer"
+                    aria-label="Scroll categories right"
+                    title="Next categories"
+                  >
+                    <ChevronRight size={16} />
                   </button>
                 </div>
-              </>
-            )}
-          </section>
-        )}
 
-        {/* QUICK ACTION BLOCKS / EXPERT WORKSPACE */}
-        {user?.role === 'EXPERT' ? (
-          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 py-5 sm:py-6 relative z-20">
-            <h2 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-on-background mb-3">
-              Expert Workspace
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div 
-                onClick={() => navigate('/expert/consultations')} 
-                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
-              >
-                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
-                  inbox
-                </span>
-                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">New Requests</h3>
-                <p className="text-xs text-on-surface-variant mt-0.5">View and respond to consultation requests.</p>
-              </div>
-
-              <div 
-                onClick={() => navigate('/expert/schedule')} 
-                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
-              >
-                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
-                  calendar_month
-                </span>
-                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">My Schedule</h3>
-                <p className="text-xs text-on-surface-variant mt-0.5">Manage upcoming sessions.</p>
-              </div>
-
-              <div 
-                onClick={() => navigate('/expert/messages')} 
-                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
-              >
-                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
-                  forum
-                </span>
-                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">Messages & Calls</h3>
-                <p className="text-xs text-on-surface-variant mt-0.5">Open active chats and calls.</p>
-              </div>
-
-              <div 
-                onClick={() => navigate('/expert/earnings')} 
-                className="bg-surface-card rounded-2xl p-4 sm:p-5 border border-border hover:border-primary/50 transition-all cursor-pointer group shadow-xs hover:shadow-sm"
-              >
-                <span className="material-symbols-outlined text-amber-500 text-[24px] mb-2 block group-hover:scale-110 transition-transform">
-                  account_balance_wallet
-                </span>
-                <h3 className="font-heading font-bold text-on-background text-sm sm:text-base">My Earnings</h3>
-                <p className="text-xs text-on-surface-variant mt-0.5">View earnings and payout status.</p>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-2 sm:pt-3 pb-1.5 sm:pb-2 relative z-20">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-
-              <div onClick={() => navigate('/experts?mode=chat')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
-                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
-                </div>
-                <div>
-                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Chat with Expert</h3>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Instant text consultation</p>
-                </div>
-              </div>
-
-              <div onClick={() => navigate('/experts?mode=audio')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
-                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
-                </div>
-                <div>
-                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Call Expert</h3>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">One-on-one voice call</p>
-                </div>
-              </div>
-
-              <div onClick={() => navigate('/blog')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
-                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>article</span>
-                </div>
-                <div>
-                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Daily Articles</h3>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Your personalized reading</p>
-                </div>
-              </div>
-
-              <div onClick={() => navigate('/free-services')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
-                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>calculate</span>
-                </div>
-                <div>
-                  <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Get Free Report</h3>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Detailed issue analysis</p>
-                </div>
-              </div>
-
-            </div>
-          </section>
-        )}
-
-        {/* OUR SERVICES */}
-        {user?.role !== 'EXPERT' && (
-          <section className="bg-background pt-1 sm:pt-2 pb-1.5 sm:pb-2">
-            <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
-              <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-on-background mb-3 sm:mb-4 flex items-center gap-2">
-                Our <span className="text-secondary-dark">Services</span>
-              </h2>
-
-              <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-3 sm:gap-3.5 pb-1.5 snap-x hide-scrollbar">
-
-                <div onClick={() => navigate('/free-services')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
-                  <div>
-                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
-                      <span className="material-symbols-outlined text-[18px]">assignment</span>
-                    </div>
-                    <h3 className="font-bold text-on-background text-sm">Free Audit</h3>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">Detailed project audit in 60 sec</p>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </div>
-                </div>
-
-                <div onClick={() => navigate('/blog')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
-                  <div>
-                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
-                      <span className="material-symbols-outlined text-[18px]">lightbulb</span>
-                    </div>
-                    <h3 className="font-bold text-on-background text-sm">Daily Tips</h3>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">For all 12 industries</p>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </div>
-                </div>
-
-                <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
-                  <div>
-                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
-                      <span className="material-symbols-outlined text-[18px]">analytics</span>
-                    </div>
-                    <h3 className="font-bold text-on-background text-sm">Career Reading</h3>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">3-card, job, career, finance</p>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </div>
-                </div>
-
-                <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
-                  <div>
-                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
-                      <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
-                    </div>
-                    <h3 className="font-bold text-on-background text-sm">Book a Mentor</h3>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">Live session, verified guides</p>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </div>
-                </div>
-
-                <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
-                  <div>
-                    <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
-                      <span className="material-symbols-outlined text-[18px]">corporate_fare</span>
-                    </div>
-                    <h3 className="font-bold text-on-background text-sm">Legal Consult</h3>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">For startup, business, tax</p>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* CATEGORY EXPLORATION / EXPERT QUICK ACTIONS */}
-        {user?.role === 'EXPERT' ? (
-          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6 relative z-20">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              <button
-                type="button"
-                onClick={() => navigate('/expert/dashboard')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
-              >
-                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
-                  grid_view
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-on-background">Dashboard</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/expert/consultations')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
-              >
-                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
-                  event_available
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-on-background">Consultations</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/expert/messages')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
-              >
-                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
-                  forum
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-on-background">Messages</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/expert/earnings')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
-              >
-                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
-                  account_balance_wallet
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-on-background">Earnings</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/expert/schedule')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
-              >
-                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
-                  calendar_clock
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-on-background">Availability</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/expert/profile')}
-                className="bg-surface-card hover:bg-surface-muted border border-border hover:border-primary/50 rounded-2xl py-5 px-4 flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer shadow-xs text-center"
-              >
-                <span className="material-symbols-outlined text-[26px] text-primary group-hover:scale-110 transition-transform">
-                  person
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-on-background">My Profile</span>
-              </button>
-            </div>
-          </section>
-        ) : (
-          <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-1 sm:pt-2 pb-5 sm:pb-6 relative z-20">
-            <div className="bg-surface-card rounded-2xl sm:rounded-3xl shadow-xs border border-border p-4 sm:p-5 md:p-6">
-              <div className="flex items-center justify-between mb-4 sm:mb-5">
-                <div>
-                  <h2 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-on-background">Explore Categories</h2>
-                  <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">Find experts specialized in your domain</p>
-                </div>
-
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Category Horizontal Scroll Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => scrollCategory('left')}
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border bg-surface-muted hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer"
-                      aria-label="Scroll categories left"
-                      title="Previous categories"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollCategory('right')}
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border bg-surface-muted hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer"
-                      aria-label="Scroll categories right"
-                      title="Next categories"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-
-                  <button 
-                    onClick={() => navigate('/categories')}
-                    className="text-primary font-semibold text-xs sm:text-sm hover:text-primary-dark flex items-center gap-0.5 transition-colors cursor-pointer ml-1"
-                  >
-                    View All <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Scrollable Categories List */}
-              <div 
-                ref={categoryScrollRef}
-                className="flex gap-3.5 sm:gap-4.5 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory hide-scrollbar"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {/* 'All' category button */}
                 <button 
+                  onClick={() => navigate('/categories')}
+                  className="text-primary font-semibold text-xs sm:text-sm hover:text-primary-dark flex items-center gap-0.5 transition-colors cursor-pointer ml-1"
+                >
+                  View All <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Categories List */}
+            <div 
+              ref={categoryScrollRef}
+              className="flex gap-3.5 sm:gap-4.5 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory hide-scrollbar"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {/* Database Categories */}
+              {dbCategories.map((cat) => (
+                <button 
+                  key={cat._id} 
                   type="button"
-                  onClick={() => navigate('/category/all')}
+                  onClick={() => navigate(`/category/${cat._id}`)}
                   className="flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm"
                 >
                   <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 border-border/80 group-hover:border-primary/60 group-hover:scale-105 transition-all duration-300">
                     <img 
-                      src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=300&q=80" 
-                      alt="All Categories" 
+                      src={getCatImage(cat)} 
+                      alt={cat.name} 
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-center leading-snug text-on-surface group-hover:text-primary transition-colors">
-                    All
+                  <span className="text-xs sm:text-sm font-bold text-center leading-snug line-clamp-2 max-w-[130px] text-on-surface group-hover:text-primary transition-colors">
+                    {cat.name}
                   </span>
                 </button>
+              ))}
+            </div>
+          </div>
+        </section>
 
-                {/* Database Categories */}
-                {dbCategories.map((cat) => (
-                  <button 
-                    key={cat._id} 
-                    type="button"
-                    onClick={() => navigate(`/category/${cat._id}`)}
-                    className="flex flex-col items-center min-w-[125px] sm:min-w-[145px] md:min-w-[155px] shrink-0 gap-3 p-3.5 sm:p-4.5 rounded-2xl border transition-all duration-200 group snap-start cursor-pointer bg-surface-muted hover:bg-surface border-border/70 hover:border-primary/40 hover:shadow-sm"
-                  >
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full overflow-hidden shadow-sm border-2 border-border/80 group-hover:border-primary/60 group-hover:scale-105 transition-all duration-300">
-                      <img 
-                        src={getCatImage(cat)} 
-                        alt={cat.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className="text-xs sm:text-sm font-bold text-center leading-snug line-clamp-2 max-w-[130px] text-on-surface group-hover:text-primary transition-colors">
-                      {cat.name}
-                    </span>
-                  </button>
-                ))}
+        {/* QUICK ACTION BLOCKS */}
+        <section className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6 pt-2 sm:pt-3 pb-1.5 sm:pb-2 relative z-20">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+
+            <div onClick={() => navigate('/experts?mode=chat')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Chat with Expert</h3>
+                <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Instant text consultation</p>
               </div>
             </div>
-          </section>
-        )}
+
+            <div onClick={() => navigate('/experts?mode=audio')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Call Expert</h3>
+                <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">One-on-one voice call</p>
+              </div>
+            </div>
+
+            <div onClick={() => navigate('/blog')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>article</span>
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Daily Articles</h3>
+                <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Your personalized reading</p>
+              </div>
+            </div>
+
+            <div onClick={() => navigate('/free-services')} className="bg-surface-muted rounded-2xl p-3.5 sm:p-4 border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between h-24 sm:h-28">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-background text-[17px]" style={{ fontVariationSettings: "'FILL' 1" }}>calculate</span>
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-on-background text-xs sm:text-sm md:text-base leading-tight">Get Free Report</h3>
+                <p className="text-[11px] text-on-surface-variant mt-0.5 hidden md:block">Detailed issue analysis</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* OUR SERVICES */}
+        <section className="bg-background pt-1 sm:pt-2 pb-1.5 sm:pb-2">
+          <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 lg:px-6">
+            <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-on-background mb-3 sm:mb-4 flex items-center gap-2">
+              Our <span className="text-secondary-dark">Services</span>
+            </h2>
+
+            <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-3 sm:gap-3.5 pb-1.5 snap-x hide-scrollbar">
+
+              <div onClick={() => navigate('/free-services')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                    <span className="material-symbols-outlined text-[18px]">assignment</span>
+                  </div>
+                  <h3 className="font-bold text-on-background text-sm">Free Audit</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">Detailed project audit in 60 sec</p>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </div>
+              </div>
+
+              <div onClick={() => navigate('/blog')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                    <span className="material-symbols-outlined text-[18px]">lightbulb</span>
+                  </div>
+                  <h3 className="font-bold text-on-background text-sm">Daily Tips</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">For all 12 industries</p>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </div>
+              </div>
+
+              <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                    <span className="material-symbols-outlined text-[18px]">analytics</span>
+                  </div>
+                  <h3 className="font-bold text-on-background text-sm">Career Reading</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">3-card, job, career, finance</p>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </div>
+              </div>
+
+              <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                    <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
+                  </div>
+                  <h3 className="font-bold text-on-background text-sm">Book a Mentor</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">Live session, verified guides</p>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </div>
+              </div>
+
+              <div onClick={() => navigate('/experts')} className="min-w-[190px] sm:min-w-[210px] lg:min-w-0 w-full bg-surface-card rounded-2xl p-4 shadow-xs snap-start cursor-pointer hover:shadow-sm transition-all border border-border/50 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 bg-secondary-light rounded-lg flex items-center justify-center text-secondary mb-2.5 border border-secondary/20">
+                    <span className="material-symbols-outlined text-[18px]">corporate_fare</span>
+                  </div>
+                  <h3 className="font-bold text-on-background text-sm">Legal Consult</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 mb-3">For startup, business, tax</p>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-secondary-light text-secondary flex items-center justify-center ml-auto">
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
 
         {/* TESTIMONIALS SECTION - Real people. Real reviews. */}
         <section className="bg-surface-muted py-8 sm:py-12 md:py-14 border-y border-border">
@@ -1637,81 +1330,6 @@ function Home() {
                 At <strong className="font-semibold text-on-background">{brandName}</strong>, we believe that timely, verified guidance can fundamentally transform lives. From seeking clarity during career crossroads and emotional turbulence to consulting experienced advocates for high-stakes business decisions, everyday life presents challenges that require seasoned perspectives. {brandName} bridges this gap by connecting seekers with India's top 1% verified experts across diverse domains.
               </p>
 
-              {/* Vetted Expertise In */}
-              <div className="space-y-2 pt-1">
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
-                  VETTED EXPERTISE IN:
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDomain('astrology')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      selectedDomain === 'astrology'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
-                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
-                    }`}
-                  >
-                    <span>🪐</span> Astrology
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDomain('medicine')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      selectedDomain === 'medicine'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
-                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
-                    }`}
-                  >
-                    <span>🩺</span> Medicine
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDomain('legal')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      selectedDomain === 'legal'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
-                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
-                    }`}
-                  >
-                    <span>⚖️</span> Law
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDomain('career')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      selectedDomain === 'career'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
-                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
-                    }`}
-                  >
-                    <span>🎯</span> Career
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDomain('mental-health')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      selectedDomain === 'mental-health'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
-                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
-                    }`}
-                  >
-                    <span>🧠</span> Mental Wellness
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDomain('tech')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      selectedDomain === 'tech'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20'
-                        : 'bg-white dark:bg-surface-card border-border text-on-background hover:border-amber-500'
-                    }`}
-                  >
-                    <span>💻</span> Tech Mentorship
-                  </button>
-                </div>
-              </div>
-
               {/* Modes of Consultation Subheader */}
               <div className="flex items-center justify-between pt-2">
                 <h3 className="font-heading font-bold text-xs sm:text-sm uppercase tracking-wider text-on-surface-variant">
@@ -1806,90 +1424,39 @@ function Home() {
               {/* Bottom Trust Strip */}
               <div className="bg-white dark:bg-surface-card rounded-2xl p-3 border border-border shadow-xs flex items-center justify-center gap-2.5 sm:gap-4 text-xs font-semibold text-on-surface-variant text-center flex-wrap">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  500+ Indian Cities & Global
-                </span>
-                <span className="text-border">|</span>
-                <span className="flex items-center gap-1.5">
                   <ShieldCheck size={14} className="text-primary" />
                   Strict Multi-Step Vetted
                 </span>
               </div>
             </div>
 
-            {/* SECTION 2: CATEGORY SPOTLIGHT & CTA CARD */}
+            {/* SECTION 2: PLATFORM STATS */}
             <div className="space-y-4">
-              {/* Featured Domain Card */}
-              <div className="bg-white dark:bg-surface-card rounded-3xl p-6 sm:p-8 border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-4">
-                {/* Category Pill Tag */}
-                {currentDomainData.tag && (
-                  <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-300 border border-orange-200/60 font-heading">
-                    {currentDomainData.tag}
-                  </span>
-                )}
-
-                {/* Heading */}
-                <h3 className="font-heading font-extrabold text-xl sm:text-2xl md:text-3xl text-on-background leading-snug">
-                  {currentDomainData.title}
-                </h3>
-
-                {/* Description */}
-                <p className="font-body text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                  {currentDomainData.description}
-                </p>
-
-                {/* 2x2 Subcategory Grid */}
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
-                  {currentDomainData.items.map((sub, i) => (
-                    <div
-                      key={i}
-                      onClick={() => navigate('/experts')}
-                      className="bg-surface-muted/60 dark:bg-background/50 hover:bg-surface-muted rounded-2xl p-3 border border-border/80 flex items-center gap-2.5 cursor-pointer transition-all group"
-                    >
-                      <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{sub.icon}</span>
-                      <div className="min-w-0">
-                        <p className="font-heading font-bold text-xs text-on-background truncate group-hover:text-primary transition-colors">
-                          {sub.title}
-                        </p>
-                        <p className="text-[10px] text-on-surface-variant truncate">
-                          {sub.subtitle}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Big Gradient Button */}
-                <button
-                  type="button"
-                  onClick={() => navigate('/experts')}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white font-heading font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:shadow-orange-500/25 active:scale-[0.99] transition-all cursor-pointer"
-                >
-                  Consult an Expert Now →
-                </button>
-
-                {/* Trust Note */}
-                <div className="flex items-center justify-center gap-1.5 text-xs text-on-surface-variant/80 font-medium pt-0.5">
-                  <span className="material-symbols-outlined text-[15px] text-emerald-600">lock</span>
-                  <span>100% Confidential & Secure Consultation</span>
-                </div>
-              </div>
-
               {/* 3-Column Stats Card */}
               <div className="bg-white dark:bg-surface-card rounded-2xl p-4 sm:p-5 border border-border shadow-xs grid grid-cols-3 divide-x divide-border text-center">
                 <div>
-                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background">100k+</p>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">Consultations</p>
+                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background">
+                    {homeStats?.stat1Value || '100k+'}
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    {homeStats?.stat1Label || 'Consultations'}
+                  </p>
                 </div>
                 <div>
                   <p className="font-heading font-extrabold text-base sm:text-xl text-on-background flex items-center justify-center gap-1">
-                    4.9 <Star size={13} className="fill-amber-500 text-amber-500 inline" />
+                    {homeStats?.stat2Value || '4.9'} <Star size={13} className="fill-amber-500 text-amber-500 inline" />
                   </p>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">Avg. Rating</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    {homeStats?.stat2Label || 'Avg. Rating'}
+                  </p>
                 </div>
                 <div>
-                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background">Top 1%</p>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">Vetted Minds</p>
+                  <p className="font-heading font-extrabold text-base sm:text-xl text-on-background">
+                    {homeStats?.stat3Value || 'Top 1%'}
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    {homeStats?.stat3Label || 'Vetted Minds'}
+                  </p>
                 </div>
               </div>
             </div>

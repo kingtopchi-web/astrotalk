@@ -230,6 +230,7 @@ exports.getPayouts = async (req, res) => {
     }
     const payouts = await PayoutTransaction.find(filter)
       .populate('expert', 'name email phone mobile specialty bankDetails')
+      .populate('recipientId', 'name email phone mobile role bankDetails')
       .sort({ createdAt: -1 });
 
     res.json({
@@ -261,6 +262,37 @@ exports.processPayoutRequest = async (req, res) => {
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
 
+    const recipientId = payout.recipientId || payout.expert?._id || payout.expert;
+    const recipientRole = payout.recipientModel === 'User' ? 'USER' : 'EXPERT';
+    const recipientModel = payout.recipientModel || 'Expert';
+    const targetLink = recipientRole === 'EXPERT' ? '/expert/earnings' : '/marketplace/seller';
+
+    // Verify bank approval before any payout processing (Admin must approve passbook first)
+    if (recipientModel === 'User' || (!payout.expert && recipientId)) {
+      const User = require('../models/User');
+      const userDoc = await User.findById(recipientId);
+      if (!userDoc || userDoc.bankDetails?.verificationStatus !== 'APPROVED') {
+        const currentStatus = userDoc?.bankDetails?.verificationStatus || payout.bankDetails?.bankVerificationStatus || 'NOT_SUBMITTED';
+        return res.status(400).json({
+          success: false,
+          message: `Cannot process payout. User's bank passbook is not approved by Admin yet (Current Status: ${currentStatus}). Please review and approve the passbook under User Management first.`
+        });
+      }
+    } else if (payout.expert) {
+      if (payout.expert.bankDetails?.verificationStatus !== 'APPROVED') {
+        const currentStatus = payout.expert.bankDetails?.verificationStatus || 'NOT_SUBMITTED';
+        return res.status(400).json({
+          success: false,
+          message: `Cannot process payout. Expert's bank details are not approved by Admin yet (Current Status: ${currentStatus}).`
+        });
+      }
+    }
+    
+    // 1 rupya deduct karke payout (since ₹1 was already credited during penny-drop verification)
+    const finalDisbursedAmount = (payout.pennyDropConfirmed && payout.remainingAmount)
+      ? payout.remainingAmount
+      : (payout.amount > 1 ? payout.amount - 1 : payout.amount);
+
     if (mode === 'manual_transfer') {
       // Mark as paid manually (Admin transferred via IMPS/NEFT/UPI directly)
       payout.status = 'PROCESSED';
@@ -270,26 +302,28 @@ exports.processPayoutRequest = async (req, res) => {
         ...payout.notes,
         manualApproval: true,
         referenceNumber,
+        finalDisbursedAmount,
+        pennyDropDeducted: 1,
         processedBy: req.user?.email || 'admin'
       };
       await payout.save();
 
-      // Notify Expert
+      // Notify Recipient (Expert or Marketplace User)
       await sendNotification({
-        recipient: payout.expert._id,
-        recipientRole: 'EXPERT',
-        recipientModel: 'Expert',
-        title: 'Payout Processed Successfully',
-        message: `Your requested payout of ₹${payout.amount} has been processed and credited to your registered bank account. (Ref: ${payout.providerPayoutId})`,
-        actionText: 'View Earnings',
-        link: '/expert/earnings',
+        recipient: recipientId,
+        recipientRole,
+        recipientModel,
+        title: 'Payout Disbursed Successfully',
+        message: `Aapka requested payout transfer ho gaya hai: ₹${finalDisbursedAmount} credited to bank account ending in ****${payout.bankDetails?.accountNumber?.slice(-4) || '****'} (₹1 verification already credited). Ref: ${payout.providerPayoutId}`,
+        actionText: 'View Payout',
+        link: targetLink,
         type: 'payout_processed',
         badge: 'Completed'
       }, io).catch(() => {});
 
       return res.json({
         success: true,
-        message: `Payout of ₹${payout.amount} marked as successfully processed!`,
+        message: `Payout of ₹${finalDisbursedAmount} (₹1 verification deducted from total ₹${payout.amount}) marked as successfully processed!`,
         payout
       });
     }
@@ -297,12 +331,14 @@ exports.processPayoutRequest = async (req, res) => {
     // Auto transfer via RazorpayX
     const targetAccountCode = overrideAccountCode || payout.accountCode;
     const result = await payoutService.initiatePayout({
-      expertId: payout.expert._id,
-      amount: payout.amount,
+      expertId: recipientId,
+      amount: finalDisbursedAmount,
       overrideAccountCode: targetAccountCode,
       notes: {
         payoutRecordId: payout._id.toString(),
-        internalId: payout.internalTransactionId
+        internalId: payout.internalTransactionId,
+        finalDisbursedAmount,
+        pennyDropDeducted: 1
       },
       adminUser: req.user,
       existingPayoutId: payout._id
@@ -316,13 +352,13 @@ exports.processPayoutRequest = async (req, res) => {
     await payout.save();
 
     await sendNotification({
-      recipient: payout.expert._id,
-      recipientRole: 'EXPERT',
-      recipientModel: 'Expert',
-      title: 'Payout Processed Successfully',
-      message: `Your requested payout of ₹${payout.amount} has been processed via RazorpayX. (Ref: ${result.providerPayoutId})`,
-      actionText: 'View Earnings',
-      link: '/expert/earnings',
+      recipient: recipientId,
+      recipientRole,
+      recipientModel,
+      title: 'Payout Disbursed via RazorpayX',
+      message: `Aapka payout transfer complete ho gaya hai: ₹${finalDisbursedAmount} has been processed via RazorpayX (₹1 verification already credited). Ref: ${result.providerPayoutId}`,
+      actionText: 'View Payout',
+      link: targetLink,
       type: 'payout_processed',
       badge: 'Completed'
     }, io).catch(() => {});
@@ -426,17 +462,24 @@ exports.rejectPayoutRequest = async (req, res) => {
 
     const io = req.app.get('io');
     const { sendNotification } = require('../utils/notificationDispatcher');
-    await sendNotification({
-      recipient: payout.expert._id,
-      recipientRole: 'EXPERT',
-      recipientModel: 'Expert',
-      title: 'Payout Request Rejected',
-      message: `Your payout request of ₹${payout.amount} was rejected: "${payout.failureReason}". Funds remain in your earnings balance.`,
-      actionText: 'Check Bank Details',
-      link: '/expert/settings',
-      type: 'payout_failed',
-      badge: 'Rejected'
-    }, io).catch(() => {});
+    const recipientId = payout.recipientId || payout.expert?._id || payout.expert;
+    const recipientRole = payout.recipientModel === 'User' ? 'USER' : 'EXPERT';
+    const recipientModel = payout.recipientModel || 'Expert';
+    const targetLink = recipientRole === 'EXPERT' ? '/expert/earnings' : '/marketplace/seller';
+
+    if (recipientId) {
+      await sendNotification({
+        recipient: recipientId,
+        recipientRole,
+        recipientModel,
+        title: 'Payout Request Rejected',
+        message: `Your payout request of ₹${payout.amount} was rejected: "${payout.failureReason}". Funds remain in your earnings balance.`,
+        actionText: 'Check Bank Details',
+        link: targetLink,
+        type: 'payout_failed',
+        badge: 'Rejected'
+      }, io).catch(() => {});
+    }
 
     res.json({
       success: true,

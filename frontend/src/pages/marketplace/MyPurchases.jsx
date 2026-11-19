@@ -137,42 +137,64 @@ export default function MyPurchases() {
                       >
                         {item.product?.title}
                       </Link>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-400">
-                        <span>By {item.sellerName}</span>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-500">
+                        <span>By <strong className="text-slate-700 dark:text-slate-300">{item.sellerName}</strong></span>
                         <span>•</span>
-                        <span>Purchased: {new Date(item.purchasedAt).toLocaleDateString()}</span>
+                        <span>Date: {new Date(item.purchasedAt).toLocaleDateString()}</span>
                         <span>•</span>
-                        <span>Downloaded: {item.downloadCount} time(s)</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                          Downloads: {item.downloadCount} / {item.downloadLimit > 0 ? item.downloadLimit : 'Unlimited'}
+                        </span>
+                        {item.downloadExpiresAt && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-[11px] font-semibold">
+                            Expires: {new Date(item.downloadExpiresAt).toLocaleDateString()}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                    <Link
-                      to={`/marketplace/products/${item.product?.slug || item.product?._id}`}
-                      className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1"
-                      title="Rate & Review"
-                    >
-                      <Star size={13} className="text-amber-500" />
-                      <span>Review</span>
-                    </Link>
+                  {(() => {
+                    const isExpired = item.downloadExpiresAt && new Date() > new Date(item.downloadExpiresAt);
+                    const isLimitReached = item.downloadLimit > 0 && (item.downloadCount || 0) >= item.downloadLimit;
 
-                    {item.downloadAccessRevoked ? (
-                      <span className="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
-                        Access Revoked (Refunded)
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(item.orderId, item.product?._id, `${item.product?.title}.${item.product?.fileExtension}`)}
-                        disabled={downloadingId === item.product?._id}
-                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
-                      >
-                        <Download size={15} className={downloadingId === item.product?._id ? 'animate-bounce' : ''} />
-                        <span>{downloadingId === item.product?._id ? 'Downloading...' : 'Download File'}</span>
-                      </button>
-                    )}
-                  </div>
+                    return (
+                      <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                        <Link
+                          to={`/marketplace/products/${item.product?.slug || item.product?._id}`}
+                          className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1"
+                          title="Rate & Review"
+                        >
+                          <Star size={13} className="text-amber-500" />
+                          <span>Review</span>
+                        </Link>
+
+                        {item.downloadAccessRevoked ? (
+                          <span className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
+                            Access Revoked
+                          </span>
+                        ) : isExpired ? (
+                          <span className="px-3.5 py-2 rounded-xl bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
+                            Link Expired
+                          </span>
+                        ) : isLimitReached ? (
+                          <span className="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                            Limit Reached ({item.downloadCount}/{item.downloadLimit})
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(item.orderId, item.product?._id, `${item.product?.title}.${item.product?.fileExtension}`)}
+                            disabled={downloadingId === item.product?._id}
+                            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                          >
+                            <Download size={15} className={downloadingId === item.product?._id ? 'animate-bounce' : ''} />
+                            <span>{downloadingId === item.product?._id ? 'Downloading...' : 'Download File'}</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

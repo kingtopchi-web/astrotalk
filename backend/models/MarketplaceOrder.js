@@ -49,6 +49,8 @@ const marketplaceOrderSchema = new mongoose.Schema({
     platformCommissionAmount: { type: Number, default: 0 },
     sellerEarnings: { type: Number, default: 0 },
     downloadCount: { type: Number, default: 0 },
+    downloadLimit: { type: Number, default: 5 },
+    downloadExpiresAt: { type: Date },
     lastDownloadedAt: { type: Date },
     downloadAccessRevoked: { type: Boolean, default: false }
   }],

@@ -10,89 +10,158 @@ import {
 } from 'lucide-react';
 import AdminNotificationDropdown from '../components/AdminNotificationDropdown';
 import AdminSearchBar from '../components/AdminSearchBar';
+import AdminThemeToggle from '../components/AdminThemeToggle';
 import LogoutModal from '../components/LogoutModal';
 import { ADMIN_API_URL } from '../utils/apiConfig';
 
 const API = ADMIN_API_URL;
 
+// ─── Module Permission Mapping ────────────────────────────────────────────────
+export const ROUTE_PERMISSION_MAP = {
+  '/dashboard': 'dashboard',
+  '/analytics': 'dashboard',
+  '/users': 'users',
+  '/experts': 'experts',
+  '/expert-applications': 'experts',
+  '/categories': 'categories',
+  '/sub-categories': 'categories',
+  '/consultations': 'consultations',
+  '/consultations/upcoming': 'consultations',
+  '/consultations/completed': 'consultations',
+  '/consultations/cancelled': 'consultations',
+  '/messages': 'support',
+  '/contact-inquiries': 'inquiries',
+  '/reviews': 'reviews',
+  '/video-sessions': 'consultations',
+  '/notifications': 'notifications',
+  '/transactions': 'finance',
+  '/refunds': 'finance',
+  '/revenue': 'finance',
+  '/coupons': 'coupons',
+  '/razorpay-accounts': 'finance',
+  '/marketplace-management': 'marketplace',
+  '/settings': 'settings',
+  '/profile': 'profile', // always allowed to logged-in admin
+  '/administrators': 'administrators', // strictly SUPER_ADMIN only
+};
+
+export const canAccessPath = (pathname, adminUser) => {
+  if (!adminUser) return false;
+  const isSuperAdmin = adminUser.role === 'SUPER_ADMIN';
+  if (isSuperAdmin) return true;
+  if (pathname === '/profile') return true;
+  if (pathname === '/administrators') return false; // Strictly Super Admin only
+
+  const permissions = Array.isArray(adminUser.permissions) ? adminUser.permissions : [];
+  if (permissions.includes('*')) return true;
+
+  // Match root or sub-routes
+  for (const [route, moduleKey] of Object.entries(ROUTE_PERMISSION_MAP)) {
+    if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
+      return permissions.includes(moduleKey);
+    }
+  }
+  return true;
+};
+
 // ─── Sidebar section + item config ───────────────────────────────────────────
-const buildNav = (stats = {}) => [
-  {
-    section: 'MAIN',
-    icon: LayoutDashboard,
-    items: [
-      { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-      { name: 'Analytics', path: '/analytics', icon: BarChart3 },
-    ],
-  },
-  {
-    section: 'USERS & EXPERTS',
-    icon: Users,
-    badge: stats.pendingExperts > 0 ? stats.pendingExperts : undefined,
-    badgeColor: 'orange',
-    items: [
-      { name: 'Users', path: '/users', icon: Users, badge: stats.totalUsers },
-      { name: 'Experts', path: '/experts', icon: UserCheck, badge: stats.totalExperts },
-      { name: 'Expert Applications', path: '/expert-applications', icon: ClipboardList, badge: stats.pendingExperts, badgeColor: 'orange' },
-      { name: 'Categories', path: '/categories', icon: Tags },
-      { name: 'Sub-Categories', path: '/sub-categories', icon: Tags },
-    ],
-  },
-  {
-    section: 'CONSULTATIONS',
-    icon: CalendarClock,
-    items: [
-      { name: 'All Consultations', path: '/consultations', icon: CalendarClock, badge: stats.totalConsultations },
-      { name: 'Upcoming', path: '/consultations/upcoming', icon: ChevronRight },
-      { name: 'Completed', path: '/consultations/completed', icon: CheckCircle },
-      { name: 'Cancelled', path: '/consultations/cancelled', icon: XCircle },
-    ],
-  },
-  {
-    section: 'COMMUNICATION',
-    icon: MessageSquare,
-    badge: (stats.pendingInquiries > 0 || stats.flaggedReviews > 0) ? (stats.pendingInquiries || 0) + (stats.flaggedReviews || 0) : undefined,
-    badgeColor: 'orange',
-    items: [
-      { name: 'Support Tickets', path: '/messages', icon: MessageSquare },
-      { name: 'Contact Inquiries', path: '/contact-inquiries', icon: Mail, badge: stats.pendingInquiries, badgeColor: 'orange' },
-      { name: 'Review Moderation', path: '/reviews', icon: Star, badge: stats.flaggedReviews > 0 ? stats.flaggedReviews : undefined, badgeColor: 'orange' },
-      { name: 'Notifications', path: '/notifications', icon: Bell },
-    ],
-  },
-  {
-    section: 'FINANCE',
-    icon: CreditCard,
-    items: [
-      { name: 'Transactions', path: '/transactions', icon: ArrowLeftRight },
-      { name: 'Revenue', path: '/revenue', icon: TrendingUp },
-      { name: 'Coupons & Vouchers', path: '/coupons', icon: Ticket },
-      { name: 'Razorpay Accounts', path: '/razorpay-accounts', icon: CreditCard },
-    ],
-  },
-  {
-    section: 'MARKETPLACE',
-    icon: ShoppingBag,
-    items: [
-      { name: 'Digital Marketplace', path: '/marketplace-management', icon: ShoppingBag },
-    ],
-  },
-  {
-    section: 'SYSTEM',
-    icon: Settings,
-    items: [
-      { name: 'Settings', path: '/settings', icon: Settings },
-    ],
-  },
-  {
-    section: 'ADMIN',
-    icon: UserIcon,
-    items: [
-      { name: 'Admin Profile', path: '/profile', icon: UserIcon },
-      { name: 'Administrators', path: '/administrators', icon: ShieldCheck },
-    ],
-  },
-];
+const buildNav = (stats = {}, adminUser = {}) => {
+  const isSuperAdmin = adminUser?.role === 'SUPER_ADMIN';
+  const permissions = Array.isArray(adminUser?.permissions) ? adminUser.permissions : [];
+
+  const canAccessItem = (item) => {
+    if (item.path === '/profile') return true;
+    if (item.path === '/administrators') return isSuperAdmin;
+    if (isSuperAdmin || permissions.includes('*')) return true;
+    const moduleKey = ROUTE_PERMISSION_MAP[item.path];
+    return moduleKey ? permissions.includes(moduleKey) : true;
+  };
+
+  const rawSections = [
+    {
+      section: 'MAIN',
+      icon: LayoutDashboard,
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+      ],
+    },
+    {
+      section: 'USERS & EXPERTS',
+      icon: Users,
+      badge: stats.pendingExperts > 0 ? stats.pendingExperts : undefined,
+      badgeColor: 'orange',
+      items: [
+        { name: 'Users', path: '/users', icon: Users, badge: stats.totalUsers },
+        { name: 'Experts', path: '/experts', icon: UserCheck, badge: stats.totalExperts },
+        { name: 'Expert Applications', path: '/expert-applications', icon: ClipboardList, badge: stats.pendingExperts, badgeColor: 'orange' },
+        { name: 'Categories', path: '/categories', icon: Tags },
+        { name: 'Sub-Categories', path: '/sub-categories', icon: Tags },
+      ],
+    },
+    {
+      section: 'CONSULTATIONS',
+      icon: CalendarClock,
+      items: [
+        { name: 'All Consultations', path: '/consultations', icon: CalendarClock, badge: stats.totalConsultations },
+        { name: 'Upcoming', path: '/consultations/upcoming', icon: ChevronRight },
+        { name: 'Completed', path: '/consultations/completed', icon: CheckCircle },
+        { name: 'Cancelled', path: '/consultations/cancelled', icon: XCircle },
+      ],
+    },
+    {
+      section: 'COMMUNICATION',
+      icon: MessageSquare,
+      badge: (stats.pendingInquiries > 0 || stats.flaggedReviews > 0) ? (stats.pendingInquiries || 0) + (stats.flaggedReviews || 0) : undefined,
+      badgeColor: 'orange',
+      items: [
+        { name: 'Support Tickets', path: '/messages', icon: MessageSquare },
+        { name: 'Contact Inquiries', path: '/contact-inquiries', icon: Mail, badge: stats.pendingInquiries, badgeColor: 'orange' },
+        { name: 'Review Moderation', path: '/reviews', icon: Star, badge: stats.flaggedReviews > 0 ? stats.flaggedReviews : undefined, badgeColor: 'orange' },
+        { name: 'Notifications', path: '/notifications', icon: Bell },
+      ],
+    },
+    {
+      section: 'FINANCE',
+      icon: CreditCard,
+      items: [
+        { name: 'Transactions', path: '/transactions', icon: ArrowLeftRight },
+        { name: 'Revenue', path: '/revenue', icon: TrendingUp },
+        { name: 'Coupons & Vouchers', path: '/coupons', icon: Ticket },
+        { name: 'Razorpay Accounts', path: '/razorpay-accounts', icon: CreditCard },
+      ],
+    },
+    {
+      section: 'MARKETPLACE',
+      icon: ShoppingBag,
+      items: [
+        { name: 'Digital Marketplace', path: '/marketplace-management', icon: ShoppingBag },
+      ],
+    },
+    {
+      section: 'SYSTEM',
+      icon: Settings,
+      items: [
+        { name: 'Settings', path: '/settings', icon: Settings },
+      ],
+    },
+    {
+      section: 'ADMIN',
+      icon: UserIcon,
+      items: [
+        { name: 'Admin Profile', path: '/profile', icon: UserIcon },
+        { name: 'Administrators', path: '/administrators', icon: ShieldCheck },
+      ],
+    },
+  ];
+
+  return rawSections
+    .map(sec => ({
+      ...sec,
+      items: sec.items.filter(canAccessItem)
+    }))
+    .filter(sec => sec.items.length > 0);
+};
 
 // ─── Badge component ──────────────────────────────────────────────────────────
 const Badge = ({ count, color = 'blue' }) => {
@@ -123,11 +192,11 @@ const NavItem = ({ item, collapsed, onClick }) => {
       title={collapsed ? item.name : undefined}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-sm font-medium group relative ${
         isActive
-          ? 'bg-blue-50 text-blue-700 font-semibold'
-          : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+          ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 font-semibold'
+          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
       } ${collapsed ? 'justify-center' : ''}`}
     >
-      <span className={`shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+      <span className={`shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`}>
         <Icon size={16} />
       </span>
       {!collapsed && <span className="truncate flex-1">{item.name}</span>}
@@ -173,8 +242,8 @@ const SidebarSectionDropdown = ({
           title={section}
           className={`w-10 h-10 mx-auto flex items-center justify-center rounded-lg transition-colors relative ${
             hasActiveChild
-              ? 'bg-blue-50 text-blue-600 font-semibold'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <SectionIcon size={18} />
@@ -184,9 +253,9 @@ const SidebarSectionDropdown = ({
         </button>
 
         {/* Floating flyout dropdown on hover in collapsed mode */}
-        <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-white rounded-xl shadow-xl border border-slate-200 py-2 min-w-[210px] z-50">
-          <div className="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 tracking-wide uppercase">{section}</span>
+        <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 min-w-[210px] z-50">
+          <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-800 dark:text-white tracking-wide uppercase">{section}</span>
             {badge !== undefined && <Badge count={badge} color={badgeColor || 'blue'} />}
           </div>
           <div className="py-1 px-1.5 space-y-0.5">
@@ -208,8 +277,8 @@ const SidebarSectionDropdown = ({
         onClick={onToggle}
         className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-150 select-none group ${
           hasActiveChild
-            ? 'text-blue-700 bg-blue-50/70'
-            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/70'
+            ? 'text-blue-700 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/40'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
@@ -260,8 +329,9 @@ const SidebarContent = ({
   onLogout,
   openSections,
   onToggleSection,
+  platformLogo,
 }) => {
-  const navList = buildNav(stats);
+  const navList = buildNav(stats, adminUser);
 
   return (
     <div className={`flex flex-col h-full ${collapsed ? 'w-[60px]' : 'w-64'} transition-all duration-300`}>
@@ -269,9 +339,10 @@ const SidebarContent = ({
       <div className={`flex items-center gap-3 border-b border-slate-200 shrink-0 ${collapsed ? 'justify-center py-4 px-2' : 'px-5 py-4'}`}>
         <div className="w-10 h-10 rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
           <img
-            src="/logo.png"
+            src={platformLogo || "/logo.png"}
             alt="ExpertHub Real Guidance"
-            className="w-full h-full object-cover"
+            onError={(e) => { e.currentTarget.src = "/logo.png"; }}
+            className="w-full h-full object-contain"
           />
         </div>
         {!collapsed && (
@@ -318,8 +389,14 @@ const SidebarContent = ({
               className="w-9 h-9 rounded-full border border-slate-200 object-cover shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">{adminUser?.name || 'Admin'}</p>
-              <p className="text-[10px] text-slate-400 uppercase">Super Admin</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{adminUser?.name || 'Admin'}</p>
+              <span className={`inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
+                adminUser?.role === 'SUPER_ADMIN'
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+              }`}>
+                {adminUser?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Sub-Admin'}
+              </span>
             </div>
             <button
               onClick={onLogout}
@@ -362,11 +439,37 @@ function AdminLayout() {
     'ADMIN': false,
   });
 
-  const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}')?.user || {};
+  const rawAdminStored = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('adminUser') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const adminUser = rawAdminStored?.user || rawAdminStored || {};
+  const isSuperAdmin = adminUser?.role === 'SUPER_ADMIN';
   const adminImage = adminUser?.profileImage ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(adminUser?.name || 'Admin')}&background=ea580c&color=fff`;
 
+  const [platformLogo, setPlatformLogo] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const token = localStorage.getItem('adminToken');
+        const res = await axios.get(`${API}/settings`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.data?.platformLogo) {
+          setPlatformLogo(res.data.platformLogo);
+        }
+      } catch (err) {
+        // fallback to /logo.png
+      }
+    };
+    fetchLogo();
+  }, []);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -440,10 +543,10 @@ function AdminLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex">
 
       {/* ── Desktop Sidebar ── */}
-      <aside className={`hidden md:flex flex-col bg-white border-r border-slate-200 h-screen fixed z-20 transition-all duration-300 ${collapsed ? 'w-[60px]' : 'w-64'}`}>
+      <aside className={`hidden md:flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen fixed z-20 transition-all duration-300 ${collapsed ? 'w-[60px]' : 'w-64'}`}>
         <SidebarContent
           collapsed={collapsed}
           stats={stats}
@@ -452,6 +555,7 @@ function AdminLayout() {
           onLogout={handleLogout}
           openSections={openSections}
           onToggleSection={handleToggleSection}
+          platformLogo={platformLogo}
         />
       </aside>
 
@@ -462,7 +566,7 @@ function AdminLayout() {
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative flex bg-white h-full shadow-2xl z-50">
+          <aside className="relative flex bg-white dark:bg-slate-900 h-full shadow-2xl z-50 border-r border-slate-200 dark:border-slate-800">
             <SidebarContent
               collapsed={false}
               stats={stats}
@@ -472,6 +576,7 @@ function AdminLayout() {
               onItemClick={() => setMobileOpen(false)}
               openSections={openSections}
               onToggleSection={handleToggleSection}
+              platformLogo={platformLogo}
             />
           </aside>
           <button
@@ -484,10 +589,10 @@ function AdminLayout() {
       )}
 
       {/* ── Main ── */}
-      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'md:ml-[60px]' : 'md:ml-64'}`}>
+      <main className={`flex-1 flex flex-col min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-all duration-300 ${collapsed ? 'md:ml-[60px]' : 'md:ml-64'}`}>
 
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-30 h-14 flex items-center px-4 gap-3">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 h-14 flex items-center px-4 gap-3">
 
           {/* Collapse toggle (desktop) / Menu (mobile) */}
           <button
@@ -507,7 +612,10 @@ function AdminLayout() {
           {/* Dynamic Global Admin Search */}
           <AdminSearchBar className="hidden md:flex" />
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2.5 sm:gap-3">
+            {/* Theme Toggle (Dark / Light) */}
+            <AdminThemeToggle />
+
             {/* Notifications bell */}
             <AdminNotificationDropdown />
 
@@ -523,8 +631,14 @@ function AdminLayout() {
                   className="w-8 h-8 rounded-full border border-slate-200 object-cover"
                 />
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-semibold text-slate-800 leading-none">{adminUser?.name || 'Admin'}</p>
-                  <p className="text-[10px] text-slate-400 uppercase">Super Admin</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white leading-none">{adminUser?.name || 'Admin'}</p>
+                  <span className={`inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded mt-1 ${
+                    isSuperAdmin
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                      : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                  }`}>
+                    {isSuperAdmin ? 'Super Admin' : 'Sub-Admin'}
+                  </span>
                 </div>
                 <ChevronDown size={14} className="text-slate-400" />
               </button>
@@ -554,10 +668,91 @@ function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
-          <Outlet />
+        <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto pb-24 md:pb-6">
+          {canAccessPath(location.pathname, adminUser) ? (
+            <Outlet />
+          ) : (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 sm:p-12 text-center max-w-lg mx-auto my-12 shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-800">
+                <ShieldCheck size={32} />
+              </div>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 mb-3">
+                Access Restricted
+              </span>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Module Access Restricted</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                Your administrator account does not have permission to view or edit this platform section. 
+                Please contact the platform <strong>Super Administrator</strong> to assign permissions for this module.
+              </p>
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* ── Mobile Admin Bottom Navigation Bar ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1.5 py-1.5 shadow-lg flex items-center justify-around">
+        <Link
+          to="/dashboard"
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-center transition-all ${
+            location.pathname === '/dashboard'
+              ? 'text-blue-600 font-extrabold'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <LayoutDashboard size={19} className={location.pathname === '/dashboard' ? 'stroke-[2.5]' : ''} />
+          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Home</span>
+        </Link>
+
+        <Link
+          to="/consultations"
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-center transition-all ${
+            location.pathname.startsWith('/consultations')
+              ? 'text-blue-600 font-extrabold'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <CalendarClock size={19} className={location.pathname.startsWith('/consultations') ? 'stroke-[2.5]' : ''} />
+          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Consults</span>
+        </Link>
+
+        <Link
+          to="/coupons"
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-center transition-all ${
+            location.pathname.startsWith('/coupons')
+              ? 'text-blue-600 font-extrabold'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Ticket size={19} className={location.pathname.startsWith('/coupons') ? 'stroke-[2.5]' : ''} />
+          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Coupons</span>
+        </Link>
+
+        <Link
+          to="/marketplace-management"
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-center transition-all ${
+            location.pathname.startsWith('/marketplace-management')
+              ? 'text-blue-600 font-extrabold'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <ShoppingBag size={19} className={location.pathname.startsWith('/marketplace-management') ? 'stroke-[2.5]' : ''} />
+          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Market</span>
+        </Link>
+
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-center text-slate-500 hover:text-slate-900 transition-all cursor-pointer"
+        >
+          <Menu size={19} />
+          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Menu</span>
+        </button>
+      </nav>
 
       <LogoutModal
         isOpen={showLogoutModal}

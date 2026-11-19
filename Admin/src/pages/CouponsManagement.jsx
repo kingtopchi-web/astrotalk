@@ -113,6 +113,8 @@ export default function CouponsManagement() {
       type: 'RECHARGE_BONUS',
       discountType: 'FLAT',
       discountValue: '',
+      flatBonus: '',
+      percentageBonus: '',
       minRechargeAmount: '',
       maxDiscountAmount: '',
       badge: 'OFFER',
@@ -132,8 +134,10 @@ export default function CouponsManagement() {
       title: coupon.title,
       description: coupon.description || '',
       type: coupon.type,
-      discountType: coupon.discountType,
+      discountType: coupon.discountType || 'FLAT',
       discountValue: coupon.discountValue,
+      flatBonus: coupon.flatBonus !== undefined ? coupon.flatBonus : '',
+      percentageBonus: coupon.percentageBonus !== undefined ? coupon.percentageBonus : '',
       minRechargeAmount: coupon.minRechargeAmount || '',
       maxDiscountAmount: coupon.maxDiscountAmount || '',
       badge: coupon.badge || 'OFFER',
@@ -196,9 +200,17 @@ export default function CouponsManagement() {
       setFormError('Title is required.');
       return;
     }
-    if (formData.discountValue === '' || Number(formData.discountValue) < 0) {
-      setFormError('Please enter a valid discount value.');
-      return;
+
+    if (formData.discountType === 'BOTH') {
+      if ((formData.percentageBonus === '' || Number(formData.percentageBonus) < 0) && (formData.flatBonus === '' || Number(formData.flatBonus) < 0)) {
+        setFormError('Please enter both Percentage (%) and Flat Cash Bonus (₹) values.');
+        return;
+      }
+    } else {
+      if (formData.discountValue === '' || Number(formData.discountValue) < 0) {
+        setFormError('Please enter a valid discount value.');
+        return;
+      }
     }
 
     try {
@@ -206,10 +218,17 @@ export default function CouponsManagement() {
       setFormError('');
       const token = localStorage.getItem('adminToken');
 
+      const parsedPct = Number(formData.percentageBonus) || 0;
+      const parsedFlat = Number(formData.flatBonus) || 0;
+      const parsedVal = Number(formData.discountValue) || 0;
+
       const payload = {
         ...formData,
         code: formData.code.trim().toUpperCase(),
-        discountValue: Number(formData.discountValue),
+        discountType: formData.discountType,
+        discountValue: formData.discountType === 'BOTH' ? (parsedPct || parsedVal) : parsedVal,
+        flatBonus: parsedFlat,
+        percentageBonus: parsedPct,
         minRechargeAmount: Number(formData.minRechargeAmount) || 0,
         maxDiscountAmount: Number(formData.maxDiscountAmount) || 0,
         usageLimit: Number(formData.usageLimit) || 0,
@@ -435,9 +454,24 @@ export default function CouponsManagement() {
 
                     {/* Benefit */}
                     <td className="px-5 py-4 whitespace-nowrap">
-                      <span className="font-extrabold text-slate-900">
-                        {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% Extra` : `+₹${c.discountValue} Extra`}
-                      </span>
+                      {c.discountType === 'BOTH' ? (
+                        <div className="space-y-0.5">
+                          <span className="font-extrabold text-slate-900 inline-flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[11px] font-bold">
+                              {c.percentageBonus || c.discountValue}% Extra
+                            </span>
+                            <span className="text-slate-400 font-bold">+</span>
+                            <span className="inline-flex items-center text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[11px] font-bold">
+                              ₹{c.flatBonus} Extra
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-medium">Both (% + ₹)</span>
+                        </div>
+                      ) : (
+                        <span className="font-extrabold text-slate-900">
+                          {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% Extra` : `+₹${c.discountValue} Extra`}
+                        </span>
+                      )}
                       {c.maxDiscountAmount > 0 && (
                         <span className="text-[10px] text-slate-400 block">Up to ₹{c.maxDiscountAmount}</span>
                       )}
@@ -495,22 +529,22 @@ export default function CouponsManagement() {
 
       {/* Create / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-3 border-slate-100">
-              <h2 className="text-base font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-700">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {editingCoupon ? `Edit Coupon: ${editingCoupon.code}` : 'Create New Coupon / Voucher'}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold">
                 {formError}
               </div>
             )}
@@ -518,58 +552,58 @@ export default function CouponsManagement() {
             <form onSubmit={handleSaveCoupon} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Coupon Code *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Coupon Code *</label>
                   <input
                     type="text"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                     placeholder="e.g. WELCOME50"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono font-bold uppercase focus:ring-1 focus:ring-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold uppercase focus:ring-1 focus:ring-slate-900"
                     required
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Badge Tag</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Badge Tag</label>
                   <input
                     type="text"
                     value={formData.badge}
                     onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                     placeholder="e.g. POPULAR, BEST VALUE"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Title *</label>
+                <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Title *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Flat ₹50 Extra Bonus"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                   required
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Description</label>
+                <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Short description displayed to users"
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Offer Type</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Offer Type</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                   >
                     <option value="RECHARGE_BONUS">Recharge Bonus (Paid top-up)</option>
                     <option value="VOUCHER">Gift Voucher (Direct 100% free claim)</option>
@@ -577,78 +611,168 @@ export default function CouponsManagement() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Benefit Calculation</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Benefit Calculation</label>
                   <select
                     value={formData.discountType}
                     onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                   >
                     <option value="FLAT">Flat Cash Bonus (₹)</option>
                     <option value="PERCENTAGE">Percentage Extra (%)</option>
+                    <option value="BOTH">Both: Percentage (%) + Flat Cash Bonus (₹)</option>
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Value {formData.discountType === 'FLAT' ? '(₹)' : '(%)'} *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.discountValue}
-                    onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
-                    placeholder="e.g. 50 or 20"
-                    min="0"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold focus:ring-1 focus:ring-slate-900"
-                    required
-                  />
-                </div>
+              {formData.discountType === 'BOTH' ? (
+                <div className="space-y-3 p-3.5 bg-blue-50/50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wide">
+                      Combined Offer (Both % Rate + Flat ₹)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Percentage Extra (%) *</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={formData.percentageBonus}
+                          onChange={(e) => setFormData({ ...formData, percentageBonus: e.target.value })}
+                          placeholder="e.g. 10"
+                          min="0"
+                          className="w-full pl-3 pr-8 py-2 rounded-xl border border-slate-300 dark:border-slate-600 font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
+                          required
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-extrabold text-blue-600 dark:text-blue-400">%</span>
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Min. Recharge (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.minRechargeAmount}
-                    onChange={(e) => setFormData({ ...formData, minRechargeAmount: e.target.value })}
-                    placeholder="e.g. 200"
-                    min="0"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
-                  />
-                </div>
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Flat Cash Bonus (₹) *</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-extrabold text-emerald-600 dark:text-emerald-400">₹</span>
+                        <input
+                          type="number"
+                          value={formData.flatBonus}
+                          onChange={(e) => setFormData({ ...formData, flatBonus: e.target.value })}
+                          placeholder="e.g. 50"
+                          min="0"
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Max Cap (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.maxDiscountAmount}
-                    onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })}
-                    placeholder="e.g. 300"
-                    min="0"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Min. Recharge (₹)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+                        <input
+                          type="number"
+                          value={formData.minRechargeAmount}
+                          onChange={(e) => setFormData({ ...formData, minRechargeAmount: e.target.value })}
+                          placeholder="e.g. 200"
+                          min="0"
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Max % Cap (₹)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+                        <input
+                          type="number"
+                          value={formData.maxDiscountAmount}
+                          onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })}
+                          placeholder="e.g. 300 (0 for none)"
+                          min="0"
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">
+                      Value {formData.discountType === 'FLAT' ? '(₹)' : '(%)'} *
+                    </label>
+                    <div className="relative">
+                      {formData.discountType === 'FLAT' && (
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-extrabold text-emerald-600 dark:text-emerald-400">₹</span>
+                      )}
+                      <input
+                        type="number"
+                        value={formData.discountValue}
+                        onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                        placeholder="e.g. 50 or 20"
+                        min="0"
+                        className={`w-full ${formData.discountType === 'FLAT' ? 'pl-8 pr-3' : 'pl-3 pr-8'} py-2 rounded-xl border border-slate-300 dark:border-slate-600 font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900`}
+                        required
+                      />
+                      {formData.discountType === 'PERCENTAGE' && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-extrabold text-blue-600 dark:text-blue-400">%</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Min. Recharge (₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        value={formData.minRechargeAmount}
+                        onChange={(e) => setFormData({ ...formData, minRechargeAmount: e.target.value })}
+                        placeholder="e.g. 200"
+                        min="0"
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Max Cap (₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        value={formData.maxDiscountAmount}
+                        onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })}
+                        placeholder="e.g. 300"
+                        min="0"
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Per User Limit</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Per User Limit</label>
                   <input
                     type="number"
                     value={formData.perUserLimit}
                     onChange={(e) => setFormData({ ...formData, perUserLimit: e.target.value })}
                     min="1"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Expiry Date (Optional)</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-200 block mb-1">Expiry Date (Optional)</label>
                   <input
                     type="date"
                     value={formData.validTill}
                     onChange={(e) => setFormData({ ...formData, validTill: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-1 focus:ring-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
               </div>
@@ -659,27 +783,27 @@ export default function CouponsManagement() {
                   id="isActive"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded text-amber-500 focus:ring-amber-400"
+                  className="rounded text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
                 />
-                <label htmlFor="isActive" className="font-bold text-slate-800 cursor-pointer">
+                <label htmlFor="isActive" className="font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
                   Activate this offer immediately for users
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition"
+                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold transition shadow-sm disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold transition shadow-sm disabled:opacity-50 cursor-pointer"
                 >
-                  {saving ? 'Saving...' : editingCoupon ? 'Update Coupon' : 'Create Coupon'}
+                  {saving ? 'Saving...' : editingCoupon ? 'Update Offer' : 'Create Offer'}
                 </button>
               </div>
             </form>

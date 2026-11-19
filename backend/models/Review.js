@@ -45,7 +45,25 @@ const reviewSchema = new mongoose.Schema({
   adminNotes: {
     type: String,
     default: ''
-  }
+  },
+  isEdited: {
+    type: Boolean,
+    default: false
+  },
+  editedAt: {
+    type: Date,
+    default: null
+  },
+  editHistory: [
+    {
+      rating: Number,
+      feedback: String,
+      editedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ]
 }, {
   timestamps: true
 });

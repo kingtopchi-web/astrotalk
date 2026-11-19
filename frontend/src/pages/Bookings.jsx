@@ -374,7 +374,11 @@ function Bookings() {
 
                       {activeTab === 'past' && booking.rawStatus === 'completed' && (
                         <div>
-                          {booking.hasReviewed ? (
+                          {Boolean(booking.isFree || booking.cost === 0) ? (
+                            <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold">
+                              Free Consultation
+                            </span>
+                          ) : booking.hasReviewed ? (
                             <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold">
                               <Star size={12} className="fill-amber-400 text-amber-500" />
                               <span>{booking.review?.rating || 5}★ Reviewed</span>
@@ -384,7 +388,8 @@ function Bookings() {
                               onClick={() => setReviewModalData({
                                 consultationId: booking.id,
                                 expertName: booking.expertName,
-                                consultationType: booking.type
+                                consultationType: booking.type,
+                                isFree: false
                               })}
                               className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer whitespace-nowrap"
                             >
@@ -410,6 +415,7 @@ function Bookings() {
           consultationId={reviewModalData.consultationId}
           expertName={reviewModalData.expertName}
           consultationType={reviewModalData.consultationType}
+          isFree={Boolean(reviewModalData.isFree)}
           onSuccess={handleReviewSuccess}
           onClose={() => setReviewModalData(null)}
         />

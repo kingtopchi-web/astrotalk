@@ -11,10 +11,15 @@ router.post('/tickets', auth, supportController.createTicket);
 router.get('/tickets', auth, supportController.getUserTickets);
 router.get('/tickets/:id', auth, supportController.getTicketDetails);
 router.post('/tickets/:id/reply', auth, supportController.addReply);
+router.delete('/tickets/:id', auth, supportController.deleteTicket);
 
 // Admin Ticket Routes
 const { authorizeRoles } = require('../middleware/authMiddleware');
 router.get('/admin/tickets', auth, authorizeRoles('ADMIN'), supportController.getAllTickets);
 router.put('/admin/tickets/:id/status', auth, authorizeRoles('ADMIN'), supportController.updateTicketStatus);
+router.get('/admin/recycle-bin', auth, authorizeRoles('ADMIN'), supportController.getRecycleBinTickets);
+router.post('/admin/tickets/:id/restore', auth, authorizeRoles('ADMIN'), supportController.restoreTicket);
+router.delete('/admin/tickets/:id/permanent', auth, authorizeRoles('ADMIN'), supportController.permanentlyDeleteTicket);
+router.delete('/admin/recycle-bin/empty', auth, authorizeRoles('ADMIN'), supportController.emptyRecycleBin);
 
 module.exports = router;

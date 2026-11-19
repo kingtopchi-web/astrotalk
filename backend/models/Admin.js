@@ -29,7 +29,12 @@ const adminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
+    enum: ['SUPER_ADMIN', 'ADMIN'],
     default: 'ADMIN',
+  },
+  permissions: {
+    type: [String], // e.g. ['dashboard', 'experts', 'categories', 'users', 'consultations', 'marketplace', 'support', 'inquiries', 'reviews', 'finance', 'coupons', 'notifications', 'settings']
+    default: [],
   },
   status: {
     type: String,

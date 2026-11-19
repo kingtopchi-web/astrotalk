@@ -23,12 +23,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Layers,
-  ShieldCheck
+  ShieldCheck,
+  Percent
 } from 'lucide-react';
 import { getApiUrl } from '../../utils/apiConfig';
 import { compressAvatarImage } from '../../utils/imageCompressor';
+import { usePlatformSettings } from '../../context/PlatformSettingsContext';
 
 function ExpertProfileEdit() {
+  const { platformCommissionRate = 20 } = usePlatformSettings();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const initialDataRef = useRef(null);
@@ -778,9 +781,15 @@ function ExpertProfileEdit() {
                         className="w-full appearance-none px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 cursor-pointer pr-9"
                       >
                         <option value="">Select Category</option>
-                        {categories.map(c => (
-                          <option key={c._id} value={c._id}>{c.name}</option>
-                        ))}
+                        {categories.map(c => {
+                          const hasCustomRate = c.commissionRate !== null && c.commissionRate !== undefined && !isNaN(c.commissionRate);
+                          const feeLabel = hasCustomRate ? `${c.commissionRate}% fee` : `${platformCommissionRate}% platform fee`;
+                          return (
+                            <option key={c._id} value={c._id}>
+                              {c.name} ({feeLabel})
+                            </option>
+                          );
+                        })}
                       </select>
                       <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     </div>
@@ -808,6 +817,55 @@ function ExpertProfileEdit() {
                   </div>
 
                 </div>
+
+                {/* Category Dynamic Commission Preview Card */}
+                {form.categoryId && (() => {
+                  const selectedCat = categories.find(c => c._id === form.categoryId);
+                  const hasCustomRate = selectedCat && selectedCat.commissionRate !== null && selectedCat.commissionRate !== undefined && !isNaN(selectedCat.commissionRate);
+                  const rate = hasCustomRate ? Number(selectedCat.commissionRate) : platformCommissionRate;
+                  const expertShare = Math.max(0, 100 - rate);
+
+                  return (
+                    <div className={`p-3 rounded-xl border text-xs transition-all animate-in fade-in duration-200 ${
+                      hasCustomRate
+                        ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+                        : 'bg-slate-50 border-slate-200 text-slate-800'
+                    }`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-2xs mt-0.5 ${
+                            hasCustomRate ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
+                          }`}>
+                            %
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-xs">
+                                {selectedCat?.name} Commission: {rate}%
+                              </span>
+                              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                                hasCustomRate ? 'bg-emerald-200/80 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                              }`}>
+                                {hasCustomRate ? 'Category Dynamic Rate' : 'Default Platform Rate'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] opacity-80 mt-0.5 leading-relaxed">
+                              {hasCustomRate ? (
+                                <>Admin has set a custom <strong>{rate}%</strong> commission rate for <strong>{selectedCat?.name}</strong>. You retain <strong>{expertShare}%</strong> of consultation earnings.</>
+                              ) : (
+                                <>This category uses the global default platform fee of <strong>{rate}%</strong>. You retain <strong>{expertShare}%</strong> of consultation earnings.</>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-black text-xs block">{rate}% Fee</span>
+                          <span className="text-[10px] text-emerald-700 font-bold">{expertShare}% Payout</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Specialty / Headline Title */}
                 <div>

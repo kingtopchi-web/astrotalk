@@ -19,8 +19,11 @@ exports.getMyProfile = async (req, res) => {
 // POST /api/user/saved-experts/:id
 exports.toggleSaveExpert = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    let user = await User.findById(req.user._id);
+    if (!user) {
+      user = await Expert.findById(req.user._id);
+    }
+    if (!user) return res.status(404).json({ message: 'Account not found' });
     const expertId = req.params.id;
     
     if (!user.savedExperts) user.savedExperts = [];
@@ -41,7 +44,7 @@ exports.toggleSaveExpert = async (req, res) => {
 // GET /api/user/saved-experts
 exports.getSavedExperts = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate({
+    let user = await User.findById(req.user._id).populate({
       path: 'savedExperts',
       select: 'name profileImage specialty categoryId subCategoryId pricePerMinute hourlyRate rates rating onlineStatus isVerified bio experience',
       populate: [
@@ -49,6 +52,16 @@ exports.getSavedExperts = async (req, res) => {
         { path: 'subCategoryId', select: 'name' }
       ]
     });
+    if (!user) {
+      user = await Expert.findById(req.user._id).populate({
+        path: 'savedExperts',
+        select: 'name profileImage specialty categoryId subCategoryId pricePerMinute hourlyRate rates rating onlineStatus isVerified bio experience',
+        populate: [
+          { path: 'categoryId', select: 'name' },
+          { path: 'subCategoryId', select: 'name' }
+        ]
+      });
+    }
     res.json(user?.savedExperts || []);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -205,12 +218,34 @@ exports.getPublicSettings = async (req, res) => {
     res.json({
       success: true,
       platformName: settings?.platformName || 'ExpertHub',
+      platformLogo: settings?.platformLogo || '',
+      heroSlides: settings?.heroSlides || [],
+      homeStats: settings?.homeStats || {
+        stat1Value: '100k+',
+        stat1Label: 'Consultations',
+        stat2Value: '4.9',
+        stat2Label: 'Avg. Rating',
+        stat3Value: 'Top 1%',
+        stat3Label: 'Vetted Minds',
+      },
+      socialLinks: settings?.socialLinks || {
+        instagram: '',
+        facebook: '',
+        twitter: '',
+        linkedin: '',
+        youtube: ''
+      },
       supportEmail: settings?.supportEmail || 'support@stitchplatform.com',
       contactPhone: settings?.contactPhone || '+91 98765 43210',
       address: settings?.address || 'Plot 42, Tech Park, Bengaluru, Karnataka, India',
+      enableMarketplace: settings ? settings.enableMarketplace !== false : true,
       enableFreeChat: settings ? settings.enableFreeChat !== false : true,
       freeChatDurationMinutes: settings?.freeChatDurationMinutes || 5,
+      platformCommissionRate: Number(settings?.platformCommissionRate ?? 20),
       minimumExpertDistanceKm: settings?.minimumExpertDistanceKm || 0,
+      payoutDaysInterval: Number(settings?.payoutDaysInterval ?? 7),
+      payoutEstimatedDays: Number(settings?.payoutEstimatedDays ?? 3),
+      minPayoutAmount: Number(settings?.minPayoutAmount ?? 100),
       callSafetyTips: settings?.callSafetyTips || '• अपनी प्राइवेसी बनाए रखने के लिए अपना मोबाइल नंबर, नाम, पता, बैंक A/C नंबर या OTP किसी से शेयर न करें।\n• प्लेटफॉर्म के बाहर किसी से भी पैसे का लेन-देन न करें।\n• किसी भी असुरक्षित स्थान पर किसी से व्यक्तिगत रूप से न मिलें।\n• किसी के बहकावे अथवा लालच के शिकार न हों।'
     });
   } catch (error) {

@@ -117,6 +117,8 @@ exports.getAvailableCoupons = async (req, res) => {
         type: c.type,
         discountType: c.discountType,
         discountValue: c.discountValue,
+        flatBonus: c.flatBonus || 0,
+        percentageBonus: c.percentageBonus || 0,
         minRechargeAmount: c.minRechargeAmount,
         maxDiscountAmount: c.maxDiscountAmount,
         badge: c.badge,
@@ -193,12 +195,20 @@ exports.applyCoupon = async (req, res) => {
     // Calculate bonus amount
     let bonusAmount = 0;
     if (coupon.discountType === 'FLAT') {
-      bonusAmount = coupon.discountValue;
+      bonusAmount = coupon.discountValue || coupon.flatBonus || 0;
     } else if (coupon.discountType === 'PERCENTAGE') {
-      bonusAmount = (rechargeAmount * coupon.discountValue) / 100;
+      bonusAmount = (rechargeAmount * (coupon.discountValue || coupon.percentageBonus || 0)) / 100;
       if (coupon.maxDiscountAmount > 0 && bonusAmount > coupon.maxDiscountAmount) {
         bonusAmount = coupon.maxDiscountAmount;
       }
+    } else if (coupon.discountType === 'BOTH') {
+      const pct = coupon.percentageBonus || coupon.discountValue || 0;
+      const flat = coupon.flatBonus || 0;
+      let pctAmount = (rechargeAmount * pct) / 100;
+      if (coupon.maxDiscountAmount > 0 && pctAmount > coupon.maxDiscountAmount) {
+        pctAmount = coupon.maxDiscountAmount;
+      }
+      bonusAmount = pctAmount + flat;
     }
     bonusAmount = Math.round(bonusAmount * 100) / 100;
 
@@ -283,6 +293,7 @@ exports.redeemVoucher = async (req, res) => {
     const balanceAfter = balanceBefore + voucherValue;
 
     user.walletBalance = balanceAfter;
+    user.hasRechargedWallet = true;
     await user.save();
 
     // Create a transaction record
@@ -408,6 +419,8 @@ exports.createCouponAdmin = async (req, res) => {
       type,
       discountType,
       discountValue,
+      flatBonus,
+      percentageBonus,
       minRechargeAmount,
       maxDiscountAmount,
       badge,
@@ -423,8 +436,18 @@ exports.createCouponAdmin = async (req, res) => {
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Coupon title is required' });
     }
-    if (discountValue === undefined || discountValue === null || Number(discountValue) < 0) {
-      return res.status(400).json({ success: false, message: 'Valid discount value is required' });
+    const parsedVal = discountValue !== undefined && discountValue !== null && discountValue !== '' ? Number(discountValue) : 0;
+    const parsedFlat = Number(flatBonus) || 0;
+    const parsedPct = Number(percentageBonus) || 0;
+
+    if (discountType === 'BOTH') {
+      if (parsedFlat <= 0 && parsedPct <= 0) {
+        return res.status(400).json({ success: false, message: 'Both Percentage (%) and Flat Cash Bonus (₹) values are required' });
+      }
+    } else {
+      if (parsedVal < 0) {
+        return res.status(400).json({ success: false, message: 'Valid discount value is required' });
+      }
     }
 
     const cleanCode = code.trim().toUpperCase();
@@ -439,7 +462,9 @@ exports.createCouponAdmin = async (req, res) => {
       description: description ? description.trim() : '',
       type: type || 'RECHARGE_BONUS',
       discountType: discountType || 'FLAT',
-      discountValue: Number(discountValue),
+      discountValue: discountType === 'BOTH' ? (parsedPct || parsedVal) : parsedVal,
+      flatBonus: parsedFlat,
+      percentageBonus: parsedPct || (discountType === 'PERCENTAGE' ? parsedVal : 0),
       minRechargeAmount: Number(minRechargeAmount) || 0,
       maxDiscountAmount: Number(maxDiscountAmount) || 0,
       badge: badge ? badge.trim() : 'OFFER',

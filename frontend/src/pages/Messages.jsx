@@ -213,12 +213,16 @@ function Messages() {
 
     newSocket.on('session_ended', (data) => {
       if (activeConsultation) {
-        setReviewModalData({
-          consultationId: activeConsultation._id,
-          expertName: otherUser?.name || 'Expert',
-          consultationType: 'Chat'
-        });
-        setShowReviewModal(true);
+        const isFree = Boolean(activeConsultation.isFree || activeConsultation.cost === 0);
+        if (!isFree) {
+          setReviewModalData({
+            consultationId: activeConsultation._id,
+            expertName: otherUser?.name || 'Expert',
+            consultationType: 'Chat',
+            isFree: false
+          });
+          setShowReviewModal(true);
+        }
       }
       setActiveConsultation(null);
       setChatStarted(false);
@@ -455,12 +459,14 @@ function Messages() {
       setActiveConsultation(null);
       setChatStarted(false);
 
-      // Trigger Review Modal for user
-      if (auth.user?.role === 'USER') {
+      // Trigger Review Modal for user (only if paid chat)
+      const endedIsFree = Boolean(activeConsultation?.isFree || activeConsultation?.cost === 0);
+      if (auth.user?.role === 'USER' && !endedIsFree) {
         setReviewModalData({
           consultationId: endedId,
           expertName: endedExpertName,
-          consultationType: 'Chat'
+          consultationType: 'Chat',
+          isFree: false
         });
         setShowReviewModal(true);
       }
@@ -1171,6 +1177,7 @@ function Messages() {
           consultationId={reviewModalData.consultationId}
           expertName={reviewModalData.expertName}
           consultationType={reviewModalData.consultationType || 'Chat'}
+          isFree={Boolean(reviewModalData.isFree)}
           onSuccess={() => {
             setTimeout(() => {
               setShowReviewModal(false);
