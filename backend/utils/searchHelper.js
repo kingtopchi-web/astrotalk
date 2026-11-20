@@ -142,6 +142,9 @@ async function searchExperts({
   const resolvedUserCoords = extractCoordinates(userCoords || { lat: latitude, lng: longitude });
   const isDistanceFilteringActive = adminMinDistanceKm > 0 && Boolean(resolvedUserCoords);
 
+  // Public whitelist fields - strictly exclude sensitive details (passwords, bankDetails, walletBalance, mobile, etc.)
+  const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages country latitude longitude location rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
+
   // Case 1: No search term -> standard query
   if (!queryTerm) {
     const parsedLimit = parseInt(limit) || 12;
@@ -150,7 +153,7 @@ async function searchExperts({
 
     if (isDistanceFilteringActive) {
       const allApproved = await Expert.find(baseFilter)
-        .select('-password -documents -rejectionReason -rejectedAt -rejectedBy -approvedBy')
+        .select(PUBLIC_EXPERT_FIELDS)
         .populate('categoryId', 'name slug')
         .populate('subCategoryId', 'name slug')
         .sort({ onlineStatus: -1, rating: -1, createdAt: -1 });
@@ -176,7 +179,7 @@ async function searchExperts({
     // Online experts first, then by rating, then newest
     const [experts, total] = await Promise.all([
       Expert.find(baseFilter)
-        .select('-password -documents -rejectionReason -rejectedAt -rejectedBy -approvedBy')
+        .select(PUBLIC_EXPERT_FIELDS)
         .populate('categoryId', 'name slug')
         .populate('subCategoryId', 'name slug')
         .sort({ onlineStatus: -1, rating: -1, createdAt: -1 })
@@ -279,8 +282,6 @@ async function searchExperts({
     ...baseFilter,
     $or: expertOrs
   };
-
-  const PUBLIC_EXPERT_FIELDS = 'name specialty qualification specialization experience bio languages country latitude longitude location rates pricePerMinute rating reviewsCount profileImage categoryId subCategoryId onlineStatus status verificationStatus availability';
 
   let candidateExperts = await Expert.find(expertQuery)
     .select(PUBLIC_EXPERT_FIELDS)
