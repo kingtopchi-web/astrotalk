@@ -703,11 +703,11 @@ function ExpertDiscovery() {
                             e.stopPropagation();
                             openAppointmentModal(expert, 'call');
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                          className="w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg font-bold text-[11px] sm:text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs whitespace-nowrap"
                           title="एक्सपर्ट अभी ऑफलाइन है। अपॉइंटमेंट बुक करें।"
                         >
                           <Calendar size={13} className="shrink-0" />
-                          <span>Book Appointment</span>
+                          <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
                         </button>
                       )}
                     </div>
