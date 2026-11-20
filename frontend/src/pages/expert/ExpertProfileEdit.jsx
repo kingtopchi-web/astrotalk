@@ -1,30 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  Camera, 
-  Pencil, 
-  IndianRupee, 
-  MessageCircle, 
-  Phone, 
-  Video, 
-  Check, 
-  User, 
-  Mail, 
-  MapPin, 
-  Briefcase, 
-  GraduationCap, 
-  Clock, 
-  Sparkles, 
-  ExternalLink, 
-  ChevronDown, 
-  Plus, 
-  X, 
+import {
+  Camera,
+  Pencil,
+  IndianRupee,
+  MessageCircle,
+  Phone,
+  Video,
+  Check,
+  User,
+  Mail,
+  MapPin,
+  Briefcase,
+  GraduationCap,
+  Clock,
+  Sparkles,
+  ExternalLink,
+  ChevronDown,
+  Plus,
+  X,
   AlertCircle,
   CheckCircle2,
   Layers,
   ShieldCheck,
-  Percent
+  Percent,
+  TrendingUp
 } from 'lucide-react';
 import { getApiUrl } from '../../utils/apiConfig';
 import { compressAvatarImage } from '../../utils/imageCompressor';
@@ -102,10 +103,10 @@ function ExpertProfileEdit() {
           axios.get(getApiUrl('/expert/profile'), { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(getApiUrl('/categories'))
         ]);
-        
+
         const p = profileRes.data;
         setExpertId(p._id || '');
-        
+
         const initialForm = {
           name: p.name || '',
           email: p.email || '',
@@ -119,10 +120,10 @@ function ExpertProfileEdit() {
           categoryId: p.categoryId?._id || p.categoryId || '',
           subCategoryId: p.subCategoryId?._id || p.subCategoryId || '',
           profileImage: p.profileImage || '',
-          rates: { 
-            chat: p.rates?.chat ?? 20, 
-            audio: p.rates?.audio ?? 30, 
-            video: p.rates?.video ?? 45 
+          rates: {
+            chat: p.rates?.chat ?? 20,
+            audio: p.rates?.audio ?? 30,
+            video: p.rates?.video ?? 45
           },
           instantCallEnabled: p.instantCallEnabled ?? true,
           latitude: p.latitude ?? '',
@@ -175,8 +176,8 @@ function ExpertProfileEdit() {
       try {
         const res = await axios.get(getApiUrl(`/categories/${catId}/subcategories`));
         setSubCategories(res.data || []);
-      } catch (e) { 
-        setSubCategories([]); 
+      } catch (e) {
+        setSubCategories([]);
       }
     } else {
       setSubCategories([]);
@@ -360,8 +361,8 @@ function ExpertProfileEdit() {
                   <p className="text-[11px] sm:text-xs text-rose-200/90 truncate mt-0.5">{error}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setError('')} 
+              <button
+                onClick={() => setError('')}
                 className="p-1.5 hover:bg-rose-800/40 text-rose-300 hover:text-white rounded-xl transition-colors shrink-0"
               >
                 <X size={16} />
@@ -382,8 +383,8 @@ function ExpertProfileEdit() {
                   <p className="text-[11px] sm:text-xs text-emerald-200/90 truncate mt-0.5">{success}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setSuccess('')} 
+              <button
+                onClick={() => setSuccess('')}
                 className="p-1.5 hover:bg-emerald-800/40 text-emerald-300 hover:text-white rounded-xl transition-colors shrink-0"
               >
                 <X size={16} />
@@ -400,17 +401,13 @@ function ExpertProfileEdit() {
             <div className="lg:col-span-4 space-y-6">
 
               {/* CARD 1: PROFILE PHOTO */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 shadow-sm space-y-5">
-                
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-5">
+
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                      <Camera size={14} />
-                    </div>
-                    <span className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Profile Photo
-                    </span>
+                  <div className="flex items-center gap-1.5 text-amber-700 font-bold text-xs uppercase tracking-wider">
+                    <Camera size={14} />
+                    <span>PROFILE PHOTO</span>
                   </div>
                   <span className="text-[11px] text-slate-400 font-medium">
                     JPG/PNG • Max 5MB
@@ -422,9 +419,9 @@ function ExpertProfileEdit() {
                   <div className="relative">
                     <div className="w-36 h-36 rounded-2xl overflow-hidden bg-slate-50 border-2 border-amber-200/80 shadow-xs flex items-center justify-center">
                       {form.profileImage ? (
-                        <img 
-                          src={form.profileImage} 
-                          alt="Profile Preview" 
+                        <img
+                          src={form.profileImage}
+                          alt="Profile Preview"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -444,12 +441,12 @@ function ExpertProfileEdit() {
                     >
                       <Pencil size={14} />
                     </button>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleImageChange} 
-                      accept="image/*" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      className="hidden"
                     />
                   </div>
 
@@ -491,129 +488,207 @@ function ExpertProfileEdit() {
 
               </div>
 
-              {/* CARD 2: CONSULTATION RATES */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm space-y-4">
+              {/* CARD 2: CONSULTATION RATES (Exact 100% Match to Design Reference) */}
+              <div className="bg-[#0e1628] rounded-3xl border border-slate-800/90 p-5 sm:p-6 shadow-2xl space-y-4">
                 
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                      <IndianRupee size={15} />
+                    <div className="w-6 h-6 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
+                      <IndianRupee size={13} />
                     </div>
-                    <span className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Consultation Rates
+                    <span className="font-extrabold text-xs uppercase tracking-wider text-amber-500">
+                      CONSULTATION RATES
                     </span>
                   </div>
-                  <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    ₹/min billing
-                  </span>
+                  <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="font-semibold text-[11px] tracking-tight">₹/minute billing</span>
+                  </div>
                 </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed -mt-1">
                   Set competitive per-minute fees for your instant and scheduled sessions.
                 </p>
 
-                {/* 3 Rate Inputs Grid */}
+                {/* 3 Rate Cards Grid */}
                 <div className="grid grid-cols-3 gap-2.5 pt-1">
                   
-                  {/* Chat Rate */}
-                  <div className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/70 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-2.5 sm:p-3 text-center flex flex-col justify-between transition-all group focus-within:border-blue-500/60 focus-within:ring-2 focus-within:ring-blue-500/10">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
-                      <div className="w-5 h-5 rounded-md bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-                        <MessageCircle size={12} />
-                      </div>
-                      <span className="whitespace-nowrap">Chat</span>
+                  {/* Card 1: CHAT */}
+                  <div className="bg-[#121c33] border border-slate-800/90 rounded-2xl p-3 flex flex-col items-center justify-between transition-all hover:border-slate-700">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-200 tracking-wider mb-2">
+                      <MessageCircle size={13} className="text-cyan-400 shrink-0" />
+                      <span className="uppercase text-[11px] font-extrabold">CHAT</span>
                     </div>
 
-                    <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-0.5 select-none">₹</span>
-                      <input 
-                        type="number"
-                        min="5"
-                        value={form.rates.chat}
-                        onChange={(e) => setForm({
-                          ...form,
-                          rates: { ...form.rates, chat: e.target.value }
-                        })}
-                        className="w-10 text-sm font-black text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 select-none">/m</span>
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-xl px-2 py-1.5 flex items-center justify-between w-full">
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, chat: Math.max(5, (Number(f.rates.chat) || 5) - 1) } }))}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-bold transition-colors cursor-pointer select-none"
+                      >
+                        -
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-slate-400">₹</span>
+                        <input 
+                          type="number"
+                          min="5"
+                          value={form.rates.chat}
+                          onChange={(e) => setForm({ ...form, rates: { ...form.rates, chat: e.target.value } })}
+                          className="w-7 text-center text-sm font-bold text-white bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, chat: (Number(f.rates.chat) || 5) + 1 } }))}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-bold transition-colors cursor-pointer select-none"
+                      >
+                        +
+                      </button>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹5/min</span>
+
+                    <span className="text-[10px] text-slate-400/90 font-medium mt-2">Min ₹5/min</span>
                   </div>
 
-                  {/* Voice Call Rate */}
-                  <div className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/70 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-2.5 sm:p-3 text-center flex flex-col justify-between transition-all group focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/10">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
-                      <div className="w-5 h-5 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-                        <Phone size={12} />
-                      </div>
-                      <span className="whitespace-nowrap">Voice</span>
+                  {/* Card 2: VOICE CALL */}
+                  <div className="bg-[#121c33] border border-slate-800/90 rounded-2xl p-3 flex flex-col items-center justify-between transition-all hover:border-slate-700">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-200 tracking-wider mb-2">
+                      <Phone size={13} className="text-emerald-400 shrink-0" />
+                      <span className="uppercase text-[11px] font-extrabold whitespace-nowrap">VOICE CALL</span>
                     </div>
 
-                    <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-0.5 select-none">₹</span>
-                      <input 
-                        type="number"
-                        min="10"
-                        value={form.rates.audio}
-                        onChange={(e) => setForm({
-                          ...form,
-                          rates: { ...form.rates, audio: e.target.value }
-                        })}
-                        className="w-10 text-sm font-black text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 select-none">/m</span>
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-xl px-2 py-1.5 flex items-center justify-between w-full">
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-bold transition-colors cursor-pointer select-none"
+                      >
+                        -
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-slate-400">₹</span>
+                        <input 
+                          type="number"
+                          min="10"
+                          value={form.rates.audio}
+                          onChange={(e) => setForm({ ...form, rates: { ...form.rates, audio: e.target.value } })}
+                          className="w-7 text-center text-sm font-bold text-white bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: (Number(f.rates.audio) || 10) + 1 } }))}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-bold transition-colors cursor-pointer select-none"
+                      >
+                        +
+                      </button>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹10/min</span>
+
+                    <span className="text-[10px] text-slate-400/90 font-medium mt-2">Min ₹10/min</span>
                   </div>
 
-                  {/* Video Rate */}
-                  <div className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/70 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-2.5 sm:p-3 text-center flex flex-col justify-between transition-all group focus-within:border-amber-500/60 focus-within:ring-2 focus-within:ring-amber-500/10">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
-                      <div className="w-5 h-5 rounded-md bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                        <Video size={12} />
-                      </div>
-                      <span className="whitespace-nowrap">Video</span>
+                  {/* Card 3: VIDEO (with POPULAR badge & amber glow border) */}
+                  <div className="bg-[#141f38] border border-amber-500/50 rounded-2xl p-3 flex flex-col items-center justify-between relative shadow-[0_0_20px_rgba(245,158,11,0.06)]">
+                    {/* POPULAR BADGE */}
+                    <span className="absolute -top-2.5 right-2.5 bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                      POPULAR
+                    </span>
+
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400 tracking-wider mb-2">
+                      <Video size={13} className="text-amber-400 shrink-0" />
+                      <span className="uppercase text-[11px] font-extrabold whitespace-nowrap">VIDEO</span>
                     </div>
 
-                    <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-0.5 select-none">₹</span>
-                      <input 
-                        type="number"
-                        min="20"
-                        value={form.rates.video}
-                        onChange={(e) => setForm({
-                          ...form,
-                          rates: { ...form.rates, video: e.target.value }
-                        })}
-                        className="w-10 text-sm font-black text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 select-none">/m</span>
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-xl px-2 py-1.5 flex items-center justify-between w-full">
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: Math.max(20, (Number(f.rates.video) || 20) - 1) } }))}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-bold transition-colors cursor-pointer select-none"
+                      >
+                        -
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-amber-500">₹</span>
+                        <input 
+                          type="number"
+                          min="20"
+                          value={form.rates.video}
+                          onChange={(e) => setForm({ ...form, rates: { ...form.rates, video: e.target.value } })}
+                          className="w-7 text-center text-sm font-bold text-amber-300 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: (Number(f.rates.video) || 20) + 1 } }))}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-bold transition-colors cursor-pointer select-none"
+                      >
+                        +
+                      </button>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹20/min</span>
+
+                    <span className="text-[10px] text-amber-400/90 font-medium mt-2">Min ₹20/min</span>
                   </div>
 
                 </div>
 
-                {/* Footer Options */}
-                <div className="pt-3.5 flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800">
-                  <label className="flex items-center gap-2.5 cursor-pointer font-semibold text-slate-800 dark:text-slate-200 touch-manipulation select-none group">
-                    <input 
-                      type="checkbox"
-                      checked={form.instantCallEnabled}
-                      onChange={(e) => setForm(f => ({ ...f, instantCallEnabled: e.target.checked }))}
-                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500/30 accent-amber-600 cursor-pointer touch-manipulation transition-transform group-hover:scale-105"
-                    />
-                    <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                      Enable Instant Call-ins
-                    </span>
-                  </label>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/50 px-2.5 py-0.5 rounded-full shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    92% Payout
-                  </span>
+                {/* Toggle Row (Enable Instant Call-ins & Payout Rate) */}
+                <div className="bg-[#0b1222]/90 border border-slate-800/90 rounded-2xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Toggle Switch */}
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, instantCallEnabled: !f.instantCallEnabled }))}
+                      className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer p-0.5 shrink-0 ${
+                        form.instantCallEnabled ? 'bg-amber-500' : 'bg-slate-700'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                          form.instantCallEnabled ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-white leading-tight">
+                        Enable Instant Call-ins
+                      </h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Receive on-demand sessions when active
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payout Rate Badge */}
+                  <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 text-xs font-bold px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0">
+                    <TrendingUp size={13} className="text-emerald-400" />
+                    <span className="text-[11px] font-bold">92% Payout Rate</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons Row */}
+                <div className="flex items-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={saving}
+                    className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.99] text-slate-950 font-extrabold text-xs sm:text-sm py-2.5 sm:py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                  >
+                    <span>{saving ? 'Saving...' : 'Save Rate Settings'}</span>
+                    <Check size={16} className="text-slate-950" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      rates: { chat: 5, audio: 10, video: 20 },
+                      instantCallEnabled: true
+                    }))}
+                    className="bg-[#121c33] hover:bg-[#182544] border border-slate-800 text-slate-300 font-semibold text-xs py-2.5 sm:py-3 px-3.5 rounded-xl transition-colors cursor-pointer shrink-0"
+                  >
+                    Reset Defaults
+                  </button>
                 </div>
 
               </div>
@@ -653,7 +728,7 @@ function ExpertProfileEdit() {
 
               {/* CARD 1: Account Information */}
               <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between pb-1 border-b border-slate-100">
                   <div className="flex items-center gap-2">
@@ -672,7 +747,7 @@ function ExpertProfileEdit() {
 
                 {/* 2-Column Inputs Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  
+
                   {/* Full Name */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -680,8 +755,8 @@ function ExpertProfileEdit() {
                     </label>
                     <div className="relative">
                       <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -698,8 +773,8 @@ function ExpertProfileEdit() {
                     </label>
                     <div className="relative">
                       <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         required
                         value={form.mobile}
                         onChange={(e) => setForm({ ...form, mobile: e.target.value })}
@@ -716,8 +791,8 @@ function ExpertProfileEdit() {
                     </label>
                     <div className="relative">
                       <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         value={form.email}
                         readOnly
                         title="Registered account email"
@@ -733,8 +808,8 @@ function ExpertProfileEdit() {
                     </label>
                     <div className="relative">
                       <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={form.timezone}
                         onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                         placeholder="Bengaluru, India (IST)"
@@ -776,7 +851,7 @@ function ExpertProfileEdit() {
 
               {/* CARD 2: Category & Specialty */}
               <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between pb-1 border-b border-slate-100">
                   <div className="flex items-center gap-2">
@@ -793,14 +868,14 @@ function ExpertProfileEdit() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  
+
                   {/* Category Dropdown */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
                       Category *
                     </label>
                     <div className="relative">
-                      <select 
+                      <select
                         required
                         value={form.categoryId}
                         onChange={(e) => handleCategoryChange(e.target.value)}
@@ -827,7 +902,7 @@ function ExpertProfileEdit() {
                       Sub-category *
                     </label>
                     <div className="relative">
-                      <select 
+                      <select
                         value={form.subCategoryId}
                         onChange={(e) => setForm({ ...form, subCategoryId: e.target.value })}
                         disabled={subCategories.length === 0}
@@ -852,16 +927,14 @@ function ExpertProfileEdit() {
                   const expertShare = Math.max(0, 100 - rate);
 
                   return (
-                    <div className={`p-3 rounded-xl border text-xs transition-all animate-in fade-in duration-200 ${
-                      hasCustomRate
-                        ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
-                        : 'bg-slate-50 border-slate-200 text-slate-800'
-                    }`}>
+                    <div className={`p-3 rounded-xl border text-xs transition-all animate-in fade-in duration-200 ${hasCustomRate
+                      ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+                      : 'bg-slate-50 border-slate-200 text-slate-800'
+                      }`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-2.5">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-2xs mt-0.5 ${
-                            hasCustomRate ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
-                          }`}>
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-2xs mt-0.5 ${hasCustomRate ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
+                            }`}>
                             %
                           </div>
                           <div>
@@ -869,9 +942,8 @@ function ExpertProfileEdit() {
                               <span className="font-bold text-xs">
                                 {selectedCat?.name} Commission: {rate}%
                               </span>
-                              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                                hasCustomRate ? 'bg-emerald-200/80 text-emerald-800' : 'bg-slate-200 text-slate-700'
-                              }`}>
+                              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${hasCustomRate ? 'bg-emerald-200/80 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                                }`}>
                                 {hasCustomRate ? 'Category Dynamic Rate' : 'Default Platform Rate'}
                               </span>
                             </div>
@@ -900,8 +972,8 @@ function ExpertProfileEdit() {
                   </label>
                   <div className="relative">
                     <Briefcase size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={form.specialty}
                       onChange={(e) => setForm({ ...form, specialty: e.target.value })}
@@ -916,7 +988,7 @@ function ExpertProfileEdit() {
                   <div className="flex items-center flex-wrap gap-2 text-xs">
                     <span className="font-bold text-slate-500 mr-1">Quick Tags:</span>
                     {tags.map((tag) => (
-                      <span 
+                      <span
                         key={tag}
                         className="inline-flex items-center gap-1.5 bg-amber-50/80 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-lg text-xs font-semibold group"
                       >
@@ -934,7 +1006,7 @@ function ExpertProfileEdit() {
                     {showAddTag ? (
                       <div className="inline-flex items-center gap-1 bg-white border border-amber-300 rounded-lg px-2 py-0.5">
                         <span className="text-xs text-slate-400">#</span>
-                        <input 
+                        <input
                           type="text"
                           autoFocus
                           value={newTagInput}
@@ -946,16 +1018,16 @@ function ExpertProfileEdit() {
                           placeholder="Tag"
                           className="w-20 text-xs text-slate-800 outline-none"
                         />
-                        <button 
-                          type="button" 
-                          onClick={handleAddTag} 
+                        <button
+                          type="button"
+                          onClick={handleAddTag}
                           className="text-emerald-600 font-bold hover:text-emerald-700"
                         >
                           <Check size={12} />
                         </button>
-                        <button 
-                          type="button" 
-                          onClick={() => setShowAddTag(false)} 
+                        <button
+                          type="button"
+                          onClick={() => setShowAddTag(false)}
                           className="text-slate-400 hover:text-slate-600"
                         >
                           <X size={12} />
@@ -978,7 +1050,7 @@ function ExpertProfileEdit() {
 
               {/* CARD 3: Professional Credentials */}
               <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between pb-1 border-b border-slate-100">
                   <div className="flex items-center gap-2">
@@ -995,7 +1067,7 @@ function ExpertProfileEdit() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-1">
-                  
+
                   {/* Highest Qualification & Past Experience */}
                   <div className="sm:col-span-9">
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -1003,8 +1075,8 @@ function ExpertProfileEdit() {
                     </label>
                     <div className="relative">
                       <GraduationCap size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={form.qualification}
                         onChange={(e) => setForm({ ...form, qualification: e.target.value })}
                         placeholder="e.g. MBA (Finance), Ex-Venture Associate"
@@ -1020,8 +1092,8 @@ function ExpertProfileEdit() {
                     </label>
                     <div className="relative">
                       <Clock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={form.experience}
                         onChange={(e) => setForm({ ...form, experience: e.target.value })}
                         placeholder="7"
@@ -1037,8 +1109,8 @@ function ExpertProfileEdit() {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Core Specialization Areas
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={form.specialization}
                     onChange={(e) => setForm({ ...form, specialization: e.target.value })}
                     placeholder="e.g. Fundraising, Financial Modeling & Pitch Decks"
@@ -1056,7 +1128,7 @@ function ExpertProfileEdit() {
                       {form.bio ? form.bio.length : 0}/500 chars
                     </span>
                   </div>
-                  <textarea 
+                  <textarea
                     rows={4}
                     maxLength={500}
                     value={form.bio}
