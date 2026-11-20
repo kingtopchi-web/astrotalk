@@ -556,7 +556,11 @@ function ExpertDiscovery() {
                   <div
                     key={expert._id}
                     onClick={() => navigate(`/expert/${expert._id}`)}
-                    className={`bg-surface rounded-2xl shadow-sm border border-border-color p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all relative group ${viewMode === 'list' ? 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' : ''}`}
+                    className={`bg-surface rounded-xl shadow-xs border border-border-color hover:border-primary/40 hover:shadow-md transition-all relative group cursor-pointer ${
+                      viewMode === 'list'
+                        ? 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4'
+                        : 'flex flex-col justify-between h-full p-4'
+                    }`}
                   >
                     {/* Heart Save / Bookmark Button */}
                     <button
@@ -571,122 +575,141 @@ function ExpertDiscovery() {
                       }`}
                     >
                       <Heart
-                        size={17}
+                        size={16}
                         className={`transition-transform hover:scale-110 active:scale-90 ${
                           savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
                         }`}
                       />
                     </button>
-                    {/* Avatar + Status */}
-                    <div className={`flex items-start gap-3 ${viewMode === 'grid' ? 'mb-3' : 'min-w-[200px]'}`}>
+
+                    {/* Top Info Section: Avatar + Identity */}
+                    <div className={`flex items-start gap-3 ${viewMode === 'grid' ? '' : 'min-w-[220px]'}`}>
                       <div className="relative shrink-0">
                         <img
                           src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=F97316&color=fff`}
                           alt={expert.name}
-                          className="w-14 h-14 rounded-2xl object-cover"
+                          className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl object-cover border border-border-color/80 shadow-2xs"
                         />
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${expert.onlineStatus === 'online' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                        <div
+                          className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-surface ${
+                            expert.onlineStatus === 'online' ? 'bg-emerald-500' : 'bg-slate-300'
+                          }`}
+                          title={expert.onlineStatus === 'online' ? 'Online' : 'Offline'}
+                        />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-on-surface text-sm truncate">{expert.name}</h3>
-                        <p className="text-xs text-on-surface/60 truncate">{expert.categoryId?.name || expert.specialty}</p>
-                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      <div className="min-w-0 flex-1 pr-7">
+                        <h3 className="font-bold text-on-surface text-sm sm:text-base truncate group-hover:text-primary transition-colors leading-snug">
+                          {expert.name}
+                        </h3>
+                        <p className="text-xs text-on-surface/60 truncate mt-0.5 font-medium">
+                          {expert.categoryId?.name || expert.specialty || 'Consultant'}
+                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                           {expert.subCategoryId && (
-                            <span className="inline-block text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
+                            <span className="inline-block text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded">
                               {expert.subCategoryId.name}
                             </span>
                           )}
-                          {typeof expert.distanceKm === 'number' && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200/70 font-semibold px-2 py-0.5 rounded-full" title={`Distance from your location: ${expert.distanceKm} KM`}>
-                              <MapPin size={10} className="text-emerald-600 shrink-0" />
-                              <span>{Math.round(expert.distanceKm)} km</span>
+                          {expert.experience && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 font-medium px-2 py-0.5 rounded">
+                              <span>📅 {expert.experience} exp</span>
                             </span>
                           )}
-                          {expert.languages && expert.languages.length > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 bg-slate-100 font-medium px-2 py-0.5 rounded-full" title={expert.languages.join(', ')}>
-                              <Globe size={10} className="text-amber-500 shrink-0" />
-                              <span className="truncate max-w-[120px]">{expert.languages.slice(0, 2).join(', ')}</span>
+                          {typeof expert.distanceKm === 'number' && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 font-semibold px-2 py-0.5 rounded" title={`Distance: ${expert.distanceKm} km`}>
+                              <MapPin size={9} className="text-emerald-600 shrink-0" />
+                              <span>{Math.round(expert.distanceKm)} km</span>
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Details */}
-                    <div className={viewMode === 'list' ? 'flex-1 hidden sm:block px-4' : ''}>
-                      {expert.experience && (
-                        <p className="text-xs text-on-surface/60 mb-1">📅 {expert.experience} exp</p>
-                      )}
+                    {/* Middle Section: Languages & Specialization */}
+                    <div className={`mt-2.5 space-y-1.5 flex-1 ${viewMode === 'list' ? 'hidden sm:block px-4' : ''}`}>
                       {expert.languages && expert.languages.length > 0 && (
-                        <p className="text-xs text-slate-600 mb-1 flex items-center gap-1.5 font-medium">
-                          <Globe size={12} className="text-amber-500 shrink-0" />
-                          <span>Languages: {expert.languages.join(', ')}</span>
-                        </p>
+                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+                          <Globe size={11} className="text-amber-500 shrink-0" />
+                          <span className="truncate">
+                            Languages: {expert.languages.join(', ')}
+                          </span>
+                        </div>
                       )}
                       {expert.specialization && (
-                        <p className="text-xs text-on-surface/80 mb-2 line-clamp-2">{expert.specialization}</p>
+                        <p className="text-xs text-on-surface/75 line-clamp-2 leading-relaxed min-h-[34px]">
+                          {expert.specialization}
+                        </p>
                       )}
                     </div>
 
-                    {/* Rate & Button */}
-                    <div className={viewMode === 'list' ? 'w-full sm:w-auto shrink-0 flex flex-row sm:flex-col items-center sm:items-end justify-between gap-3' : 'flex flex-col'}>
-                      <div className={viewMode === 'grid' ? 'flex flex-col mt-3 border-t border-border-color pt-3 gap-2' : 'flex flex-col gap-2'}>
-                        {viewMode === 'grid' && (
-                          <div className="flex items-center justify-between mb-1">
-                            <div>
-                              {expert.rating > 0 && (
-                                <span className="text-xs font-medium text-amber-600">⭐ {expert.rating}</span>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <span className="text-sm font-bold text-on-surface">
-                                ₹{Number(Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5)).toFixed(2)}
-                              </span>
-                              <span className="text-xs text-on-surface/50">/min</span>
-                            </div>
-                          </div>
-                        )}
-                        {expert.onlineStatus === 'online' ? (
-                          <div className={`flex items-center gap-2 ${viewMode === 'grid' ? 'w-full' : ''}`}>
-                            <button 
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'chat'); }}
-                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
-                            >
-                              Chat
-                            </button>
-                            <button 
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'audio'); }}
-                              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1 transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
-                            >
-                              Voice Call
-                            </button>
-                            <button 
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'video'); }}
-                              className="bg-primary hover:bg-primary-light text-background text-xs font-bold px-3.5 py-2 rounded-xl flex items-center justify-center gap-1 shadow-sm transition-all flex-1 cursor-pointer active:scale-95 touch-manipulation"
-                            >
-                              Video
-                            </button>
-                          </div>
-                        ) : (
-                          <div className={viewMode === 'grid' ? 'w-full' : 'min-w-[180px]'}>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openAppointmentModal(expert, 'call');
-                              }}
-                              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-sm"
-                              title="एक्सपर्ट अभी ऑफलाइन है। अपॉइंटमेंट बुक करें।"
-                            >
-                              <Calendar size={13} className="shrink-0" />
-                              <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
-                            </button>
-                          </div>
-                        )}
+                    {/* Bottom Section: Rating, Price & Action Buttons */}
+                    <div className={`mt-auto pt-3 border-t border-border-color/80 flex flex-col gap-2 ${
+                      viewMode === 'list' ? 'w-full sm:w-auto shrink-0' : 'w-full'
+                    }`}>
+                      {/* Rating & Rate Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          {expert.rating > 0 ? (
+                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <span className="text-amber-500">★</span>
+                              <span>{Number(expert.rating).toFixed(1)}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                              New
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-extrabold text-on-surface tracking-tight">
+                            ₹{Math.max(5, expert.rates?.chat || expert.pricePerMinute || 5)}
+                          </span>
+                          <span className="text-[11px] text-on-surface/50 font-medium">/min</span>
+                        </div>
                       </div>
+
+                      {/* Action Buttons */}
+                      {expert.onlineStatus === 'online' ? (
+                        <div className="grid grid-cols-3 gap-1.5 w-full">
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'chat'); }}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 text-xs font-bold py-2 px-1 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                          >
+                            <MessageSquare size={11} className="shrink-0" />
+                            <span>Chat</span>
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'audio'); }}
+                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-xs font-bold py-2 px-1 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                          >
+                            <Phone size={11} className="shrink-0" />
+                            <span>Call</span>
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'video'); }}
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold py-2 px-1 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                          >
+                            <Video size={11} className="shrink-0" />
+                            <span>Video</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openAppointmentModal(expert, 'call');
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                          title="एक्सपर्ट अभी ऑफलाइन है। अपॉइंटमेंट बुक करें।"
+                        >
+                          <Calendar size={13} className="shrink-0" />
+                          <span>Book Appointment</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
