@@ -488,20 +488,20 @@ function ExpertProfileEdit() {
 
               </div>
 
-              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive) */}
-              <div className="bg-[#0e1628] rounded-2xl border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
+              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Reduced Border Radius) */}
+              <div className="bg-[#0e1628] rounded-xl border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
                 
                 {/* Header Row */}
                 <div className="flex items-center justify-between gap-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-5 h-5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-5 h-5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
                       <IndianRupee size={12} />
                     </div>
                     <span className="font-extrabold text-[11px] uppercase tracking-wide text-amber-500 whitespace-nowrap truncate">
                       CONSULTATION RATES
                     </span>
                   </div>
-                  <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 shadow-2xs">
+                  <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-2xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span className="font-semibold text-[10px] whitespace-nowrap">₹/min billing</span>
                   </div>
@@ -515,17 +515,17 @@ function ExpertProfileEdit() {
                 <div className="grid grid-cols-3 gap-2 pt-0.5">
                   
                   {/* Card 1: CHAT */}
-                  <div className="bg-[#121c33] border border-slate-800/90 rounded-xl p-2.5 flex flex-col items-center justify-between transition-all hover:border-slate-700">
+                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2.5 flex flex-col items-center justify-between transition-all hover:border-slate-700">
                     <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-200 tracking-wider mb-2">
                       <MessageCircle size={11} className="text-cyan-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap">CHAT</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-lg px-1.5 py-1 flex items-center justify-between w-full">
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, chat: Math.max(5, (Number(f.rates.chat) || 5) - 1) } }))}
-                        className="w-4 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                       >
                         -
                       </button>
@@ -542,7 +542,7 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, chat: (Number(f.rates.chat) || 5) + 1 } }))}
-                        className="w-4 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                       >
                         +
                       </button>
@@ -552,17 +552,17 @@ function ExpertProfileEdit() {
                   </div>
 
                   {/* Card 2: VOICE CALL */}
-                  <div className="bg-[#121c33] border border-slate-800/90 rounded-xl p-2.5 flex flex-col items-center justify-between transition-all hover:border-slate-700">
+                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2.5 flex flex-col items-center justify-between transition-all hover:border-slate-700">
                     <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-200 tracking-wider mb-2">
                       <Phone size={11} className="text-emerald-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap text-[10px]">VOICE CALL</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-lg px-1.5 py-1 flex items-center justify-between w-full">
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
-                        className="w-4 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                       >
                         -
                       </button>
@@ -579,7 +579,7 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: (Number(f.rates.audio) || 10) + 1 } }))}
-                        className="w-4 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                       >
                         +
                       </button>
@@ -589,9 +589,9 @@ function ExpertProfileEdit() {
                   </div>
 
                   {/* Card 3: VIDEO (with POPULAR badge & amber glow border) */}
-                  <div className="bg-[#141f38] border border-amber-500/50 rounded-xl p-2.5 flex flex-col items-center justify-between relative shadow-[0_0_15px_rgba(245,158,11,0.06)]">
+                  <div className="bg-[#141f38] border border-amber-500/50 rounded-lg p-2.5 flex flex-col items-center justify-between relative shadow-[0_0_15px_rgba(245,158,11,0.06)]">
                     {/* POPULAR BADGE */}
-                    <span className="absolute -top-2 right-1.5 bg-amber-500 text-slate-950 text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider shadow-xs">
+                    <span className="absolute -top-2 right-1.5 bg-amber-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-xs">
                       POPULAR
                     </span>
 
@@ -600,11 +600,11 @@ function ExpertProfileEdit() {
                       <span className="uppercase font-extrabold whitespace-nowrap">VIDEO</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-lg px-1.5 py-1 flex items-center justify-between w-full">
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: Math.max(20, (Number(f.rates.video) || 20) - 1) } }))}
-                        className="w-4 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                       >
                         -
                       </button>
@@ -621,7 +621,7 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: (Number(f.rates.video) || 20) + 1 } }))}
-                        className="w-4 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                       >
                         +
                       </button>
@@ -633,7 +633,7 @@ function ExpertProfileEdit() {
                 </div>
 
                 {/* Toggle Row (Enable Instant Call-ins & Payout Rate) */}
-                <div className="bg-[#0b1222]/90 border border-slate-800/90 rounded-xl p-3 space-y-1.5">
+                <div className="bg-[#0b1222]/90 border border-slate-800/90 rounded-lg p-3 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {/* Toggle Switch */}
@@ -656,7 +656,7 @@ function ExpertProfileEdit() {
                     </div>
 
                     {/* Payout Rate Badge */}
-                    <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0">
+                    <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0">
                       <TrendingUp size={11} className="text-emerald-400" />
                       <span className="text-[10px] font-bold whitespace-nowrap">92% Payout</span>
                     </div>
@@ -673,7 +673,7 @@ function ExpertProfileEdit() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={saving}
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.99] text-slate-950 font-extrabold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.99] text-slate-950 font-extrabold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
                   >
                     <span>{saving ? 'Saving...' : 'Save Rate Settings'}</span>
                     <Check size={14} className="text-slate-950" />
