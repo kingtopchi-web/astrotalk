@@ -568,15 +568,16 @@ function ExpertDiscovery() {
                       onClick={(e) => handleToggleSave(expert._id, e)}
                       aria-label={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
                       title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
-                      className={`absolute top-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 ${
+                      className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 z-10 cursor-pointer shadow-xs ${
                         savedExpertIds.has(expert._id)
-                          ? 'bg-rose-50 text-rose-500 border border-rose-200 shadow-sm'
-                          : 'bg-surface-light/80 hover:bg-rose-50 text-on-surface/40 hover:text-rose-500 border border-border-color/60 hover:border-rose-200'
+                          ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-500 border border-rose-300 dark:border-rose-800'
+                          : 'bg-white/95 dark:bg-slate-800/95 text-slate-400 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-slate-700/80 hover:border-rose-200 hover:shadow-sm'
                       }`}
                     >
                       <Heart
                         size={16}
-                        className={`transition-transform hover:scale-110 active:scale-90 ${
+                        strokeWidth={2.2}
+                        className={`transition-transform duration-200 hover:scale-115 active:scale-90 ${
                           savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
                         }`}
                       />

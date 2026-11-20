@@ -803,15 +803,16 @@ export default function CategoryExperts() {
                         onClick={(e) => handleToggleSave(expert._id, e)}
                         aria-label="Save expert"
                         title={savedExpertIds.has(expert._id) ? "Remove from saved" : "Save expert"}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 border ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 z-10 cursor-pointer shadow-xs ${
                           savedExpertIds.has(expert._id)
-                            ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-xs'
-                            : 'bg-background/90 backdrop-blur border-border text-on-surface/50 hover:text-rose-500 hover:bg-rose-50'
+                            ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-500 border border-rose-300 dark:border-rose-800'
+                            : 'bg-white/95 dark:bg-slate-800/95 text-slate-400 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-slate-700/80 hover:border-rose-200 hover:shadow-sm'
                         }`}
                       >
                         <Heart
                           size={15}
-                          className={`transition-colors ${
+                          strokeWidth={2.2}
+                          className={`transition-transform duration-200 hover:scale-115 active:scale-90 ${
                             savedExpertIds.has(expert._id) ? 'fill-rose-500 text-rose-500' : ''
                           }`}
                         />
