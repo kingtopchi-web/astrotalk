@@ -19,6 +19,7 @@ import {
   ExternalLink,
   ChevronDown,
   Plus,
+  Minus,
   X,
   AlertCircle,
   CheckCircle2,
@@ -488,7 +489,7 @@ function ExpertProfileEdit() {
 
               </div>
 
-              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Clean Rupee Symbol & Spacing) */}
+              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Visible Minus/Plus Icons & No Truncation) */}
               <div className="bg-[#0e1628] rounded-xl border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
                 
                 {/* Header Row */}
@@ -515,38 +516,38 @@ function ExpertProfileEdit() {
                 <div className="grid grid-cols-3 gap-2 pt-0.5">
                   
                   {/* Card 1: CHAT */}
-                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2.5 flex flex-col items-center justify-between transition-all hover:border-slate-700">
+                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2 flex flex-col items-center justify-between transition-all hover:border-slate-700">
                     <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-200 tracking-wider mb-2">
                       <MessageCircle size={11} className="text-cyan-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap">CHAT</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md p-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, chat: Math.max(5, (Number(f.rates.chat) || 5) - 1) } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
-                        -
+                        <Minus size={11} strokeWidth={2.5} />
                       </button>
-                      <div className="flex items-center justify-center gap-1 flex-1 min-w-0">
+                      <div className="flex items-center justify-center gap-0.5 min-w-0">
                         <span className="text-xs font-bold text-slate-400 leading-none select-none">₹</span>
                         <input 
                           type="number"
                           min="5"
                           value={form.rates.chat}
                           onChange={(e) => setForm({ ...form, rates: { ...form.rates, chat: e.target.value } })}
-                          className="w-7 text-center text-xs font-extrabold text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-6 text-center text-xs font-extrabold text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, chat: (Number(f.rates.chat) || 5) + 1 } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
-                        +
+                        <Plus size={11} strokeWidth={2.5} />
                       </button>
                     </div>
 
@@ -554,38 +555,38 @@ function ExpertProfileEdit() {
                   </div>
 
                   {/* Card 2: VOICE CALL */}
-                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2.5 flex flex-col items-center justify-between transition-all hover:border-slate-700">
+                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2 flex flex-col items-center justify-between transition-all hover:border-slate-700">
                     <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-200 tracking-wider mb-2">
                       <Phone size={11} className="text-emerald-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap text-[10px]">VOICE CALL</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md p-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
-                        onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
+                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
-                        -
+                        <Minus size={11} strokeWidth={2.5} />
                       </button>
-                      <div className="flex items-center justify-center gap-1 flex-1 min-w-0">
+                      <div className="flex items-center justify-center gap-0.5 min-w-0">
                         <span className="text-xs font-bold text-slate-400 leading-none select-none">₹</span>
                         <input 
                           type="number"
                           min="10"
                           value={form.rates.audio}
                           onChange={(e) => setForm({ ...form, rates: { ...form.rates, audio: e.target.value } })}
-                          className="w-7 text-center text-xs font-extrabold text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-6 text-center text-xs font-extrabold text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: (Number(f.rates.audio) || 10) + 1 } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
-                        +
+                        <Plus size={11} strokeWidth={2.5} />
                       </button>
                     </div>
 
@@ -593,7 +594,7 @@ function ExpertProfileEdit() {
                   </div>
 
                   {/* Card 3: VIDEO (with POPULAR badge & amber glow border) */}
-                  <div className="bg-[#141f38] border border-amber-500/50 rounded-lg p-2.5 flex flex-col items-center justify-between relative shadow-[0_0_15px_rgba(245,158,11,0.06)]">
+                  <div className="bg-[#141f38] border border-amber-500/50 rounded-lg p-2 flex flex-col items-center justify-between relative shadow-[0_0_15px_rgba(245,158,11,0.06)]">
                     {/* POPULAR BADGE */}
                     <span className="absolute -top-2 right-1.5 bg-amber-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-xs">
                       POPULAR
@@ -604,32 +605,32 @@ function ExpertProfileEdit() {
                       <span className="uppercase font-extrabold whitespace-nowrap">VIDEO</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
+                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md p-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: Math.max(20, (Number(f.rates.video) || 20) - 1) } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
-                        -
+                        <Minus size={11} strokeWidth={2.5} />
                       </button>
-                      <div className="flex items-center justify-center gap-1 flex-1 min-w-0">
+                      <div className="flex items-center justify-center gap-0.5 min-w-0">
                         <span className="text-xs font-bold text-amber-500 leading-none select-none">₹</span>
                         <input 
                           type="number"
                           min="20"
                           value={form.rates.video}
                           onChange={(e) => setForm({ ...form, rates: { ...form.rates, video: e.target.value } })}
-                          className="w-7 text-center text-xs font-extrabold text-amber-300 bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-6 text-center text-xs font-extrabold text-amber-300 bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: (Number(f.rates.video) || 20) + 1 } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
-                        +
+                        <Plus size={11} strokeWidth={2.5} />
                       </button>
                     </div>
 
@@ -641,7 +642,7 @@ function ExpertProfileEdit() {
                 {/* Toggle Row (Enable Instant Call-ins & Payout Rate) */}
                 <div className="bg-[#0b1222]/90 border border-slate-800/90 rounded-lg p-3 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       {/* Toggle Switch */}
                       <button
                         type="button"
@@ -656,8 +657,8 @@ function ExpertProfileEdit() {
                           }`}
                         />
                       </button>
-                      <span className="text-xs font-bold text-white whitespace-nowrap truncate">
-                        Enable Instant Call-ins
+                      <span className="text-xs font-bold text-white whitespace-nowrap">
+                        Instant Call-ins
                       </span>
                     </div>
 
@@ -669,7 +670,7 @@ function ExpertProfileEdit() {
                   </div>
 
                   <p className="text-[10px] text-slate-400 pl-11 leading-tight">
-                    Receive on-demand sessions when active
+                    Receive on-demand client calls when online
                   </p>
                 </div>
 
