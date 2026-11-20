@@ -76,10 +76,7 @@ app.use((req, res, next) => {
 // CORS Configuration - Strictly restricted to authorized platform domains
 const defaultAllowed = [
   'https://experthub.nextgoodtechnologies.in',
-  'https://admin.experthub.nextgoodtechnologies.in',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000'
+  'https://admin.experthub.nextgoodtechnologies.in'
 ];
 const envAllowed = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [];
 const allowedOrigins = Array.from(new Set([...defaultAllowed, ...envAllowed])).filter(Boolean);
@@ -88,10 +85,6 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    // Only allow arbitrary local origins if explicitly configured as development
-    if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));

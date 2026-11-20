@@ -223,13 +223,12 @@ const forgotPassword = async (req, res) => {
     }
 
     // Securely determine frontend URL (Never trust arbitrary unvalidated client headers)
-    const allowedFrontends = [
+    const defaultFrontends = [
       'https://experthub.nextgoodtechnologies.in',
-      'https://admin.experthub.nextgoodtechnologies.in',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:3000'
+      'https://admin.experthub.nextgoodtechnologies.in'
     ];
+    const envFrontends = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [];
+    const allowedFrontends = Array.from(new Set([...defaultFrontends, ...envFrontends])).filter(Boolean);
     const incomingOrigin = req.get('origin') || req.get('referer');
     let validatedBase = process.env.FRONTEND_URL || 'https://experthub.nextgoodtechnologies.in';
 

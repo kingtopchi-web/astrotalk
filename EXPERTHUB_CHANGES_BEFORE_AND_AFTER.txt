@@ -31,13 +31,10 @@ app.use(cors({
 }));
 
 --- [ABHI (NOW)] ---
-// CORS Configuration - Strictly restricted to authorized platform domains
+// CORS Configuration - Strictly restricted to authorized platform domains (Zero localhost by default)
 const defaultAllowed = [
   'https://experthub.nextgoodtechnologies.in',
-  'https://admin.experthub.nextgoodtechnologies.in',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000'
+  'https://admin.experthub.nextgoodtechnologies.in'
 ];
 const envAllowed = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [];
 const allowedOrigins = Array.from(new Set([...defaultAllowed, ...envAllowed])).filter(Boolean);
@@ -48,18 +45,15 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    // Only allow arbitrary local origins if explicitly configured as development
-    if (process.env.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
 
 FAYDA (BENEFIT):
-Ab anjaan websites ko data access nahi milega. Sirf authorized domains hi backend
-se connect kar payenge.
+Production me localhost puri tarah se hata diya gaya hai. Ab koi bhi local script ya
+third-party test tool production server se connect nahi ho sakta. Jab bhi aapko local par
+run karna ho, aap seedhe backend/.env me 'ALLOWED_ORIGINS=http://localhost:5173' daal sakte hain.
 
 
 --------------------------------------------------------------------------------
