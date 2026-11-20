@@ -488,7 +488,7 @@ function ExpertProfileEdit() {
 
               </div>
 
-              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Reduced Border Radius) */}
+              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Reduced Border Radius & Better Stepper Spacing) */}
               <div className="bg-[#0e1628] rounded-xl border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
                 
                 {/* Header Row */}
@@ -525,11 +525,12 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, chat: Math.max(5, (Number(f.rates.chat) || 5) - 1) } }))}
-                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        title="Decrease rate"
                       >
                         -
                       </button>
-                      <div className="flex items-center justify-center min-w-0">
+                      <div className="flex items-center justify-center min-w-0 px-2">
                         <span className="text-[10px] font-bold text-slate-400 mr-0.5 select-none">₹</span>
                         <input 
                           type="number"
@@ -542,7 +543,8 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, chat: (Number(f.rates.chat) || 5) + 1 } }))}
-                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        title="Increase rate"
                       >
                         +
                       </button>
@@ -562,11 +564,12 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
-                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        title="Decrease rate"
                       >
                         -
                       </button>
-                      <div className="flex items-center justify-center min-w-0">
+                      <div className="flex items-center justify-center min-w-0 px-2">
                         <span className="text-[10px] font-bold text-slate-400 mr-0.5 select-none">₹</span>
                         <input 
                           type="number"
@@ -579,7 +582,8 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: (Number(f.rates.audio) || 10) + 1 } }))}
-                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        title="Increase rate"
                       >
                         +
                       </button>
@@ -604,11 +608,12 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: Math.max(20, (Number(f.rates.video) || 20) - 1) } }))}
-                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        title="Decrease rate"
                       >
                         -
                       </button>
-                      <div className="flex items-center justify-center min-w-0">
+                      <div className="flex items-center justify-center min-w-0 px-2">
                         <span className="text-[10px] font-bold text-amber-500 mr-0.5 select-none">₹</span>
                         <input 
                           type="number"
@@ -621,7 +626,8 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: (Number(f.rates.video) || 20) + 1 } }))}
-                        className="w-4 h-5 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        title="Increase rate"
                       >
                         +
                       </button>
