@@ -556,7 +556,7 @@ function ExpertDiscovery() {
                   <div
                     key={expert._id}
                     onClick={() => navigate(`/expert/${expert._id}`)}
-                    className={`bg-surface rounded-xl shadow-xs border border-border-color hover:border-primary/40 hover:shadow-md transition-all relative group cursor-pointer ${
+                    className={`bg-surface rounded-lg shadow-xs border border-border-color hover:border-primary/40 hover:shadow-md transition-all relative group cursor-pointer ${
                       viewMode === 'list'
                         ? 'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4'
                         : 'flex flex-col justify-between h-full p-4'
@@ -588,7 +588,7 @@ function ExpertDiscovery() {
                         <img
                           src={expert.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=F97316&color=fff`}
                           alt={expert.name}
-                          className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl object-cover border border-border-color/80 shadow-2xs"
+                          className="w-13 h-13 sm:w-14 sm:h-14 rounded-lg object-cover border border-border-color/80 shadow-2xs"
                         />
                         <div
                           className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-surface ${
@@ -674,7 +674,7 @@ function ExpertDiscovery() {
                           <button 
                             type="button"
                             onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'chat'); }}
-                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 text-xs font-bold py-2 px-1 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 text-xs font-bold py-2 px-1 rounded-md flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
                           >
                             <MessageSquare size={11} className="shrink-0" />
                             <span>Chat</span>
@@ -682,7 +682,7 @@ function ExpertDiscovery() {
                           <button 
                             type="button"
                             onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'audio'); }}
-                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-xs font-bold py-2 px-1 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-xs font-bold py-2 px-1 rounded-md flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
                           >
                             <Phone size={11} className="shrink-0" />
                             <span>Call</span>
@@ -690,7 +690,7 @@ function ExpertDiscovery() {
                           <button 
                             type="button"
                             onClick={(e) => { e.stopPropagation(); openCallModal(expert, 'video'); }}
-                            className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-1 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
+                            className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-1 rounded-md flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
                           >
                             <Video size={11} className="shrink-0" />
                             <span>Video</span>
@@ -703,11 +703,14 @@ function ExpertDiscovery() {
                             e.stopPropagation();
                             openAppointmentModal(expert, 'call');
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg font-bold text-[11px] sm:text-xs bg-amber-500 hover:bg-amber-600 text-white transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs whitespace-nowrap"
+                          className="w-full flex items-center justify-center gap-2 py-1.5 px-2 rounded-md font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all cursor-pointer active:scale-95 touch-manipulation shadow-2xs"
                           title="एक्सपर्ट अभी ऑफलाइन है। अपॉइंटमेंट बुक करें।"
                         >
-                          <Calendar size={13} className="shrink-0" />
-                          <span>Book Appointment / अपॉइंटमेंट बुक करें</span>
+                          <Calendar size={14} className="shrink-0" />
+                          <div className="flex flex-col items-center leading-tight py-0.5 min-w-0">
+                            <span className="text-[11.5px] font-extrabold tracking-tight">Book Appointment</span>
+                            <span className="text-[9.5px] font-semibold opacity-95">अपॉइंटमेंट बुक करें</span>
+                          </div>
                         </button>
                       )}
                     </div>
