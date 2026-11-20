@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Expert = require('../models/Expert');
 const { getAdminMinimumDistanceKm, filterExpertsByMinimumDistance, extractCoordinates } = require('../utils/distanceHelper');
 
@@ -231,7 +232,12 @@ router.get('/my-clients', protect, authorizeRoles('EXPERT'), async (req, res) =>
 // @desc    Get single expert by ID (sensitive fields masked)
 router.get('/:id', async (req, res) => {
   try {
-    const expert = await Expert.findById(req.params.id)
+    const { id } = req.params;
+    if (!id || id === 'public' || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: 'Expert not found' });
+    }
+
+    const expert = await Expert.findById(id)
       .select(PUBLIC_EXPERT_FIELDS)
       .populate('categoryId', 'name')
       .populate('subCategoryId', 'name');

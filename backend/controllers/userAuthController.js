@@ -65,7 +65,7 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/user/login
 const loginUser = async (req, res) => {
   try {
-    const { email, password, reactivate } = req.body;
+    const { email, password, reactivate } = req.body || {};
 
     if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
       return res.status(400).json({ message: 'Please provide both email and password' });
@@ -184,8 +184,8 @@ const reactivateUser = async (req, res) => {
 // @route   POST /api/auth/forgotpassword
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) {
+    const { email } = req.body || {};
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({ message: 'Please provide an email address' });
     }
 
@@ -196,7 +196,11 @@ const forgotPassword = async (req, res) => {
     const expert = await Expert.findOne({ email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } });
 
     if (!user && !expert) {
-      return res.status(404).json({ message: 'No registered account found with that email address' });
+      // Prevent user enumeration: Return generic safe response
+      return res.status(200).json({
+        success: true,
+        message: 'If an account is associated with this email, a password reset link has been dispatched.'
+      });
     }
 
     const account = user || expert;
@@ -218,18 +222,28 @@ const forgotPassword = async (req, res) => {
       await expert.save({ validateBeforeSave: false });
     }
 
-    // Determine client origin for the reset link
-    const origin = req.get('origin') || req.get('referer');
-    let clientUrl = origin ? origin.replace(/\/$/, '') : '';
-    try {
-      if (clientUrl) {
-        const u = new URL(clientUrl);
-        clientUrl = `${u.protocol}//${u.host}`;
-      }
-    } catch (e) {}
+    // Securely determine frontend URL (Never trust arbitrary unvalidated client headers)
+    const allowedFrontends = [
+      'https://experthub.nextgoodtechnologies.in',
+      'https://admin.experthub.nextgoodtechnologies.in',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:3000'
+    ];
+    const incomingOrigin = req.get('origin') || req.get('referer');
+    let validatedBase = process.env.FRONTEND_URL || 'https://experthub.nextgoodtechnologies.in';
 
-    const frontendBase = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
-    const resetUrl = `${frontendBase}/reset-password/${resetToken}`;
+    if (incomingOrigin) {
+      try {
+        const u = new URL(incomingOrigin);
+        const originUrl = `${u.protocol}//${u.host}`;
+        if (allowedFrontends.includes(originUrl)) {
+          validatedBase = originUrl;
+        }
+      } catch (e) {}
+    }
+
+    const resetUrl = `${validatedBase}/reset-password/${resetToken}`;
 
     const message = `Hello ${account.name || 'there'},\n\nYou (or someone else) requested a password reset for your ExpertHub account.\n\nPlease reset your password by opening the link below (valid for 15 minutes):\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.`;
 

@@ -9,7 +9,7 @@ const sendEmail = require('../utils/sendEmail');
 // @access  Public
 exports.submitContactForm = async (req, res) => {
   try {
-    const { name, email, phone, subject, message } = req.body;
+    const { name, email, phone, subject, message } = req.body || {};
 
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Please enter your name.' });

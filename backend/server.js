@@ -73,13 +73,25 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS Configuration
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://experthub.nextgoodtechnologies.in,http://localhost:5173,http://localhost:5174,http://localhost:3000').split(',');
+// CORS Configuration - Strictly restricted to authorized platform domains
+const defaultAllowed = [
+  'https://experthub.nextgoodtechnologies.in',
+  'https://admin.experthub.nextgoodtechnologies.in',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000'
+];
+const envAllowed = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [];
+const allowedOrigins = Array.from(new Set([...defaultAllowed, ...envAllowed])).filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Only allow arbitrary local origins if explicitly configured as development
+    if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
@@ -198,6 +210,38 @@ app.get('/', (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running!' });
+});
+
+// Centralized Error Handling Middleware (Suppresses raw stack trace / path leakage in production)
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  // Handle JSON parsing / body-parser syntax errors
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid JSON request payload format.'
+    });
+  }
+
+  // Handle CORS rejection
+  if (err.message && err.message.includes('CORS')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: Origin not authorized by CORS policy.'
+    });
+  }
+
+  // Generic sanitized error response
+  console.error('[UnhandledError]', err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message && process.env.NODE_ENV === 'development'
+      ? err.message
+      : 'An unexpected internal error occurred. Please try again later.'
+  });
 });
 
 const PORT = process.env.PORT || 5000;

@@ -706,8 +706,8 @@ exports.getDocumentFile = async (req, res) => {
       return res.status(404).json({ message: 'Document not found.' });
     }
 
-    // Role-based authorization: Only ADMIN or the owner EXPERT can view this document!
-    const isAdmin = decoded.role === 'ADMIN';
+    // Role-based authorization: Only ADMIN (including SUPER_ADMIN) or the owner EXPERT can view this document!
+    const isAdmin = decoded.role === 'ADMIN' || decoded.role === 'SUPER_ADMIN';
     const isOwnerExpert = decoded.role === 'EXPERT' && decoded.id.toString() === doc.expertId.toString();
 
     if (!isAdmin && !isOwnerExpert) {

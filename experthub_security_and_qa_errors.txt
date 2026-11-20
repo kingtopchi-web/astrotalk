@@ -1,0 +1,282 @@
+================================================================================
+EXPERTHUB - PRODUCTION QA & SECURITY AUDIT ERRORS & VULNERABILITIES LIST
+================================================================================
+Domain: https://experthub.nextgoodtechnologies.in
+IP: 148.135.136.177
+Date Generated: 20 November 2026
+Status: Audit Findings Report (Actionable Technical & Simple Hindi Guide)
+================================================================================
+
+
+--------------------------------------------------------------------------------
+[ERROR 01] - [HIGH RISK] PERMISSIVE CORS (ANJAAN WEBSITES KO ACCESS MILNA)
+--------------------------------------------------------------------------------
+Issue ID: SEC-001
+File Location: backend/server.js (Lines 77 - 88)
+Severity: HIGH | Priority: P1
+
+1. Dikkat Kya Hai (What is happening):
+   Browser ka niyam hota hai ki sirf aapki website ka frontend hi backend se data le
+   sakta hai. Lekin backend me setting aisi hai ki agar 'NODE_ENV' production me strictly
+   match nahi hota, to koi bhi doosri website (jaise hacker-site.com ya google.com) se aayi
+   request ko server accept kar leta hai aur unhe 'credentials: true' ke sath data de deta hai.
+
+2. Khatra (Security Impact):
+   Agar koi logged-in user kisi malicious website par visit kare, to wo website background me
+   user ke session aur cookies ke sath ExpertHub API ko calls bhej sakti hai.
+
+3. Kaise Test Karein (How to Test):
+   PowerShell / Terminal me run karein:
+   curl.exe -s -I -H "Origin: https://google.com" https://experthub.nextgoodtechnologies.in/api/health
+
+   Aapko response me dikhega:
+   Access-Control-Allow-Origin: https://google.com
+   Access-Control-Allow-Credentials: true
+   (Kyunki google.com ko reject hona chahiye tha, accept nahi).
+
+4. Solution (Fix):
+   - Server par environment variable strictly 'NODE_ENV=production' set karein.
+   - backend/server.js me CORS origin function ko strict whitelist par lock karein taaki
+     sirf 'experthub.nextgoodtechnologies.in' hi allow ho.
+
+
+--------------------------------------------------------------------------------
+[ERROR 02] - [HIGH RISK] PASSWORD RESET HOST POISONING (CHORI KA RESET LINK)
+--------------------------------------------------------------------------------
+Issue ID: SEC-002
+File Location: backend/controllers/userAuthController.js (Lines 221 - 233)
+Severity: HIGH | Priority: P1
+
+1. Dikkat Kya Hai (What is happening):
+   Jab user 'Forgot Password' request bhejta hai, to uske email par password reset link jaata hai.
+   Code me website ka domain name fix karne ke bajaye, request ke 'Origin' ya 'Referer' header
+   se domain ka naam utha liya ja raha hai:
+   const origin = req.get('origin') || req.get('referer');
+   const resetUrl = `${frontendBase}/reset-password/${resetToken}`;
+
+2. Khatra (Security Impact):
+   Agar koi hacker kisi user ke liye password reset request bhejte waqt header me apna
+   fake domain (jaise https://attacker.com) bhej de, to user ko asli ExpertHub ki email
+   aayegi lekin andar ka button hacker ki website ka hoga. User uspe click karke naya
+   password dale ga aur account hack ho jayega.
+
+3. Solution (Fix):
+   Request header se domain lena turant band karein. Reset URL me platform ka official
+   domain hardcode ya verified env variable use karein:
+   const frontendBase = process.env.FRONTEND_URL || 'https://experthub.nextgoodtechnologies.in';
+
+
+--------------------------------------------------------------------------------
+[ERROR 03] - [HIGH RISK] RAZORPAY TEST MODE KEYS IN PRODUCTION (DEMO PAYMENT)
+--------------------------------------------------------------------------------
+Issue ID: SEC-009
+File Location: frontend/.env (Line 2) & backend/.env
+Severity: HIGH | Priority: P1
+
+1. Dikkat Kya Hai (What is happening):
+   Production build me Razorpay ka Key ID 'rzp_test_SBFgUhpkJffWZY' laga hua hai,
+   jo ki Razorpay ka Test/Demo Mode hai.
+
+2. Khatra (Operational Impact):
+   Live customer jab wallet recharge ya consultation book karne ke liye paise pay karega,
+   to asli bank account se real paise process nahi honge aur popup par '[Test Mode]' likha
+   hua aayega.
+
+3. Kaise Test Karein (How to Test):
+   Website par login karke https://experthub.nextgoodtechnologies.in/wallet par jayein
+   aur 'Add Money' par click karein. Jo popup aayega uske top par yellow patti me
+   '[Test Mode]' saaf dikhega.
+
+4. Solution (Fix):
+   Razorpay dashboard se Live API Keys ('rzp_live_...') generate karke frontend/.env
+   aur backend/.env me lagayein aur live webhook secret update karein.
+
+
+--------------------------------------------------------------------------------
+[ERROR 04] - [MEDIUM RISK] STACK TRACE & FILE PATH LEAK (SERVER FILES DIKHNA)
+--------------------------------------------------------------------------------
+Issue ID: SEC-003
+File Location: backend/server.js (Global Error Handler missing)
+Severity: MEDIUM | Priority: P2
+
+1. Dikkat Kya Hai (What is happening):
+   Express me koi custom central error handler middleware register nahi hai. Jab koi
+   syntax error ya galat format ka data aata hai, to Express ka default HTML error page
+   pura stack trace screen par print kar deta hai.
+
+2. Khatra (Security Impact):
+   Bahar ke kisi bhi user/hacker ko server ka exact internal path pata chal jata hai:
+   '/ExpertHub/backend/node_modules/body-parser/lib/types/json.js'
+   Isse server ke directories aur installed packages reveal ho jaate hain.
+
+3. Kaise Test Karein (How to Test):
+   PowerShell me run karein:
+   curl.exe -s -H "Content-Type: application/json" -d "{" https://experthub.nextgoodtechnologies.in/api/auth/user/login
+
+   Response me pura HTML stack trace print hoga.
+
+4. Solution (Fix):
+   backend/server.js ke aakhiri me (routes ke baad) ek standard error handling middleware add karein:
+   app.use((err, req, res, next) => {
+     res.status(err.status || 500).json({ success: false, message: 'Invalid request payload or server error' });
+   });
+
+
+--------------------------------------------------------------------------------
+[ERROR 05] - [MEDIUM RISK] SUPER_ADMIN ROLE LOCKED OUT OF EXPERT DOCUMENTS
+--------------------------------------------------------------------------------
+Issue ID: SEC-005
+File Location: backend/controllers/documentController.js (Line 710)
+Severity: MEDIUM | Priority: P2
+
+1. Dikkat Kya Hai (What is happening):
+   Expert ke upload kiye gaye KYC / Verification documents download karne ke endpoint
+   ('/api/documents/:documentId/file') par check laga hai:
+   const isAdmin = decoded.role === 'ADMIN';
+   Is check me 'SUPER_ADMIN' role likhna chhoot gaya hai.
+
+2. Khatra (Functionality Bug):
+   Platform ka main Admin (Super Admin) jab kisi expert ke certificates ya ID documents
+   open karke verify karne jayega, to server usko '403 Forbidden: You do not have
+   permission to view this private document' bolkar block kar dega.
+
+3. Kaise Test Karein (How to Test):
+   Admin panel me SUPER_ADMIN account se login karein aur kisi expert ke document
+   view link ko open karein -> 403 Forbidden aayega.
+
+4. Solution (Fix):
+   Line 710 ko update karein:
+   const isAdmin = decoded.role === 'ADMIN' || decoded.role === 'SUPER_ADMIN';
+
+
+--------------------------------------------------------------------------------
+[ERROR 06] - [MEDIUM RISK] UNDEFINED REQ.BODY PAR 500 INTERNAL SERVER ERROR
+--------------------------------------------------------------------------------
+Issue ID: SEC-006
+File Location: backend/controllers/userAuthController.js (Line 68), contactController.js (Line 12)
+Severity: MEDIUM | Priority: P2
+
+1. Dikkat Kya Hai (What is happening):
+   Jab client bina 'Content-Type: application/json' header ke ya khali POST request bhejta hai,
+   to Express 'req.body' ko undefined set karta hai. Code me bina check kiye seedhe
+   destructuring likhi hai:
+   const { email, password } = req.body;
+   Isse Node.js me 'TypeError: Cannot destructure property email of req.body as it is undefined'
+   throw hota hai aur server 500 Server Error return karta hai.
+
+2. Kaise Test Karein (How to Test):
+   PowerShell me run karein:
+   curl.exe -s -I -X POST https://experthub.nextgoodtechnologies.in/api/auth/user/login
+   Response aayega: HTTP/1.1 500 Internal Server Error (jabki 400 Bad Request aana chahiye tha).
+
+3. Solution (Fix):
+   Controllers me safe default fallback lagayein:
+   const { email, password } = req.body || {};
+
+
+--------------------------------------------------------------------------------
+[ERROR 07] - [MEDIUM RISK] MONGOOSE CAST ERROR ON INVALID URL PARAMETERS (500 ERROR)
+--------------------------------------------------------------------------------
+Issue ID: SEC-007
+File Location: backend/routes/expertRoutes.js (Line 232)
+Severity: MEDIUM | Priority: P2
+
+1. Dikkat Kya Hai (What is happening):
+   Public expert route '/api/experts/:id' me param ':id' ko check nahi kiya ja raha hai
+   ki wo valid 24-character hexadecimal MongoDB ObjectId hai ya nahi.
+   Jab koi '/api/experts/public' ya '/api/experts/123' call karta hai, to Mongoose ka
+   CastError trigger hota hai aur 500 Server Error return hota hai.
+
+2. Kaise Test Karein (How to Test):
+   Browser me direct open karein:
+   https://experthub.nextgoodtechnologies.in/api/experts/public
+   Screen par aayega: {"message":"Server Error"} (HTTP 500).
+
+3. Solution (Fix):
+   Route me ObjectId validation lagayein:
+   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+     return res.status(404).json({ message: 'Expert not found' });
+   }
+
+
+--------------------------------------------------------------------------------
+[ERROR 08] - [MEDIUM RISK] USER EMAIL ENUMERATION ON FORGOT PASSWORD
+--------------------------------------------------------------------------------
+Issue ID: SEC-004
+File Location: backend/controllers/userAuthController.js (Lines 198 - 200)
+Severity: MEDIUM | Priority: P3
+
+1. Dikkat Kya Hai (What is happening):
+   Forgot password endpoint me agar email registered nahi hai to ye '404 Not Found'
+   return karta hai, aur registered hai to '200 OK'. Isse koi bhi script chala kar
+   pata laga sakta hai ki kaun-kaun se emails platform par registered hain.
+
+2. Solution (Fix):
+   OWASP security standard ke mutabiq hamesha generic response dein:
+   "If an account with that email address exists, a password reset link has been dispatched."
+
+
+--------------------------------------------------------------------------------
+[ERROR 09] - [LOW RISK] MISSING SECURITY HEADERS ON NGINX STATIC ASSETS
+--------------------------------------------------------------------------------
+Issue ID: SEC-008
+File Location: /etc/nginx/sites-available/experthub (Hostinger VPS)
+Severity: LOW | Priority: P3
+
+1. Dikkat Kya Hai (What is happening):
+   Express Helmet backend par HSTS aur CSP headers inject karta hai, lekin Nginx jab
+   frontend ki static files (index.html, JS bundles) serve karta hai, to unme
+   Strict-Transport-Security (HSTS) aur X-Frame-Options headers attach nahi hote.
+
+2. Solution (Fix):
+   Nginx configuration ke server block me security headers add karein:
+   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+   add_header X-Frame-Options "SAMEORIGIN" always;
+   add_header X-Content-Type-Options "nosniff" always;
+
+
+--------------------------------------------------------------------------------
+[ERROR 10] - [PERFORMANCE] NGINX GZIP COMPRESSION DISABLED (SLOW LOAD)
+--------------------------------------------------------------------------------
+Issue ID: PERF-001
+File Location: /etc/nginx/nginx.conf (Hostinger VPS)
+Severity: MEDIUM (Performance) | Priority: P2
+
+1. Dikkat Kya Hai (What is happening):
+   Live server par Nginx Gzip compression disabled hai. Main frontend JavaScript file
+   'index-DOQ_TNz3.js' bina compress hue pure 1.57 MB (1,571,460 bytes) transfer ho rahi hai.
+
+2. Asar (Impact):
+   Mobile ya slow internet par website khulne me 4 guna zyada time aur bandwidth lagta hai.
+   Agar Gzip enable ho to ye file 1.57 MB se ghat kar sirf ~370 KB ki ho jayegi (76% reduction).
+
+3. Kaise Test Karein (How to Test):
+   PowerShell me run karein:
+   curl.exe -s -I -H "Accept-Encoding: gzip" https://experthub.nextgoodtechnologies.in/assets/index-DOQ_TNz3.js
+   Headers me 'Content-Encoding: gzip' missing hai aur Content-Length 1571460 hai.
+
+4. Solution (Fix):
+   Nginx me gzip enable karein:
+   gzip on;
+   gzip_types text/plain text/css application/json application/javascript text/xml;
+
+
+================================================================================
+PRIORITY ROADMAP TO FIX:
+--------------------------------------------------------------------------------
+Phase 1 (Immediate / P1):
+  - [SEC-001] Fix CORS in backend/server.js
+  - [SEC-002] Fix Reset Link domain in userAuthController.js
+  - [SEC-009] Update Razorpay Live Keys in frontend/.env & backend/.env
+
+Phase 2 (Reliability / P2):
+  - [SEC-003] Add central error handling in backend/server.js
+  - [SEC-005] Add SUPER_ADMIN check in documentController.js
+  - [SEC-006] Add req.body fallback in auth controllers
+  - [SEC-007] Add ObjectId validation in expertRoutes.js
+  - [PERF-001] Enable Gzip in VPS Nginx
+
+Phase 3 (Hardening / P3):
+  - [SEC-004] Generic forgot-password response
+  - [SEC-008] Add Nginx security headers
+================================================================================
