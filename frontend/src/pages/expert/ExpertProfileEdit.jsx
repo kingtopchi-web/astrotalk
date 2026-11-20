@@ -352,7 +352,7 @@ function ExpertProfileEdit() {
         {/* Fixed Global Floating Responsive Toast Alerts */}
         {error && (
           <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] w-[92vw] max-w-md animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="bg-rose-950/95 text-rose-100 border border-rose-500/40 px-4 sm:px-5 py-3.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3 backdrop-blur-md ring-1 ring-rose-500/30">
+            <div className="bg-rose-950/95 text-rose-100 border border-rose-500/40 px-4 sm:px-5 py-3.5 rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3 backdrop-blur-md ring-1 ring-rose-500/30">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/30">
                   <AlertCircle size={20} />
@@ -364,7 +364,7 @@ function ExpertProfileEdit() {
               </div>
               <button
                 onClick={() => setError('')}
-                className="p-1.5 hover:bg-rose-800/40 text-rose-300 hover:text-white rounded-xl transition-colors shrink-0"
+                className="p-1.5 hover:bg-rose-800/40 text-rose-300 hover:text-white rounded-md transition-colors shrink-0"
               >
                 <X size={16} />
               </button>
@@ -374,7 +374,7 @@ function ExpertProfileEdit() {
 
         {success && (
           <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] w-[92vw] max-w-md animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="bg-emerald-950/95 text-emerald-100 border border-emerald-500/40 px-4 sm:px-5 py-3.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3 backdrop-blur-md ring-1 ring-emerald-500/30">
+            <div className="bg-emerald-950/95 text-emerald-100 border border-emerald-500/40 px-4 sm:px-5 py-3.5 rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3 backdrop-blur-md ring-1 ring-emerald-500/30">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
                   <CheckCircle2 size={20} />
@@ -386,7 +386,7 @@ function ExpertProfileEdit() {
               </div>
               <button
                 onClick={() => setSuccess('')}
-                className="p-1.5 hover:bg-emerald-800/40 text-emerald-300 hover:text-white rounded-xl transition-colors shrink-0"
+                className="p-1.5 hover:bg-emerald-800/40 text-emerald-300 hover:text-white rounded-md transition-colors shrink-0"
               >
                 <X size={16} />
               </button>
@@ -402,7 +402,7 @@ function ExpertProfileEdit() {
             <div className="lg:col-span-4 space-y-6">
 
               {/* CARD 1: PROFILE PHOTO */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-5">
+              <div className="bg-white rounded-lg border border-slate-200/90 p-6 shadow-xs space-y-5">
 
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -418,7 +418,7 @@ function ExpertProfileEdit() {
                 {/* Photo Preview Container */}
                 <div className="flex flex-col items-center">
                   <div className="relative">
-                    <div className="w-36 h-36 rounded-2xl overflow-hidden bg-slate-50 border-2 border-amber-200/80 shadow-xs flex items-center justify-center">
+                    <div className="w-36 h-36 rounded-lg overflow-hidden bg-slate-50 border-2 border-amber-200/80 shadow-xs flex items-center justify-center">
                       {form.profileImage ? (
                         <img
                           src={form.profileImage}
@@ -471,7 +471,7 @@ function ExpertProfileEdit() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/90 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                      className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/90 rounded-md text-xs font-semibold shadow-2xs transition-all cursor-pointer"
                     >
                       Change Image
                     </button>
@@ -490,7 +490,7 @@ function ExpertProfileEdit() {
               </div>
 
               {/* CARD 2: CONSULTATION RATES (Clean Stepper without Rupee Collision) */}
-              <div className="bg-[#0e1628] rounded-xl border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
+              <div className="bg-[#0e1628] rounded-md border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
                 
                 {/* Header Row */}
                 <div className="flex items-center justify-between gap-1.5">
@@ -689,9 +689,9 @@ function ExpertProfileEdit() {
               </div>
 
               {/* CARD 3: Profile Quality Box */}
-              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-4 flex items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-100/90 text-amber-700 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-md bg-amber-100/90 text-amber-700 flex items-center justify-center shrink-0">
                     <Sparkles size={17} />
                   </div>
                   <div>
@@ -722,7 +722,7 @@ function ExpertProfileEdit() {
             <div className="lg:col-span-8 space-y-6">
 
               {/* CARD 1: Account Information */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <div className="bg-white rounded-lg border border-slate-200/90 p-6 shadow-xs space-y-4">
 
                 {/* Header */}
                 <div className="flex items-center justify-between pb-1 border-b border-slate-100">
@@ -756,7 +756,7 @@ function ExpertProfileEdit() {
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         placeholder="Sneha Kapoor"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
                       />
                     </div>
                   </div>
@@ -774,7 +774,7 @@ function ExpertProfileEdit() {
                         value={form.mobile}
                         onChange={(e) => setForm({ ...form, mobile: e.target.value })}
                         placeholder="9876500006"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
                       />
                     </div>
                   </div>
@@ -791,7 +791,7 @@ function ExpertProfileEdit() {
                         value={form.email}
                         readOnly
                         title="Registered account email"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 font-semibold cursor-not-allowed"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-100 font-semibold cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -808,13 +808,13 @@ function ExpertProfileEdit() {
                         value={form.timezone}
                         onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                         placeholder="Bengaluru, India (IST)"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 dark:text-slate-100"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 dark:text-slate-100"
                       />
                     </div>
                   </div>
 
                   {/* Live Coordinates / Geolocation */}
-                  <div className="sm:col-span-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-xl p-3">
+                  <div className="sm:col-span-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-md p-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <MapPin size={16} className={form.latitude && form.longitude ? 'text-emerald-500 shrink-0' : 'text-slate-400 shrink-0'} />
@@ -845,7 +845,7 @@ function ExpertProfileEdit() {
               </div>
 
               {/* CARD 2: Category & Specialty */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <div className="bg-white rounded-lg border border-slate-200/90 p-6 shadow-xs space-y-4">
 
                 {/* Header */}
                 <div className="flex items-center justify-between pb-1 border-b border-slate-100">
@@ -874,7 +874,7 @@ function ExpertProfileEdit() {
                         required
                         value={form.categoryId}
                         onChange={(e) => handleCategoryChange(e.target.value)}
-                        className="w-full appearance-none px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 cursor-pointer pr-9"
+                        className="w-full appearance-none px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 cursor-pointer pr-9"
                       >
                         <option value="">Select Category</option>
                         {categories.map(c => {
@@ -901,7 +901,7 @@ function ExpertProfileEdit() {
                         value={form.subCategoryId}
                         onChange={(e) => setForm({ ...form, subCategoryId: e.target.value })}
                         disabled={subCategories.length === 0}
-                        className="w-full appearance-none px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 cursor-pointer pr-9 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                        className="w-full appearance-none px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 cursor-pointer pr-9 disabled:bg-slate-50 disabled:cursor-not-allowed"
                       >
                         <option value="">{subCategories.length === 0 ? 'No subcategories available' : 'Select Subcategory'}</option>
                         {subCategories.map(s => (
@@ -922,7 +922,7 @@ function ExpertProfileEdit() {
                   const expertShare = Math.max(0, 100 - rate);
 
                   return (
-                    <div className={`p-3 rounded-xl border text-xs transition-all animate-in fade-in duration-200 ${hasCustomRate
+                    <div className={`p-3 rounded-md border text-xs transition-all animate-in fade-in duration-200 ${hasCustomRate
                       ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
                       : 'bg-slate-50 border-slate-200 text-slate-800'
                       }`}>
@@ -973,7 +973,7 @@ function ExpertProfileEdit() {
                       value={form.specialty}
                       onChange={(e) => setForm({ ...form, specialty: e.target.value })}
                       placeholder="e.g. Venture Capital & Pitch Deck Strategy"
-                      className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
+                      className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
                     />
                   </div>
                 </div>
@@ -1044,7 +1044,7 @@ function ExpertProfileEdit() {
               </div>
 
               {/* CARD 3: Professional Credentials */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <div className="bg-white rounded-lg border border-slate-200/90 p-6 shadow-xs space-y-4">
 
                 {/* Header */}
                 <div className="flex items-center justify-between pb-1 border-b border-slate-100">
@@ -1075,7 +1075,7 @@ function ExpertProfileEdit() {
                         value={form.qualification}
                         onChange={(e) => setForm({ ...form, qualification: e.target.value })}
                         placeholder="e.g. MBA (Finance), Ex-Venture Associate"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
                       />
                     </div>
                   </div>
@@ -1092,7 +1092,7 @@ function ExpertProfileEdit() {
                         value={form.experience}
                         onChange={(e) => setForm({ ...form, experience: e.target.value })}
                         placeholder="7"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 text-center"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 text-center"
                       />
                     </div>
                   </div>
@@ -1109,7 +1109,7 @@ function ExpertProfileEdit() {
                     value={form.specialization}
                     onChange={(e) => setForm({ ...form, specialization: e.target.value })}
                     placeholder="e.g. Fundraising, Financial Modeling & Pitch Decks"
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800"
                   />
                 </div>
 
@@ -1129,7 +1129,7 @@ function ExpertProfileEdit() {
                     value={form.bio}
                     onChange={(e) => setForm({ ...form, bio: e.target.value })}
                     placeholder="Describe your background, expertise, and how you help clients achieve their goals..."
-                    className="w-full px-4 py-3 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 leading-relaxed"
+                    className="w-full px-4 py-3 text-xs sm:text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-slate-800 leading-relaxed"
                   />
                 </div>
 
@@ -1144,7 +1144,7 @@ function ExpertProfileEdit() {
             <button
               type="button"
               onClick={hasUnsavedChanges ? handleResetChanges : () => navigate('/expert/dashboard')}
-              className="px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl shadow-2xs transition-all cursor-pointer"
+              className="px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-md shadow-2xs transition-all cursor-pointer"
             >
               {hasUnsavedChanges ? 'Discard Changes' : 'Back to Dashboard'}
             </button>
@@ -1152,7 +1152,7 @@ function ExpertProfileEdit() {
             <button
               type="submit"
               disabled={saving || !hasUnsavedChanges}
-              className="px-6 py-2.5 bg-[#D97706] hover:bg-[#B45309] disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              className="px-6 py-2.5 bg-[#D97706] hover:bg-[#B45309] disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-md shadow-xs hover:shadow transition-all flex items-center gap-2 cursor-pointer active:scale-95"
             >
               <Check size={16} />
               <span>{saving ? 'Saving Profile...' : 'Save Profile'}</span>
@@ -1163,7 +1163,7 @@ function ExpertProfileEdit() {
         {/* ================= FLOATING STICKY ACTION BAR (VISIBLE ON SCROLL) ================= */}
         {hasUnsavedChanges && (
           <div className="fixed bottom-3 inset-x-3 sm:bottom-6 sm:inset-x-auto sm:right-6 md:right-8 z-50 animate-in slide-in-from-bottom-5 duration-300">
-            <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-2xl p-2.5 sm:p-3 sm:px-4 flex items-center justify-between gap-3 sm:gap-5 ring-1 ring-amber-500/30 max-w-lg mx-auto sm:mx-0">
+            <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-lg p-2.5 sm:p-3 sm:px-4 flex items-center justify-between gap-3 sm:gap-5 ring-1 ring-amber-500/30 max-w-lg mx-auto sm:mx-0">
               <div className="flex items-center gap-2.5 pl-1 min-w-0">
                 <span className="relative flex h-2.5 w-2.5 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -1180,7 +1180,7 @@ function ExpertProfileEdit() {
                   type="button"
                   onClick={handleResetChanges}
                   disabled={saving}
-                  className="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                 >
                   Discard
                 </button>
@@ -1188,7 +1188,7 @@ function ExpertProfileEdit() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={saving}
-                  className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-900/40 flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm rounded-md shadow-lg shadow-amber-900/40 flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   {saving ? (
                     <>
