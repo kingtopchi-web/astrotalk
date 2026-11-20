@@ -346,7 +346,7 @@ function ExpertProfileEdit() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF9] p-4 sm:p-6 lg:p-8 font-sans text-slate-800">
+    <div className="min-h-screen bg-[#FDFBF9] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-100 transition-colors">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Fixed Global Floating Responsive Toast Alerts */}
@@ -489,26 +489,26 @@ function ExpertProfileEdit() {
 
               </div>
 
-              {/* CARD 2: CONSULTATION RATES (Clean Stepper without Rupee Collision) */}
-              <div className="bg-[#0e1628] rounded-md border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
+              {/* CARD 2: CONSULTATION RATES (Theme-Adaptive: Clean in Light and Dark) */}
+              <div className="bg-white dark:bg-[#0e1628] rounded-md border border-slate-200/90 dark:border-slate-800/90 p-4 sm:p-5 shadow-xs dark:shadow-xl space-y-3.5 text-slate-800 dark:text-slate-200 transition-colors">
                 
                 {/* Header Row */}
                 <div className="flex items-center justify-between gap-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-5 h-5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-5 h-5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
                       <IndianRupee size={12} />
                     </div>
-                    <span className="font-extrabold text-[11px] uppercase tracking-wide text-amber-500 whitespace-nowrap truncate">
+                    <span className="font-extrabold text-[11px] uppercase tracking-wide text-amber-600 dark:text-amber-500 whitespace-nowrap truncate">
                       CONSULTATION RATES
                     </span>
                   </div>
-                  <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <div className="bg-emerald-50 dark:bg-[#052822] border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
                     <span className="font-semibold text-[10px] whitespace-nowrap">₹/min billing</span>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-400 leading-snug">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                   Set competitive per-minute fees for instant & scheduled sessions.
                 </p>
 
@@ -516,17 +516,17 @@ function ExpertProfileEdit() {
                 <div className="grid grid-cols-3 gap-1.5 pt-0.5">
                   
                   {/* Card 1: CHAT */}
-                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2 px-1 flex flex-col items-center justify-between transition-all hover:border-slate-700">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-200 tracking-wider mb-2">
-                      <MessageCircle size={11} className="text-cyan-400 shrink-0" />
+                  <div className="bg-slate-50 dark:bg-[#121c33] border border-slate-200/90 dark:border-slate-800/90 rounded-lg p-2 px-1 flex flex-col items-center justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 tracking-wider mb-2">
+                      <MessageCircle size={11} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap">CHAT</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md p-0.5 flex items-center justify-between w-full overflow-hidden">
+                    <div className="bg-white dark:bg-[#0b1222] border border-slate-200 dark:border-slate-800/80 rounded-md p-0.5 flex items-center justify-between w-full overflow-hidden shadow-2xs">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, chat: Math.max(5, (Number(f.rates.chat) || 5) - 1) } }))}
-                        className="w-4 h-4 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
                         <Minus size={9} strokeWidth={2.5} />
@@ -537,34 +537,34 @@ function ExpertProfileEdit() {
                         min="5"
                         value={form.rates.chat}
                         onChange={(e) => setForm({ ...form, rates: { ...form.rates, chat: e.target.value } })}
-                        className="flex-1 min-w-0 text-center text-xs font-black text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="flex-1 min-w-0 text-center text-xs font-black text-slate-900 dark:text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
 
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, chat: (Number(f.rates.chat) || 5) + 1 } }))}
-                        className="w-4 h-4 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
                         <Plus size={9} strokeWidth={2.5} />
                       </button>
                     </div>
 
-                    <span className="text-[10px] text-slate-400/90 font-medium mt-1.5 whitespace-nowrap">Min ₹5/min</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400/90 font-medium mt-1.5 whitespace-nowrap">Min ₹5/min</span>
                   </div>
 
                   {/* Card 2: VOICE CALL */}
-                  <div className="bg-[#121c33] border border-slate-800/90 rounded-lg p-2 px-1 flex flex-col items-center justify-between transition-all hover:border-slate-700">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-200 tracking-wider mb-2">
-                      <Phone size={11} className="text-emerald-400 shrink-0" />
+                  <div className="bg-slate-50 dark:bg-[#121c33] border border-slate-200/90 dark:border-slate-800/90 rounded-lg p-2 px-1 flex flex-col items-center justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 tracking-wider mb-2">
+                      <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap text-[10px]">VOICE CALL</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md p-0.5 flex items-center justify-between w-full overflow-hidden">
+                    <div className="bg-white dark:bg-[#0b1222] border border-slate-200 dark:border-slate-800/80 rounded-md p-0.5 flex items-center justify-between w-full overflow-hidden shadow-2xs">
                       <button 
                         type="button" 
-                        onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
-                        className="w-4 h-4 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
+                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
+                        className="w-4 h-4 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
                         <Minus size={9} strokeWidth={2.5} />
@@ -575,39 +575,39 @@ function ExpertProfileEdit() {
                         min="10"
                         value={form.rates.audio}
                         onChange={(e) => setForm({ ...form, rates: { ...form.rates, audio: e.target.value } })}
-                        className="flex-1 min-w-0 text-center text-xs font-black text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="flex-1 min-w-0 text-center text-xs font-black text-slate-900 dark:text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
 
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: (Number(f.rates.audio) || 10) + 1 } }))}
-                        className="w-4 h-4 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
                         <Plus size={9} strokeWidth={2.5} />
                       </button>
                     </div>
 
-                    <span className="text-[10px] text-slate-400/90 font-medium mt-1.5 whitespace-nowrap">Min ₹10/min</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400/90 font-medium mt-1.5 whitespace-nowrap">Min ₹10/min</span>
                   </div>
 
                   {/* Card 3: VIDEO (with POPULAR badge & amber glow border) */}
-                  <div className="bg-[#141f38] border border-amber-500/50 rounded-lg p-2 px-1 flex flex-col items-center justify-between relative shadow-[0_0_15px_rgba(245,158,11,0.06)]">
+                  <div className="bg-amber-50/60 dark:bg-[#141f38] border border-amber-300/80 dark:border-amber-500/50 rounded-lg p-2 px-1 flex flex-col items-center justify-between relative shadow-2xs dark:shadow-[0_0_15px_rgba(245,158,11,0.06)]">
                     {/* POPULAR BADGE */}
                     <span className="absolute -top-2 right-1 bg-amber-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-xs">
                       POPULAR
                     </span>
 
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-400 tracking-wider mb-2">
-                      <Video size={11} className="text-amber-400 shrink-0" />
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 tracking-wider mb-2">
+                      <Video size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
                       <span className="uppercase font-extrabold whitespace-nowrap">VIDEO</span>
                     </div>
 
-                    <div className="bg-[#0b1222] border border-slate-800/80 rounded-md p-0.5 flex items-center justify-between w-full overflow-hidden">
+                    <div className="bg-white dark:bg-[#0b1222] border border-amber-300 dark:border-slate-800/80 rounded-md p-0.5 flex items-center justify-between w-full overflow-hidden shadow-2xs">
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: Math.max(20, (Number(f.rates.video) || 20) - 1) } }))}
-                        className="w-4 h-4 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4 rounded bg-amber-100 dark:bg-slate-800 hover:bg-amber-200 dark:hover:bg-slate-700 text-amber-800 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
                         <Minus size={9} strokeWidth={2.5} />
@@ -618,26 +618,26 @@ function ExpertProfileEdit() {
                         min="20"
                         value={form.rates.video}
                         onChange={(e) => setForm({ ...form, rates: { ...form.rates, video: e.target.value } })}
-                        className="flex-1 min-w-0 text-center text-xs font-black text-amber-300 bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="flex-1 min-w-0 text-center text-xs font-black text-amber-800 dark:text-amber-300 bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
 
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: (Number(f.rates.video) || 20) + 1 } }))}
-                        className="w-4 h-4 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4 rounded bg-amber-100 dark:bg-slate-800 hover:bg-amber-200 dark:hover:bg-slate-700 text-amber-800 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
                         <Plus size={9} strokeWidth={2.5} />
                       </button>
                     </div>
 
-                    <span className="text-[10px] text-amber-400/90 font-medium mt-1.5 whitespace-nowrap">Min ₹20/min</span>
+                    <span className="text-[10px] text-amber-700 dark:text-amber-400/90 font-medium mt-1.5 whitespace-nowrap">Min ₹20/min</span>
                   </div>
 
                 </div>
 
                 {/* Toggle Row (Enable Instant Call-ins & Payout Rate) */}
-                <div className="bg-[#0b1222]/90 border border-slate-800/90 rounded-lg p-3 space-y-1.5">
+                <div className="bg-slate-50 dark:bg-[#0b1222]/90 border border-slate-200/90 dark:border-slate-800/90 rounded-lg p-3 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       {/* Toggle Switch */}
@@ -645,7 +645,7 @@ function ExpertProfileEdit() {
                         type="button"
                         onClick={() => setForm(f => ({ ...f, instantCallEnabled: !f.instantCallEnabled }))}
                         className={`w-9 h-5 rounded-full relative transition-colors cursor-pointer p-0.5 shrink-0 ${
-                          form.instantCallEnabled ? 'bg-amber-500' : 'bg-slate-700'
+                          form.instantCallEnabled ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
                         }`}
                       >
                         <div
@@ -654,19 +654,19 @@ function ExpertProfileEdit() {
                           }`}
                         />
                       </button>
-                      <span className="text-xs font-bold text-white whitespace-nowrap">
+                      <span className="text-xs font-bold text-slate-800 dark:text-white whitespace-nowrap">
                         Instant Call-ins
                       </span>
                     </div>
 
                     {/* Payout Rate Badge */}
-                    <div className="bg-[#052822] border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0">
-                      <TrendingUp size={11} className="text-emerald-400" />
+                    <div className="bg-emerald-50 dark:bg-[#052822] border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0">
+                      <TrendingUp size={11} className="text-emerald-600 dark:text-emerald-400" />
                       <span className="text-[10px] font-bold whitespace-nowrap">92% Payout</span>
                     </div>
                   </div>
 
-                  <p className="text-[10px] text-slate-400 pl-11 leading-tight">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 pl-11 leading-tight">
                     Receive on-demand client calls when online
                   </p>
                 </div>
@@ -680,7 +680,7 @@ function ExpertProfileEdit() {
                       rates: { chat: 5, audio: 10, video: 20 },
                       instantCallEnabled: true
                     }))}
-                    className="text-[11px] font-medium text-slate-400 hover:text-amber-400 transition-colors cursor-pointer hover:underline"
+                    className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer hover:underline"
                   >
                     Reset to Defaults
                   </button>
