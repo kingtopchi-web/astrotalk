@@ -400,13 +400,17 @@ function ExpertProfileEdit() {
             <div className="lg:col-span-4 space-y-6">
 
               {/* CARD 1: PROFILE PHOTO */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-5">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 shadow-sm space-y-5">
                 
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-amber-700 font-bold text-xs uppercase tracking-wider">
-                    <Camera size={14} />
-                    <span>PROFILE PHOTO</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Camera size={14} />
+                    </div>
+                    <span className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      Profile Photo
+                    </span>
                   </div>
                   <span className="text-[11px] text-slate-400 font-medium">
                     JPG/PNG • Max 5MB
@@ -488,20 +492,25 @@ function ExpertProfileEdit() {
               </div>
 
               {/* CARD 2: CONSULTATION RATES */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm space-y-4">
                 
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-amber-700 font-bold text-xs uppercase tracking-wider">
-                    <IndianRupee size={14} />
-                    <span>CONSULTATION RATES</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <IndianRupee size={15} />
+                    </div>
+                    <span className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      Consultation Rates
+                    </span>
                   </div>
-                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                    ₹/minute billing
+                  <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    ₹/min billing
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Set competitive per-minute fees for your instant and scheduled sessions.
                 </p>
 
@@ -509,13 +518,16 @@ function ExpertProfileEdit() {
                 <div className="grid grid-cols-3 gap-2.5 pt-1">
                   
                   {/* Chat Rate */}
-                  <div className="bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-center flex flex-col justify-between">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                      <MessageCircle size={12} className="text-blue-500 shrink-0" />
-                      <span>Chat</span>
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/70 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-2.5 sm:p-3 text-center flex flex-col justify-between transition-all group focus-within:border-blue-500/60 focus-within:ring-2 focus-within:ring-blue-500/10">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
+                      <div className="w-5 h-5 rounded-md bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                        <MessageCircle size={12} />
+                      </div>
+                      <span className="whitespace-nowrap">Chat</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 shadow-2xs">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">₹</span>
+
+                    <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-1 select-none">₹</span>
                       <input 
                         type="number"
                         min="5"
@@ -524,20 +536,23 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, chat: e.target.value }
                         })}
-                        className="w-12 text-sm font-bold text-slate-900 dark:text-white text-center outline-none bg-transparent"
+                        className="w-12 text-sm font-extrabold text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Min ₹5/min</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹5/min</span>
                   </div>
 
                   {/* Voice Call Rate */}
-                  <div className="bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-center flex flex-col justify-between">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                      <Phone size={12} className="text-emerald-500 shrink-0" />
-                      <span>Voice Call</span>
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/70 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-2.5 sm:p-3 text-center flex flex-col justify-between transition-all group focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/10">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
+                      <div className="w-5 h-5 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                        <Phone size={12} />
+                      </div>
+                      <span className="whitespace-nowrap">Voice</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 shadow-2xs">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">₹</span>
+
+                    <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-1 select-none">₹</span>
                       <input 
                         type="number"
                         min="10"
@@ -546,20 +561,23 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, audio: e.target.value }
                         })}
-                        className="w-12 text-sm font-bold text-slate-900 dark:text-white text-center outline-none bg-transparent"
+                        className="w-12 text-sm font-extrabold text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Min ₹10/min</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹10/min</span>
                   </div>
 
                   {/* Video Rate */}
-                  <div className="bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-center flex flex-col justify-between">
-                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                      <Video size={12} className="text-amber-500 shrink-0" />
-                      <span>Video</span>
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/70 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-2.5 sm:p-3 text-center flex flex-col justify-between transition-all group focus-within:border-amber-500/60 focus-within:ring-2 focus-within:ring-amber-500/10">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
+                      <div className="w-5 h-5 rounded-md bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                        <Video size={12} />
+                      </div>
+                      <span className="whitespace-nowrap">Video</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 shadow-2xs">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">₹</span>
+
+                    <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-1 select-none">₹</span>
                       <input 
                         type="number"
                         min="20"
@@ -568,26 +586,28 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, video: e.target.value }
                         })}
-                        className="w-12 text-sm font-bold text-slate-900 dark:text-white text-center outline-none bg-transparent"
+                        className="w-12 text-sm font-extrabold text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Min ₹20/min</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹20/min</span>
                   </div>
 
                 </div>
 
                 {/* Footer Options */}
-                <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-100">
-                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800 touch-manipulation select-none">
+                <div className="pt-3 flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800">
+                  <label className="flex items-center gap-2.5 cursor-pointer font-semibold text-slate-800 dark:text-slate-200 touch-manipulation select-none group">
                     <input 
                       type="checkbox"
                       checked={form.instantCallEnabled}
                       onChange={(e) => setForm(f => ({ ...f, instantCallEnabled: e.target.checked }))}
-                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer touch-manipulation"
+                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500/30 accent-amber-600 cursor-pointer touch-manipulation transition-transform group-hover:scale-105"
                     />
-                    <span>Enable Instant Call-ins</span>
+                    <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Enable Instant Call-ins</span>
                   </label>
-                  <span className="text-slate-500 font-medium">92% Payout</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 px-2.5 py-0.5 rounded-full shadow-2xs">
+                    92% Payout
+                  </span>
                 </div>
 
               </div>
