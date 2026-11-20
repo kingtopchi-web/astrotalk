@@ -12,8 +12,10 @@
 }
 
 @layer base {
-  body {
+  html, body {
     @apply bg-background text-secondary antialiased;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 }
 

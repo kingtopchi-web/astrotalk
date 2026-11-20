@@ -432,9 +432,9 @@ const ExpertsList = () => {
           No experts found for the selected filters.
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse min-w-[1200px]">
+            <table className="w-full text-left border-collapse min-w-[1100px]">
               <thead>
                 <tr className="bg-white border-b border-slate-200 text-slate-700 text-sm whitespace-nowrap">
                   <th className="p-4 font-semibold min-w-[200px]">Expert</th>

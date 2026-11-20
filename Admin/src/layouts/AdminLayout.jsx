@@ -543,7 +543,7 @@ function AdminLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex w-full max-w-full overflow-x-hidden">
 
       {/* ── Desktop Sidebar ── */}
       <aside className={`hidden md:flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen fixed z-20 transition-all duration-300 ${collapsed ? 'w-[60px]' : 'w-64'}`}>
@@ -589,7 +589,7 @@ function AdminLayout() {
       )}
 
       {/* ── Main ── */}
-      <main className={`flex-1 flex flex-col min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-all duration-300 ${collapsed ? 'md:ml-[60px]' : 'md:ml-64'}`}>
+      <main className={`flex-1 flex flex-col min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-all duration-300 w-full min-w-0 overflow-x-hidden ${collapsed ? 'md:ml-[60px]' : 'md:ml-64'}`}>
 
         {/* Top Header */}
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 h-14 flex items-center px-4 gap-3">
@@ -668,7 +668,7 @@ function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto pb-24 md:pb-6">
+        <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto pb-24 md:pb-6 min-w-0">
           {canAccessPath(location.pathname, adminUser) ? (
             <Outlet />
           ) : (
