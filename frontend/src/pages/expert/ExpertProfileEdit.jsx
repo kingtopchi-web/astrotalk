@@ -833,7 +833,7 @@ function ExpertProfileEdit() {
                         type="button"
                         onClick={detectMyLocation}
                         disabled={detectingLocation}
-                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-lg transition-all shrink-0 cursor-pointer"
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold text-xs rounded transition-all shrink-0 cursor-pointer"
                       >
                         {detectingLocation ? 'Detecting...' : (form.latitude ? 'Update GPS Location' : 'Auto-Detect Location')}
                       </button>
@@ -985,7 +985,7 @@ function ExpertProfileEdit() {
                     {tags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-1.5 bg-amber-50/80 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-lg text-xs font-semibold group"
+                        className="inline-flex items-center gap-1.5 bg-amber-50/80 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded text-xs font-semibold group"
                       >
                         <span>#{tag}</span>
                         <button
@@ -999,7 +999,7 @@ function ExpertProfileEdit() {
                     ))}
 
                     {showAddTag ? (
-                      <div className="inline-flex items-center gap-1 bg-white border border-amber-300 rounded-lg px-2 py-0.5">
+                      <div className="inline-flex items-center gap-1 bg-white border border-amber-300 rounded px-2 py-0.5">
                         <span className="text-xs text-slate-400">#</span>
                         <input
                           type="text"
@@ -1032,7 +1032,7 @@ function ExpertProfileEdit() {
                       <button
                         type="button"
                         onClick={() => setShowAddTag(true)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 hover:bg-amber-50 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 hover:bg-amber-50 px-2.5 py-1 rounded transition-colors cursor-pointer"
                       >
                         <Plus size={13} />
                         <span>Add Tag</span>
