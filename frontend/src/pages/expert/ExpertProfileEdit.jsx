@@ -527,7 +527,7 @@ function ExpertProfileEdit() {
                     </div>
 
                     <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-1 select-none">₹</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-0.5 select-none">₹</span>
                       <input 
                         type="number"
                         min="5"
@@ -536,8 +536,9 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, chat: e.target.value }
                         })}
-                        className="w-12 text-sm font-extrabold text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 text-sm font-black text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 select-none">/m</span>
                     </div>
                     <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹5/min</span>
                   </div>
@@ -552,7 +553,7 @@ function ExpertProfileEdit() {
                     </div>
 
                     <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-1 select-none">₹</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-0.5 select-none">₹</span>
                       <input 
                         type="number"
                         min="10"
@@ -561,8 +562,9 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, audio: e.target.value }
                         })}
-                        className="w-12 text-sm font-extrabold text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 text-sm font-black text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 select-none">/m</span>
                     </div>
                     <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹10/min</span>
                   </div>
@@ -577,7 +579,7 @@ function ExpertProfileEdit() {
                     </div>
 
                     <div className="relative flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-2xs group-hover:border-slate-300 dark:group-hover:border-slate-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-1 select-none">₹</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mr-0.5 select-none">₹</span>
                       <input 
                         type="number"
                         min="20"
@@ -586,8 +588,9 @@ function ExpertProfileEdit() {
                           ...form,
                           rates: { ...form.rates, video: e.target.value }
                         })}
-                        className="w-12 text-sm font-extrabold text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 text-sm font-black text-slate-900 dark:text-white text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 select-none">/m</span>
                     </div>
                     <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-1.5">Min ₹20/min</span>
                   </div>
@@ -595,7 +598,7 @@ function ExpertProfileEdit() {
                 </div>
 
                 {/* Footer Options */}
-                <div className="pt-3 flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-3.5 flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800">
                   <label className="flex items-center gap-2.5 cursor-pointer font-semibold text-slate-800 dark:text-slate-200 touch-manipulation select-none group">
                     <input 
                       type="checkbox"
@@ -603,9 +606,12 @@ function ExpertProfileEdit() {
                       onChange={(e) => setForm(f => ({ ...f, instantCallEnabled: e.target.checked }))}
                       className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500/30 accent-amber-600 cursor-pointer touch-manipulation transition-transform group-hover:scale-105"
                     />
-                    <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Enable Instant Call-ins</span>
+                    <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      Enable Instant Call-ins
+                    </span>
                   </label>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 px-2.5 py-0.5 rounded-full shadow-2xs">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/50 px-2.5 py-0.5 rounded-full shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     92% Payout
                   </span>
                 </div>
