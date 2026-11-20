@@ -671,31 +671,19 @@ function ExpertProfileEdit() {
                   </p>
                 </div>
 
-                {/* Action Buttons Row */}
-                <div className="space-y-2 pt-0.5">
+                {/* Reset to Defaults Option */}
+                <div className="flex items-center justify-end pt-1">
                   <button
                     type="button"
-                    onClick={handleSubmit}
-                    disabled={saving}
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.99] text-slate-950 font-extrabold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      rates: { chat: 5, audio: 10, video: 20 },
+                      instantCallEnabled: true
+                    }))}
+                    className="text-[11px] font-medium text-slate-400 hover:text-amber-400 transition-colors cursor-pointer hover:underline"
                   >
-                    <span>{saving ? 'Saving...' : 'Save Rate Settings'}</span>
-                    <Check size={14} className="text-slate-950" />
+                    Reset to Defaults
                   </button>
-
-                  <div className="flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setForm(f => ({
-                        ...f,
-                        rates: { chat: 5, audio: 10, video: 20 },
-                        instantCallEnabled: true
-                      }))}
-                      className="text-[11px] font-medium text-slate-400 hover:text-amber-400 transition-colors cursor-pointer hover:underline"
-                    >
-                      Reset to Defaults
-                    </button>
-                  </div>
                 </div>
 
               </div>
