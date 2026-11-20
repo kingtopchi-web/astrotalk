@@ -488,7 +488,7 @@ function ExpertProfileEdit() {
 
               </div>
 
-              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Reduced Border Radius & Better Stepper Spacing) */}
+              {/* CARD 2: CONSULTATION RATES (Pixel-Perfect Sidebar Responsive with Clean Rupee Symbol & Spacing) */}
               <div className="bg-[#0e1628] rounded-xl border border-slate-800/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-200">
                 
                 {/* Header Row */}
@@ -525,25 +525,25 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, chat: Math.max(5, (Number(f.rates.chat) || 5) - 1) } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
                         -
                       </button>
-                      <div className="flex items-center justify-center min-w-0 px-2">
-                        <span className="text-[10px] font-bold text-slate-400 mr-0.5 select-none">₹</span>
+                      <div className="flex items-center justify-center gap-1 flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-400 leading-none select-none">₹</span>
                         <input 
                           type="number"
                           min="5"
                           value={form.rates.chat}
                           onChange={(e) => setForm({ ...form, rates: { ...form.rates, chat: e.target.value } })}
-                          className="w-6 text-center text-xs font-bold text-white bg-transparent outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-7 text-center text-xs font-extrabold text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, chat: (Number(f.rates.chat) || 5) + 1 } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
                         +
@@ -563,26 +563,26 @@ function ExpertProfileEdit() {
                     <div className="bg-[#0b1222] border border-slate-800/80 rounded-md px-1.5 py-1 flex items-center justify-between w-full">
                       <button 
                         type="button" 
-                        onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        onClick={() => setForm(f => ({ ...f, rates: { ...f.rates, audio: Math.max(10, (Number(f.rates.audio) || 10) - 1) } }))}
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
                         -
                       </button>
-                      <div className="flex items-center justify-center min-w-0 px-2">
-                        <span className="text-[10px] font-bold text-slate-400 mr-0.5 select-none">₹</span>
+                      <div className="flex items-center justify-center gap-1 flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-400 leading-none select-none">₹</span>
                         <input 
                           type="number"
                           min="10"
                           value={form.rates.audio}
                           onChange={(e) => setForm({ ...form, rates: { ...form.rates, audio: e.target.value } })}
-                          className="w-6 text-center text-xs font-bold text-white bg-transparent outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-7 text-center text-xs font-extrabold text-white bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, audio: (Number(f.rates.audio) || 10) + 1 } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
                         +
@@ -608,25 +608,25 @@ function ExpertProfileEdit() {
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: Math.max(20, (Number(f.rates.video) || 20) - 1) } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                         title="Decrease rate"
                       >
                         -
                       </button>
-                      <div className="flex items-center justify-center min-w-0 px-2">
-                        <span className="text-[10px] font-bold text-amber-500 mr-0.5 select-none">₹</span>
+                      <div className="flex items-center justify-center gap-1 flex-1 min-w-0">
+                        <span className="text-xs font-bold text-amber-500 leading-none select-none">₹</span>
                         <input 
                           type="number"
                           min="20"
                           value={form.rates.video}
                           onChange={(e) => setForm({ ...form, rates: { ...form.rates, video: e.target.value } })}
-                          className="w-6 text-center text-xs font-bold text-amber-300 bg-transparent outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-7 text-center text-xs font-extrabold text-amber-300 bg-transparent outline-none p-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setForm(f => ({ ...f, rates: { ...form.rates, video: (Number(f.rates.video) || 20) + 1 } }))}
-                        className="w-4 h-4.5 rounded-sm bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
+                        className="w-4 h-4.5 rounded-sm bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer select-none shrink-0"
                         title="Increase rate"
                       >
                         +
